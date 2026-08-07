@@ -10,19 +10,21 @@
 | `ai-hiring-workspace-intelligence` | Modèle opératoire visible par le recrutement | `04` |
 | `ai-newsflow-sourcing-intelligence` | Momentum et faire/acheter/s’allier | `05` |
 
-## Tunnel de qualification v0.2
+## Tunnel de qualification
 
 | Skill | Responsabilité exclusive | Sortie |
 |---|---|---|
-| `qualification-tunnel-router` | Router et vérifier les handoffs | Prochaine skill |
+| `qualification-tunnel-router` | Router, vérifier les handoffs et résoudre les blockers vers leur prérequis | Prochaine skill / resolver |
 | `enterprise-demand-intelligence` | Qualifier le compte sans connaître les offres | `05_enterprise_demand_profile.yaml` |
 | `product-icp-intelligence` | Versionner la vérité d’une offre sans compte | `product_catalog/OFFER-*.yaml` |
-| `opportunity-fit-matching` | Croiser les deux profils sans recherche fraîche | `06_product_fit_matrix.yaml` |
-| `engagement-pilot-design` | Transformer un match en preuve falsifiable | `07_engagement_hypothesis.md` |
+| `opportunity-fit-matching` | Croiser demande et profils produit sans recherche fraîche | `06_product_fit_matrix.yaml` |
+| `person-opportunity-targeting` | Sélectionner les premiers contacts après fit valide | `06b_contact_targets.yaml` |
+| `iterative-reach-matchmaking` | Organiser promoteurs, prescripteurs, terrain, sponsors techniques et veto en première/seconde vague | `06c_reach_strategy.yaml` |
+| `engagement-pilot-design` | Transformer fit + reach en preuve ou discovery falsifiable | `07_engagement_hypothesis.md` |
 
-Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` lorsqu’elles existent et seulement les références méthodologiques nécessaires. Les faits produit restent dans `product_catalog/`; les faits compte restent dans `studies/`.
+Les faits produit restent dans `product_catalog/`; les faits compte et personnes restent dans leurs artefacts propriétaires. Le newsflow peut modifier le `why_now` du reach, jamais le fit.
 
-## Couche réseau v0.3
+## Couche réseau
 
 | Skill | Responsabilité exclusive | Sortie |
 |---|---|---|
@@ -30,20 +32,35 @@ Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` lo
 | `enterprise-icb-mapping` | Candidat ICB fondé sur l’activité | `company_icb_mappings.jsonl` |
 | `network-account-screening` | Priorité de recherche product-agnostic | `account_screening.jsonl` |
 | `network-study-orchestration` | Cycle `create/refresh/ready/hold` | `study_queue.yaml` |
-| `person-opportunity-targeting` | Sélection de contacts après fit | `06b_contact_targets.yaml` |
 | `sector-intelligence-consolidation` | Synthèse de trois études comparables ou plus | `sector_rollups/ICB-*.yaml` |
 
-`engagement-pilot-design` transforme ensuite les cibles et le fit en hypothèses de reach ou de preuve, sans inventer d’autorité ni de besoin.
-
-## Catalogue de demande et Nudging v0.6
+## Catalogue de demande, chaînes de valeur et patrimoine UC
 
 | Skill | Responsabilité exclusive | Sortie |
 |---|---|---|
 | `enterprise-use-case-intelligence` | Recenser et maintenir les use cases d’une entreprise à partir de ses preuves, sans offre | `05b_use_case_inventory.yaml` |
-| `sector-intelligence-consolidation` | Consolider les preuves et use cases de >=3 études d’un même secteur ICB | `data/private/sector_rollups/ICB-*.yaml` |
-| `use-case-nudging` | Productivisation, upsell par dépendance et packaging cross-sell à partir du seul inventaire de use cases de l’entreprise | `09_use_case_nudges.yaml` |
+| `enterprise-value-chain-causal-analysis` | Décomposer un UC canonique dans sa chaîne opérationnelle avec Porter et ses causes avec Ishikawa | `05c_value_chain_causal_map.yaml` |
+| `sector-intelligence-consolidation` | Consolider preuves et use cases de >=3 études d’un même secteur ICB | `data/private/sector_rollups/ICB-*.yaml` |
+| `use-case-nudging` | Productivisation, upsell par dépendance et cross-sell feedback-backed depuis le seul inventaire entreprise | `09_use_case_nudges.yaml` |
 
-Le catalogue de demande suit la hiérarchie `ICB -> secteur -> entreprises -> études -> use cases`. ICB sert à naviguer et benchmarker ; il ne prouve jamais un besoin. Le Nudging est séparé de la qualification initiale : il ne lit ni ICB, ni rollup sectoriel, ni profil de demande, ni catalogue produit, ni matrice de fit.
+Le patrimoine UC utilise une vue graphe **dérivée**, pas une nouvelle skill ni une nouvelle vérité. Les liens `depends_on`, `enables`, `variant_of`, `shares_asset`, `same_outcome`, `value_chain_neighbor`, `causal_neighbor` et `similar_pattern` conservent scope, basis, confiance et provenance. Une similarité sectorielle ne prouve jamais qu’un compte possède le use case.
+
+La hiérarchie de navigation reste `ICB -> secteur -> entreprises -> études -> use cases`. ICB sert à naviguer et benchmarker ; il ne prouve jamais un besoin. Porter/Ishikawa peuvent faire émerger un workflow adjacent au statut d’hypothèse, mais seul `enterprise-use-case-intelligence` peut le canonicaliser avec une preuve entreprise.
+
+## Handoff reach v0.7
+
+```text
+05 demand
+-> 05b use cases
+-> 05c value-chain / causal map (optionnel pour expliquer le workflow)
+-> immutable product snapshots
+-> 06 product fit
+-> 06b contact targets
+-> 06c iterative reach
+-> 07 engagement / pilot
+```
+
+`iterative-reach-matchmaking` ne remplace ni le matching ni l’organigramme. Il orchestre les preuves déjà acquises et peut router en arrière vers `tech-leadership-org-intelligence` ou la validation de rôle lorsqu’une seconde vague de personnes est nécessaire.
 
 ## Intelligence exécutive et candidatures v0.4
 
