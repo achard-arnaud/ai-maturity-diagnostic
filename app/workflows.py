@@ -193,7 +193,41 @@ class WorkflowPlanner:
     def _reach(self, study_id: str) -> dict[str, Any]:
         if not study_id:
             raise ControlPlaneError("study_id is required for reach workflow")
-        preview = ReachMatchmaker(self.root).preview(study_id)
+        qualification = QualificationCockpit(self.root).study(study_id)
+        if qualification is None:
+            raise ControlPlaneError(f"unknown study: {study_id}")
+        try:
+            preview = ReachMatchmaker(self.root).preview(study_id)
+        except ControlPlaneError as exc:
+            resolution = qualification.get("current_blocker")
+            if resolution is None:
+                resolution = blocker(
+                    category="organization",
+                    key=f"{study_id}:reach-prerequisite",
+                    message=str(exc),
+                    required_state="Qualification prerequisites for reach are valid and current",
+                    owner_skill="qualification-tunnel-router",
+                    cta_label="Résoudre les prérequis",
+                    cta_input=f"Inspecte le study {study_id} et route vers le prérequis manquant avant de relancer le reach.",
+                    context_paths=[qualification["study_path"]],
+                    postcondition="qualification exposes a valid positive fit and current company contact handoff",
+                )
+            fit_done = bool(qualification["artifacts"].get("fit_progression_allowed"))
+            contacts_done = bool(qualification["artifacts"].get("contacts_ready"))
+            return {
+                "schema_version": "0.7",
+                "kind": "reach",
+                "target": study_id,
+                "label": qualification["company"],
+                "steps": [
+                    {"id": "fit", "skill": "opportunity-fit-matching", "status": "completed" if fit_done else "blocked", "gate": "Valid positive fit with hard gates respected"},
+                    {"id": "contacts", "skill": "person-opportunity-targeting", "status": "completed" if contacts_done else ("blocked" if fit_done else "locked"), "gate": "Current company-linked targets for the selected offer"},
+                    {"id": "org_newsflow", "skill": "tech-leadership-org-intelligence", "status": "conditional" if contacts_done else "locked", "gate": "Organization/decision evidence and role validation; newsflow only informs why-now"},
+                    attach_resolution({"id": "reach", "skill": "iterative-reach-matchmaking", "status": "blocked", "gate": "Resolve qualification/contact prerequisites before stakeholder sequencing"}, resolution),
+                    {"id": "pilot", "skill": "engagement-pilot-design", "status": "locked", "gate": "Resolved reach before pilot/proof"},
+                ],
+                "current": {"stakeholders": 0, "blockers": 1, "prerequisite_error": str(exc)},
+            }
         blockers = preview.get("blockers", []) or []
         steps = [
             {"id": "fit", "skill": "opportunity-fit-matching", "status": "completed", "gate": f"Valid {preview['fit_decision']} fit"},
