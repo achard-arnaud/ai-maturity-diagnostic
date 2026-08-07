@@ -1,0 +1,22 @@
+[
+  {"query":"Avec ce fit validé, qui contacter en premier puis en second tour ?","should_trigger":true},
+  {"query":"Distingue promoteur, prescripteur, utilisateur et veto pour cette opportunité.","should_trigger":true},
+  {"query":"Élargis le second tour de contacts parce que le sponsor n'est pas établi.","should_trigger":true},
+  {"query":"Relie l'ICP produit aux personnes déjà connues après le matching.","should_trigger":true},
+  {"query":"Sachant le newsflow actuel, quel interlocuteur valider d'abord sans changer le fit ?","should_trigger":true},
+  {"query":"Construis une stratégie de reach first-wave/second-wave à partir de l'orga et des contacts.","should_trigger":true},
+  {"query":"Quel prescripteur peut nous aider à identifier le terrain owner de ce use case ?","should_trigger":true},
+  {"query":"Prépare le reach map pour ce compte avec les rôles à confirmer.","should_trigger":true},
+  {"query":"J'ai un match positif mais aucun contact prêt : propose la seconde vague de qualification personnes.","should_trigger":true},
+  {"query":"Bridge entreprise, produit, ICP, use cases, organigramme et newsflow pour l'ordre de contact.","should_trigger":true},
+  {"query":"Recherche la stratégie IA de cette entreprise avant de connaître les offres.","should_trigger":false},
+  {"query":"Ajoute les use cases observés dans l'inventaire.","should_trigger":false},
+  {"query":"Décompose UC-2 avec Ishikawa.","should_trigger":false},
+  {"query":"Compare les offres pour choisir le meilleur fit.","should_trigger":false},
+  {"query":"Importe mon fichier de contacts.","should_trigger":false},
+  {"query":"Assigne le secteur ICB.","should_trigger":false},
+  {"query":"Fais un benchmark sectoriel.","should_trigger":false},
+  {"query":"Crée un nudge de productivisation.","should_trigger":false},
+  {"query":"Rédige et envoie un email commercial.","should_trigger":false},
+  {"query":"Mets à jour le profil canonique de l'offre.","should_trigger":false}
+]
