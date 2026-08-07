@@ -1,0 +1,22 @@
+[
+  {"query":"Le fit Astraforge est VALIDATE : quels contacts du compte sont les plus pertinents ?","should_trigger":true},
+  {"query":"Sélectionne sponsor, terrain owner et veto après le matching produit.","should_trigger":true},
+  {"query":"Croise les personas du snapshot avec les personnes de cette entreprise.","should_trigger":true},
+  {"query":"Classe les contacts sans modifier la décision de product fit.","should_trigger":true},
+  {"query":"Quel contact privé correspond le mieux au rôle CTO attendu par l’offre ?","should_trigger":true},
+  {"query":"Prépare la liste personne–entreprise–produit à partir du match existant.","should_trigger":true},
+  {"query":"Identifie les rôles à valider avant outreach.","should_trigger":true},
+  {"query":"Le compte a plusieurs contacts data et sécurité : priorise-les pour l’offre retenue.","should_trigger":true},
+  {"query":"Génère 06b_contact_targets.yaml pour cette étude qualifiée.","should_trigger":true},
+  {"query":"Signale qu’un titre non daté ne prouve pas le pouvoir d’achat.","should_trigger":true},
+  {"query":"Importe cette liste de 1 000 contacts.","should_trigger":false},
+  {"query":"Quel compte du réseau faut-il rechercher ?","should_trigger":false},
+  {"query":"Trouve le secteur ICB de l’entreprise.","should_trigger":false},
+  {"query":"Refais la recherche publique du compte.","should_trigger":false},
+  {"query":"Décide quelle offre gagne le matching.","should_trigger":false},
+  {"query":"Définis l’ICP d’Astraforge.","should_trigger":false},
+  {"query":"Conçois les KPI du pilote.","should_trigger":false},
+  {"query":"Rédige immédiatement un message LinkedIn sans fit.","should_trigger":false},
+  {"query":"Crée la synthèse sectorielle.","should_trigger":false},
+  {"query":"Lance les études des tiers A.","should_trigger":false}
+]

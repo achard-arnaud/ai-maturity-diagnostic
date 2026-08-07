@@ -1,0 +1,22 @@
+[
+  {"query":"Importe ce fichier de contacts et crée les personnes, entreprises et relations.","should_trigger":true},
+  {"query":"Normalise cette liste TSV de mon réseau sans lancer de recherche web.","should_trigger":true},
+  {"query":"Déduplique les contacts et attribue des identifiants stables.","should_trigger":true},
+  {"query":"Ajoute ce nouvel export CRM au registre privé du réseau.","should_trigger":true},
+  {"query":"Associe chaque personne à l’entreprise indiquée dans ce fichier.","should_trigger":true},
+  {"query":"Crée le manifeste d’intake et conserve un snapshot immuable du fichier.","should_trigger":true},
+  {"query":"Contrôle les colonnes Name, Job title, Company et Country avant ingestion.","should_trigger":true},
+  {"query":"Produis les objets canoniques personne, entreprise et relation depuis cette liste.","should_trigger":true},
+  {"query":"Intègre une nouvelle liste d’invités dans le réseau privé.","should_trigger":true},
+  {"query":"Enregistre les titres comme non vérifiés et prépare leur validation future.","should_trigger":true},
+  {"query":"Recherche la stratégie IA de BNP Paribas.","should_trigger":false},
+  {"query":"Classe les entreprises dans la nomenclature ICB.","should_trigger":false},
+  {"query":"Quelle offre correspond à ce compte ?","should_trigger":false},
+  {"query":"Sélectionne le meilleur contact après le matching.","should_trigger":false},
+  {"query":"Consolide les diagnostics du secteur bancaire.","should_trigger":false},
+  {"query":"Mets à jour l’ICP d’Astraforge.","should_trigger":false},
+  {"query":"Rédige un message LinkedIn pour ce CTO.","should_trigger":false},
+  {"query":"Calcule le niveau de maturité IA de cette entreprise.","should_trigger":false},
+  {"query":"Crée les études des comptes prioritaires.","should_trigger":false},
+  {"query":"Applique les hard gates du produit.","should_trigger":false}
+]

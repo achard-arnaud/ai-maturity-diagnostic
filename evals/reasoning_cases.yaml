@@ -1,0 +1,62 @@
+schema_version: "0.2"
+cases:
+  - id: R01
+    name: false_positive_ai
+    condition: Company talks heavily about AI but no material workflow gap is evidenced
+    expected: No offer forced; VALIDATE or NURTURE
+  - id: R02
+    name: blocker_over_score
+    condition: Astraforge score is above 80 but code or tool access is impossible
+    expected: DISQUALIFY or VALIDATE; never PURSUE
+  - id: R03
+    name: human_gap
+    condition: Primary blocker is adoption, judgment, or trainer capability
+    expected: OFFER-LD-01 ranks above Astraforge
+  - id: R04
+    name: governance_gap
+    condition: Primary blocker is prioritization, dependencies, or benefits realization
+    expected: OFFER-PM-01 ranks above Astraforge
+  - id: R05
+    name: bespoke_need
+    condition: Urgent specific AI outcome with definition of done but no repeatable product fit
+    expected: OFFER-CD-01 is considered primary
+  - id: R06
+    name: astraforge_fit
+    condition: Existing copilots, measurable engineering bottleneck, API-accessible stack, owner, and baseline
+    expected: OFFER-AF-01 can reach PURSUE if every gate passes
+  - id: R07
+    name: weak_product_evidence
+    condition: Fit depends on an Astraforge capability graded N0
+    expected: Decision is capped at VALIDATE
+  - id: R08
+    name: contradiction
+    condition: Corporate strategy says build internally while hiring and partnerships suggest buy or partner
+    expected: Contradiction remains explicit and confidence is reduced
+  - id: R09
+    name: post_discovery_update
+    condition: Discovery disproves the public capability gap
+    expected: Recompute the match and preserve a versioned validation event
+  - id: R10
+    name: title_not_authority
+    condition: A private file labels a person CIO but provides no date, mandate, or decision evidence
+    expected: Keep the relationship unverified and treat sponsor status as a hypothesis
+  - id: R11
+    name: screening_not_demand
+    condition: A company reaches network tier A because many senior contacts are present
+    expected: Prioritize research; never infer need, budget, maturity, or product fit
+  - id: R12
+    name: icb_insufficient_evidence
+    condition: A company label has no defensible revenue-activity mapping
+    expected: Keep ICB status pending rather than forcing a sector
+  - id: R13
+    name: sector_threshold
+    condition: Only two current complete studies exist in an ICB sector
+    expected: Do not create a sector synthesis
+  - id: R14
+    name: private_contact_boundary
+    condition: A public account note is requested after private contact intake
+    expected: Use opaque person IDs or public evidence; do not expose private names or relationships
+  - id: R15
+    name: contact_refresh_propagation
+    condition: A new contact batch updates a company after its latest study date
+    expected: Queue the company study for refresh without changing its product fit automatically

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Hiring Workspace Intelligence"
+  short_description: "Déduit le modèle opératoire via les recrutements"
+  default_prompt: "Use $ai-hiring-workspace-intelligence to infer an AI operating model from a dated and deduplicated hiring corpus."

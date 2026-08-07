@@ -1,0 +1,22 @@
+[
+  {"query":"Qualifie ISAGRI puis dis-moi laquelle de nos quatre offres est la plus pertinente.","should_trigger":true},
+  {"query":"Je reprends l’étude LDLC, quelle est la prochaine étape du tunnel ?","should_trigger":true},
+  {"query":"Voici un compte et Astraforge : faut-il rechercher le compte ou matcher directement ?","should_trigger":true},
+  {"query":"Je joins un fichier de contacts : quelles skills doivent s’enchaîner jusqu’au reach ?","should_trigger":true},
+  {"query":"On a les contacts mais pas le mapping ICB ni les études : quelle étape vient ensuite ?","should_trigger":true},
+  {"query":"Route cette demande vers la bonne skill de notre tunnel.","should_trigger":true},
+  {"query":"On a le profil entreprise mais pas les profils produit, quelle étape vient ensuite ?","should_trigger":true},
+  {"query":"On a déjà le fit produit, quelle skill doit concevoir le pilote ?","should_trigger":true},
+  {"query":"Je veux enchaîner recherche entreprise, matching et hypothèse de pilote sans mélanger les étapes.","should_trigger":true},
+  {"query":"Vérifie où nous en sommes dans cette étude et propose seulement la prochaine skill.","should_trigger":true},
+  {"query":"Mets à jour l’ICP d’Astraforge.","should_trigger":false},
+  {"query":"Recherche les dirigeants IA de cette entreprise.","should_trigger":false},
+  {"query":"Construis le pilote Astraforge à partir du fit déjà validé.","should_trigger":false},
+  {"query":"Score les quatre offres à partir des profils déjà fournis.","should_trigger":false},
+  {"query":"Analyse les offres d’emploi de cette société.","should_trigger":false},
+  {"query":"Définis les hard gates de notre offre formation.","should_trigger":false},
+  {"query":"Prépare une baseline et des KPI pour le pilote déjà retenu.","should_trigger":false},
+  {"query":"Formalise les preuves et inconnues du produit PMBOK.","should_trigger":false},
+  {"query":"Cartographie le buying committee public de ce compte.","should_trigger":false},
+  {"query":"Compare le profil entreprise et le snapshot Astraforge.","should_trigger":false}
+]

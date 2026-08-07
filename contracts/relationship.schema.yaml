@@ -1,0 +1,23 @@
+schema_version: "0.3"
+title: Person-company relationship contract
+required: [relationship_id, person_id, company_id, job_title, country, current_status, source_refs, epistemic_status, evidence_grade]
+contract:
+  relationship_id: string
+  person_id: string
+  company_id: string
+  job_title: string
+  country: string
+  relationship_type: employment
+  current_status:
+    enum: [unverified, current, former, invalidated]
+  role_hypotheses: list
+  source_refs: list
+  observed_at: date_or_null
+  epistemic_status:
+    enum: [fact, inference, hypothesis, unknown]
+  evidence_grade:
+    enum: [P1, P2, U1, W1, N0]
+  requires_validation: boolean
+rules:
+  - Import date is not evidence that an employment relationship is current.
+  - A title is not proof of budget, authority, or influence.

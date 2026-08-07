@@ -1,0 +1,18 @@
+schema_version: "0.2"
+title: Canonical product profile contract
+required:
+  - schema_version
+  - offer
+offer_required:
+  - offer_id
+  - profile_version
+  - positioning
+  - problem
+  - outcomes
+  - icp
+  - hard_gates
+  - proof
+contract_notes:
+  - No account-specific evidence is allowed in a canonical product profile except a formal reference case.
+  - Unknown pricing, proof, deployment, or architecture must remain explicit unknowns.
+  - A product profile is versioned independently from studies.

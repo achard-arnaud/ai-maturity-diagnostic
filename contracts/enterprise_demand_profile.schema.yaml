@@ -1,0 +1,38 @@
+schema_version: "0.2"
+title: Enterprise demand profile contract
+required:
+  - schema_version
+  - study_id
+  - profile_version
+  - company
+  - evidence_claims
+  - strategic_priorities
+  - capability_gaps
+  - buying_context
+  - constraints
+  - unknowns
+  - confidence
+contract:
+  schema_version: string
+  study_id: string
+  profile_version: string
+  company: string
+  evidence_claims: list
+  strategic_priorities: list
+  capability_gaps: list
+  buying_context:
+    sponsors: list
+    terrain_owners: list
+    veto_players: list
+    timing_signals: list
+  constraints:
+    technical: list
+    organizational: list
+    regulatory: list
+  unknowns: list
+  confidence:
+    enum: [low, medium, high]
+forbidden_fields:
+  - recommended_offer
+  - offer_score
+  - astraforge_fit

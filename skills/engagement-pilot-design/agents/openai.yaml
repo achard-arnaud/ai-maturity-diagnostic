@@ -1,0 +1,4 @@
+interface:
+  display_name: "Engagement Pilot Design"
+  short_description: "Conçoit la preuve commerciale après matching"
+  default_prompt: "Use $engagement-pilot-design to turn the existing fit decision into a bounded proof or pilot."

@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "company": "ISAGRI",
+    "note_number": 2,
+    "title": "ISAGRI : organigramme reconstitué et cartographie des décideurs",
+    "subtitle": "Exemple réduit dérivé d’une analyse publique ; à revalider avant tout usage.",
+    "date": "21 juillet 2026",
+    "evidence_cutoff": "2026-07-21",
+    "keywords": ["GOUVERNANCE", "CTO / DSI", "PRODUIT", "FILIÈRES", "IA"],
+    "purpose": "Démontrer le contrat de données et la génération de la note.",
+    "disclaimer": "Exemple historique non officiel. Les rôles, relations et sources doivent être revalidés à la date d’usage."
+  },
+  "executive_thesis": "La gouvernance technologique apparaît fédérée et en transition. Les responsabilités groupe, services mutualisés et filiales doivent être distinguées, tandis que le titulaire de certaines fonctions critiques reste non établi publiquement.",
+  "executive_summary": [
+    ["Centre de gravité", "La direction générale arbitre la transformation ; les capacités technologiques sont distribuées."],
+    ["Tech groupe", "Un rôle de CTO global de transition est visible dans les sources de l’exemple."],
+    ["Zone d’ombre", "Le titulaire et le périmètre exacts du DSI Groupe restent à confirmer."]
+  ],
+  "method_notes": [
+    "Séparer mandats légaux, rôles opérationnels et relations inférées.",
+    "Les pointillés représentent une relation fonctionnelle ou probable.",
+    "L’absence de nom ne signifie pas l’absence de fonction."
+  ],
+  "legal_structure": [
+    ["Holding", "Gouvernance capitalistique", "Groupe ISA"],
+    ["Services mutualisés", "Fonctions groupe et technologie transverse", "Groupe ISAGRI Services"],
+    ["Cœur opérationnel", "Logiciels agricoles et comptables", "ISAGRI et entités associées"],
+    ["Filières", "Roadmaps verticales", "AKANEA, KERHIS, IRIUM, AGIRIS"]
+  ],
+  "orgchart": {
+    "nodes": [
+      {"id": "chair", "label": "Présidence / gouvernance", "tier": "governance"},
+      {"id": "dg", "label": "Direction générale Groupe", "tier": "business"},
+      {"id": "cto", "label": "CTO global de transition", "tier": "transition"},
+      {"id": "dsi", "label": "DSI Groupe\\nTitulaire non confirmé", "tier": "unknown"},
+      {"id": "core", "label": "CTO / direction technique ISAGRI", "tier": "technology"},
+      {"id": "subs", "label": "Directions R&D / produit des filiales", "tier": "federated"}
+    ],
+    "edges": [
+      ["chair", "dg", "solid"],
+      ["dg", "cto", "solid"],
+      ["dg", "dsi", "dashed"],
+      ["cto", "core", "dashed"],
+      ["cto", "subs", "dashed"]
+    ]
+  },
+  "power_map": [
+    ["Direction générale", "Arbitrage stratégique et ressources", "Quel résultat justifie un pilote groupe ?"],
+    ["CTO global", "Transformation du portefeuille technologique", "Quelle roadmap concentre le risque de delivery ?"],
+    ["DSI Groupe", "SI interne, sécurité et services partagés", "Quels contrôles conditionnent l’industrialisation ?"],
+    ["R&D / Produit", "Backlog, architecture locale et valeur client", "Quel périmètre permet une preuve mesurable ?"]
+  ],
+  "raci": {
+    "headers": ["Décision", "DG", "CTO", "DSI", "R&D / Produit"],
+    "rows": [
+      ["Priorités de transformation", "A", "R", "C", "R"],
+      ["Standards d’architecture", "I", "A/R", "C", "R"],
+      ["Sécurité, accès et données", "I", "C", "A/R", "C"],
+      ["Pilotage d’un produit", "I", "C", "C", "A/R"]
+    ]
+  },
+  "people": [
+    {
+      "id": "P01",
+      "name": "Jean-Marc Fernandez",
+      "role": "Interim Global CTO",
+      "perimeter": "Groupe ISAGRI",
+      "tenure": "Mission publique en 2026 dans l’exemple",
+      "experience": "Direction technologique de transition et transformation SaaS.",
+      "expertise": "Operating model, gouvernance tech, portefeuille.",
+      "ai_communication": "Communication publique technologique ; portée IA à confirmer.",
+      "confidence": "Confirmé sur le profil ; périmètre interne à confirmer",
+      "source_ids": ["S01"],
+      "last_verified": "2026-07-21"
+    },
+    {
+      "id": "P02",
+      "name": "DSI Groupe — titulaire non confirmé",
+      "role": "Directeur des systèmes d’information",
+      "perimeter": "Groupe ISAGRI",
+      "tenure": "À confirmer",
+      "experience": "Fonction mentionnée, identité non établie dans l’exemple réduit.",
+      "expertise": "SI, sécurité, outils et services partagés.",
+      "ai_communication": "Non évaluable.",
+      "confidence": "À confirmer",
+      "source_ids": ["S02"],
+      "last_verified": "2026-07-21"
+    },
+    {
+      "id": "P03",
+      "name": "Frédéric Chaillot",
+      "role": "CTO Groupe ISAGRI Services",
+      "perimeter": "Technologies mutualisées",
+      "tenure": "À revalider",
+      "experience": "Gouvernance technique transverse et transformation.",
+      "expertise": "Architecture, plateformes, standards.",
+      "ai_communication": "Communication directe observée dans le workflow de référence.",
+      "confidence": "Confirmé",
+      "source_ids": ["S03"],
+      "last_verified": "2026-07-21"
+    }
+  ],
+  "influence_map": [
+    ["Sponsor", "Direction générale / CTO global", "Légitime le pilote", "Transformation et résultats"],
+    ["Terrain", "CTO, R&D et produit de la filière", "Fournit backlog et équipe", "Risque de roadmap"],
+    ["Contrôle", "DSI, sécurité, cloud", "Valide les conditions de scale", "Accès, logs, réversibilité"],
+    ["Valeur", "Produit, support, finance", "Quantifie l’impact", "Time-to-market et qualité"]
+  ],
+  "contact_order": [
+    "Valider le sponsor de transformation.",
+    "Choisir une roadmap et son propriétaire.",
+    "Associer plateforme, sécurité et contrôle.",
+    "Faire confirmer la valeur par produit et support."
+  ],
+  "unknowns": [
+    "Titulaire et périmètre du DSI Groupe.",
+    "Durée du mandat de transition du CTO global.",
+    "Relations hiérarchiques exactes entre groupe et filiales.",
+    "Droits de décision du dispositif IA transverse."
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "source_type": "public_profile",
+      "title": "Profil public — Interim Global CTO",
+      "publisher": "LinkedIn",
+      "publication_or_access_date": "2026-07-21",
+      "url": "https://fr.linkedin.com/in/jmarcfernandez",
+      "supports_fields": ["people.P01.role"],
+      "notes": "Revalider avant usage."
+    },
+    {
+      "id": "S02",
+      "source_type": "job_posting",
+      "title": "Annonce mentionnant la fonction DSI Groupe",
+      "publisher": "Source de l’exemple",
+      "publication_or_access_date": "2026-07-21",
+      "url": "https://emploi.isagri.fr/",
+      "supports_fields": ["people.P02.role"],
+      "notes": "Ne confirme pas le titulaire."
+    },
+    {
+      "id": "S03",
+      "source_type": "public_profile",
+      "title": "Profil public — CTO Groupe ISAGRI Services",
+      "publisher": "LinkedIn",
+      "publication_or_access_date": "2026-07-21",
+      "url": "https://fr.linkedin.com/in/frederic-chaillot-49873a42",
+      "supports_fields": ["people.P03.role"],
+      "notes": "Revalider avant usage."
+    }
+  ]
+}

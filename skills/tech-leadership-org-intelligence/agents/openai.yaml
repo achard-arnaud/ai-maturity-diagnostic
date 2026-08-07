@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tech Leadership Org Intelligence"
+  short_description: "Reconstitue gouvernance, tech et produit"
+  default_prompt: "Use $tech-leadership-org-intelligence to reconstruct a technology and product decision system from public evidence."

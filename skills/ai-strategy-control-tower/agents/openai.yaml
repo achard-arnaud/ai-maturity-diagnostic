@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Strategy Control Tower"
+  short_description: "Orchestre une analyse de stratégie IA"
+  default_prompt: "Use $ai-strategy-control-tower to assess real AI strategy, governance, maturity, and sourcing posture."

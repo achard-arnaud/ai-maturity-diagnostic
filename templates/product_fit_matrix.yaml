@@ -1,0 +1,10 @@
+schema_version: "0.2"
+study_id: ""
+enterprise_profile_version: "0.2"
+product_snapshots: []
+matches: []
+recommended_offer_id: null
+alternative_offer_ids: []
+decision: null
+confidence: low
+next_validation: []

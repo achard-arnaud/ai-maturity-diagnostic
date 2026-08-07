@@ -1,0 +1,18 @@
+schema_version: "0.3"
+title: Person-company-product targeting contract
+required: [study_id, company_id, offer_id, fit_decision, fit_score, product_profile_version, targets]
+target:
+  target_id: string
+  person_id: string
+  relationship_id: string
+  role_hypotheses: list
+  persona_matches: list
+  target_score: number_0_100
+  confidence:
+    enum: [low, medium, high]
+  current_role_status: string
+  required_validations: list
+rules:
+  - Contact targeting requires a coordinated selected match with PURSUE or VALIDATE.
+  - A FAIL blocker or critical gate prevents targeting; an OPEN gate permits validation targeting only.
+  - A title may suggest a role but never proves buying authority.

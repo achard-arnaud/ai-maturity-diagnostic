@@ -1,0 +1,4 @@
+interface:
+  display_name: "Person Opportunity Targeting"
+  short_description: "Sélectionne les contacts après product fit"
+  default_prompt: "Use $person-opportunity-targeting to rank relevant contacts after a company-product fit decision exists."

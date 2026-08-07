@@ -1,0 +1,22 @@
+[
+  {"query":"Consolide les diagnostics de trois banques actuelles dans une vue secteur ICB.","should_trigger":true},
+  {"query":"Quels gaps de capacité reviennent dans au moins trois comptes du même secteur ?","should_trigger":true},
+  {"query":"Produis les patterns de maturité du secteur Utilities à partir des études complètes.","should_trigger":true},
+  {"query":"Regroupe les cas d’usage par line of business sans perdre les claim IDs.","should_trigger":true},
+  {"query":"Teste si le seuil de consolidation sectorielle est atteint.","should_trigger":true},
+  {"query":"Compare les priorités stratégiques récurrentes et les contre-exemples du secteur.","should_trigger":true},
+  {"query":"Construis la synthèse ICB-301010 depuis les evidence pools.","should_trigger":true},
+  {"query":"Distingue faits répétés, inférences et biais du corpus sectoriel.","should_trigger":true},
+  {"query":"Identifie les thèmes de formation communs à quatre comptes du même secteur.","should_trigger":true},
+  {"query":"Rafraîchis le rollup sectoriel après un nouveau diagnostic complet.","should_trigger":true},
+  {"query":"Importe le fichier de contacts.","should_trigger":false},
+  {"query":"Assigne un secteur ICB à une entreprise.","should_trigger":false},
+  {"query":"Priorise les comptes du réseau.","should_trigger":false},
+  {"query":"Recherche la maturité IA d’une seule entreprise.","should_trigger":false},
+  {"query":"Compare les produits pour un compte.","should_trigger":false},
+  {"query":"Choisis une personne après le matching.","should_trigger":false},
+  {"query":"Rédige un message de reach.","should_trigger":false},
+  {"query":"Initialise une étude vierge.","should_trigger":false},
+  {"query":"Mets à jour le catalogue produit.","should_trigger":false},
+  {"query":"Génère l’organigramme d’une entreprise.","should_trigger":false}
+]

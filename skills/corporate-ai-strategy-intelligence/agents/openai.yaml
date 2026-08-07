@@ -1,0 +1,4 @@
+interface:
+  display_name: "Corporate AI Strategy Intelligence"
+  short_description: "Relie stratégie corporate et rôle réel de l’IA"
+  default_prompt: "Use $corporate-ai-strategy-intelligence to reconstruct corporate priorities before assessing the role of AI."
