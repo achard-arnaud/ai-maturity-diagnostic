@@ -30,6 +30,38 @@ def claim_records(items: list[Any], company_id: str, study_id: str) -> list[dict
     return records
 
 
+def use_case_records(inventory: dict[str, Any], company_id: str, study_id: str) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for item in inventory.get("use_cases", []) or []:
+        if not isinstance(item, dict) or not item.get("use_case_id"):
+            continue
+        records.append(
+            {
+                "company_id": company_id,
+                "study_id": study_id,
+                "inventory_version": inventory.get("inventory_version"),
+                "use_case_id": item.get("use_case_id"),
+                "name": item.get("name"),
+                "line_of_business": item.get("line_of_business"),
+                "workflow": item.get("workflow"),
+                "job_to_be_done": item.get("job_to_be_done"),
+                "expected_outcome": item.get("expected_outcome"),
+                "outcome_family": item.get("outcome_family"),
+                "evidence_status": item.get("evidence_status", "inferred"),
+                "evidence_claim_ids": item.get("evidence_claim_ids", []),
+                "maturity": item.get("maturity", "unknown"),
+                "dependencies": item.get("dependencies", {"depends_on": [], "enables": []}),
+                "repeatability": item.get("repeatability", "unknown"),
+                "variant_axes": item.get("variant_axes", []),
+                "reusable_assets": item.get("reusable_assets", []),
+                "feedback": item.get("feedback", []),
+                "confidence": item.get("confidence", "low"),
+                "unknowns": item.get("unknowns", []),
+            }
+        )
+    return records
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", type=Path, default=ROOT / "data" / "private")
@@ -55,6 +87,11 @@ def main() -> int:
                 profile = load_yaml(study_dir / "05_enterprise_demand_profile.yaml")
             except Exception:
                 continue
+            inventory_path = study_dir / "05b_use_case_inventory.yaml"
+            try:
+                inventory = load_yaml(inventory_path) if inventory_path.is_file() else {}
+            except Exception:
+                inventory = {}
             company_id = manifest.get("company_id")
             mapping = mappings.get(company_id)
             if not mapping or mapping.get("mapping_status") not in {"candidate", "validated"}:
@@ -82,6 +119,7 @@ def main() -> int:
                     "icb_mapping_status": mapping.get("mapping_status"),
                     "icb_confidence": mapping.get("confidence"),
                     "profile": profile,
+                    "use_case_inventory": inventory,
                 }
             )
 
@@ -96,12 +134,14 @@ def main() -> int:
             "candidate" if mapping_statuses == {"candidate"} else "mixed"
         )
         publication_status = "decision_grade" if classification_basis == "validated" else "exploratory"
+        use_case_count = sum(len((item.get("use_case_inventory") or {}).get("use_cases", []) or []) for item in eligible)
         status_entries.append(
             {
                 "sector_code": sector_code,
                 "sector_name": sector_name,
                 "observed_studies": len(records),
                 "eligible_current_studies": len(eligible),
+                "use_case_count": use_case_count,
                 "threshold": args.threshold,
                 "status": "eligible" if len(eligible) >= args.threshold else "insufficient",
                 "classification_basis": classification_basis,
@@ -112,11 +152,13 @@ def main() -> int:
             continue
         priority_pool: list[dict[str, Any]] = []
         gap_pool: list[dict[str, Any]] = []
+        use_case_pool: list[dict[str, Any]] = []
         for item in eligible:
             priority_pool.extend(claim_records(item["profile"].get("strategic_priorities", []), item["company_id"], item["study_id"]))
             gap_pool.extend(claim_records(item["profile"].get("capability_gaps", []), item["company_id"], item["study_id"]))
+            use_case_pool.extend(use_case_records(item.get("use_case_inventory") or {}, item["company_id"], item["study_id"]))
         rollup = {
-            "schema_version": "0.3",
+            "schema_version": "0.6",
             "sector_code": sector_code,
             "sector_name": sector_name,
             "taxonomy_version": "5.0",
@@ -132,16 +174,22 @@ def main() -> int:
                     "icb_mapping_id": item["icb_mapping_id"],
                     "icb_mapping_status": item["icb_mapping_status"],
                     "icb_confidence": item["icb_confidence"],
+                    "use_case_inventory_version": (item.get("use_case_inventory") or {}).get("inventory_version"),
                 }
                 for item in eligible
             ],
-            "evidence_pool": {"strategic_priorities": priority_pool, "capability_gaps": gap_pool},
+            "evidence_pool": {
+                "strategic_priorities": priority_pool,
+                "capability_gaps": gap_pool,
+                "use_cases": use_case_pool,
+            },
             "synthesis": {
                 "recurring_priorities": [],
                 "recurring_capability_gaps": [],
                 "maturity_patterns": [],
                 "training_and_upskilling_themes": [],
                 "use_cases_by_line_of_business": [],
+                "use_case_dependencies": [],
                 "contradictions": [],
                 "unknowns": [],
             },
@@ -156,7 +204,7 @@ def main() -> int:
     dump_yaml(
         rollup_dir / "status.yaml",
         {
-            "schema_version": "0.3",
+            "schema_version": "0.6",
             "generated_at": utc_now(),
             "as_of": as_of.isoformat(),
             "threshold": args.threshold,

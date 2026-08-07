@@ -1,0 +1,44 @@
+schema_version: "0.6"
+milestone: demand-matching-nudging
+updated_at: "2026-08-07"
+status: engineering_complete
+items:
+  - id: TODO-V06-001
+    priority: P0
+    status: completed
+    area: demand_catalog
+    task: Expose ICB sector browsing, company/study readiness and third-company benchmark CTA.
+    verification: Demand catalog tests cover 2/3, 3+ and stale-rollup gate behavior; UI exposes unit and full-SDLC CTAs.
+  - id: TODO-V06-002
+    priority: P0
+    status: completed
+    area: use_cases
+    task: Make company use-case inventory a first-class product-blind artifact and ingest it into sector evidence pools.
+    verification: Versioned schema and owner skill added; sector-rollup test preserves company/study/use-case provenance.
+  - id: TODO-V06-003
+    priority: P0
+    status: completed
+    area: qualification
+    task: Add artifact-gated qualification/matching cockpit and guided full-SDLC workflow.
+    verification: Cockpit tests cover next-stage routing, nurture stop and blocker/critical hard-gate defense in depth.
+  - id: TODO-V06-004
+    priority: P0
+    status: completed
+    area: nudging
+    task: Add isolated Nudging menu and deterministic productivization/dependency-upsell/cross-sell previews.
+    verification: Nudging tests enforce inventory-only inputs, explicit dependency edges and feedback-backed cross-sell.
+  - id: TODO-V06-005
+    priority: P1
+    status: open
+    area: feedback
+    task: Validate UX wording and workflow priorities on real private network/study data.
+  - id: TODO-V06-006
+    priority: P1
+    status: open
+    area: evals
+    task: Build a Gold Set for use-case extraction, dependency edges and nudge false positives before decision-grade automation.
+  - id: TODO-V06-007
+    priority: P1
+    status: open
+    area: persistence
+    task: Decide whether workflow/nudge review history needs a dedicated durable store beyond study artifacts.
