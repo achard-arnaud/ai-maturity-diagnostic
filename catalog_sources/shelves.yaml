@@ -1,0 +1,19 @@
+schema_version: "0.5"
+purpose: "Lightweight shelf taxonomy for discovering candidate offers without merging canonical product profiles."
+shelves:
+  - shelf_id: strategic-intelligence
+    name: Strategic Intelligence
+    purpose: Evidence-led strategic intelligence, qualification and decision support.
+    offer_ids: [OFFER-AF-01]
+  - shelf_id: learning-adoption
+    name: Learning, Adoption & Human Capability
+    purpose: Role-based capability, judgment, adoption, transmission and human-change offers.
+    offer_ids: [OFFER-LD-01]
+  - shelf_id: project-governance
+    name: Project & Portfolio Governance
+    purpose: Governance, portfolio steering and operating-model offers.
+    offer_ids: [OFFER-PM-01]
+  - shelf_id: consulting-delivery
+    name: AI Consulting & Delivery
+    purpose: Delivery, implementation and transformation support offers.
+    offer_ids: [OFFER-CD-01]

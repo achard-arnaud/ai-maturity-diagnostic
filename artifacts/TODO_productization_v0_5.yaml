@@ -1,0 +1,77 @@
+schema_version: "0.5"
+milestone: v0.5-productized-control-plane
+updated_at: "2026-08-07"
+status: in_progress
+items:
+  - id: TODO-V05-001
+    priority: P0
+    status: completed
+    area: architecture
+    task: Preserve README and AGENTS invariants in the web control-plane boundary.
+    done_when: The web layer only orchestrates existing skills and artifacts and never becomes product/account truth.
+  - id: TODO-V05-002
+    priority: P0
+    status: completed
+    area: backend
+    task: Provide a dependency-light API for health, skill inventory, offers, shelves, backlog and unit skill invocations.
+    done_when: Endpoints are implemented and covered by unit tests.
+  - id: TODO-V05-003
+    priority: P0
+    status: completed
+    area: frontend
+    task: Provide a mobile-capable UI with an explicit unit-call CTA for every discovered skill.
+    done_when: Skills are discovered from SKILL.md and each CTA invokes only its selected skill.
+  - id: TODO-V05-004
+    priority: P0
+    status: completed
+    area: runtime
+    task: Add a pluggable external skill-executor contract without claiming execution when no runtime is configured.
+    done_when: The API returns a traceable prepared invocation by default and executes only through AI_DIAGNOSTIC_SKILL_EXECUTOR.
+  - id: TODO-V05-005
+    priority: P0
+    status: completed
+    area: catalog
+    task: Add offer shelves and company-catalog staging with an explicit product-icp-intelligence promotion gate.
+    done_when: Harvested candidates remain under data/private/catalog_harvest and cannot automatically mutate product_catalog.
+  - id: TODO-V05-006
+    priority: P1
+    status: completed
+    area: product_truth
+    task: Enrich OFFER-LD-01 from Sarah and Isabelle owner material without strengthening unvalidated proof or pricing.
+    done_when: Capability/adoption scope is more explicit while proof remains U1 and unknowns remain visible.
+  - id: TODO-V05-007
+    priority: P0
+    status: open
+    area: security
+    task: Add authentication, authorization, audit logging and deployment hardening before exposing the control plane on a network.
+    done_when: Threat model, auth/RBAC, audit retention, secrets handling and deployment controls are reviewed and tested.
+  - id: TODO-V05-008
+    priority: P1
+    status: open
+    area: runtime
+    task: Select and implement the production skill executor adapter.
+    done_when: A reviewed runtime can consume the unit invocation envelope, enforce context boundaries and return structured results.
+  - id: TODO-V05-009
+    priority: P1
+    status: open
+    area: persistence
+    task: Define durable run history, artifact store and queue semantics if concurrent executions are required.
+    done_when: Run state is restart-safe and artifacts remain traceable to skill, version and evidence.
+  - id: TODO-V05-010
+    priority: P1
+    status: open
+    area: product_truth
+    task: Obtain product-owner validation of Sarah/Isabelle offer ownership, packaging, delivery capacity, proof and commercial references.
+    done_when: OFFER-LD-01 can move from draft/U1 to an owner-approved profile without inferred claims.
+  - id: TODO-V05-011
+    priority: P1
+    status: open
+    area: evals
+    task: Close TODO-REL-004 Gold Set/model evaluation before treating automated commercial scores as decision-grade.
+    done_when: Precision, collision rate, failures and approved thresholds are recorded.
+  - id: TODO-V05-012
+    priority: P2
+    status: deferred
+    area: related_product
+    task: Develop the separate Sarah x Isabelle public positioning questionnaire after the current project and its source material are reviewed as a dedicated product.
+    done_when: A separate PRD/repository owns questionnaire UX, scoring, consent, lead capture and localization rather than embedding them in this control plane.
