@@ -16,7 +16,7 @@ def dump(path: Path, data: object) -> None:
 
 
 class ReachMatchmakerTests(unittest.TestCase):
-    def seed(self, root: Path, *, stale_second: bool = False, open_gate: bool = False) -> Path:
+    def seed(self, root: Path, *, stale_second: bool = False, open_gate: bool = False, terrain_persona: str = "Transformation_Lead") -> Path:
         study = root / "studies/acme"
         snapshot = "inputs/product_snapshots/OFFER-1__v1.yaml"
         dump(study / "00_manifest.yaml", {
@@ -36,7 +36,7 @@ class ReachMatchmakerTests(unittest.TestCase):
             "study_id": "acme-1", "company_id": "C1", "offer_id": "OFFER-1", "fit_decision": "validate",
             "targets": [
                 {"person_id": "P1", "target_id": "T1", "role_hypotheses": ["economic_sponsor"], "persona_matches": ["CIO"], "target_score": 80, "current_role_status": "current", "required_validations": ["Confirm mandate"]},
-                {"person_id": "P2", "target_id": "T2", "role_hypotheses": ["terrain_owner"], "persona_matches": ["Transformation_Lead"], "target_score": 45, "current_role_status": "stale" if stale_second else "current", "required_validations": ["Confirm role"]},
+                {"person_id": "P2", "target_id": "T2", "role_hypotheses": ["terrain_owner"], "persona_matches": [terrain_persona], "target_score": 45, "current_role_status": "stale" if stale_second else "current", "required_validations": ["Confirm role"]},
             ],
         })
         return study
@@ -67,11 +67,19 @@ class ReachMatchmakerTests(unittest.TestCase):
 
     def test_missing_prescriber_lane_routes_second_round_org_expansion(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); self.seed(root)
+            root = Path(tmp); self.seed(root, terrain_persona="Operations_Manager")
             result = ReachMatchmaker(root).preview("acme-1")
             missing = [item for item in result["blockers"] if item["category"] == "organization"]
             self.assertTrue(any("prescripteur" in item["message"] for item in missing))
             self.assertTrue(all(item["cta_label"] == "Élargir le 2e tour" for item in missing))
+
+    def test_transformation_lead_can_legitimately_cover_terrain_and_prescriber(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.seed(root)
+            result = ReachMatchmaker(root).preview("acme-1")
+            p2 = next(item for item in result["stakeholders"] if item["person_id"] == "P2")
+            self.assertIn("terrain_user", p2["stakeholder_roles"])
+            self.assertIn("prescriber", p2["stakeholder_roles"])
 
     def test_open_fit_gate_is_carried_into_reach_as_validation_blocker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -80,6 +88,10 @@ class ReachMatchmakerTests(unittest.TestCase):
             gate = next(item for item in result["blockers"] if item["category"] == "fit_gate")
             self.assertEqual("opportunity-fit-matching", gate["owner_skill"])
             self.assertIn("OPEN", gate["message"])
+
+    def test_malformed_score_never_promotes_a_contact_to_first_wave(self) -> None:
+        self.assertEqual(0, ReachMatchmaker._target_score({"target_score": "not-a-number"}))
+        self.assertEqual("second", ReachMatchmaker._wave({"target_score": "not-a-number", "current_role_status": "current"}, ["promoter"]))
 
     def test_non_positive_fit_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
