@@ -22,6 +22,38 @@ class QualificationCockpit:
         text = path.read_text(encoding="utf-8")
         return "Non établi" not in text and "Recommended offer: Non établi" not in text
 
+    @staticmethod
+    def _selected_match(fit: dict[str, Any]) -> dict[str, Any] | None:
+        matches = [item for item in fit.get("matches", []) or [] if isinstance(item, dict)]
+        recommended = fit.get("recommended_offer_id")
+        if recommended:
+            selected = next((item for item in matches if item.get("offer_id") == recommended), None)
+            if selected is not None:
+                return selected
+        decision = fit.get("decision")
+        selected = next((item for item in matches if item.get("decision") == decision), None)
+        return selected or (matches[0] if len(matches) == 1 else None)
+
+    @classmethod
+    def _fit_violation(cls, fit: dict[str, Any]) -> str | None:
+        decision = fit.get("decision")
+        if decision not in {"pursue", "validate"}:
+            return None
+        selected = cls._selected_match(fit)
+        if selected is None:
+            return "No selected match can be reconciled with the top-level decision."
+        if selected.get("decision") != decision:
+            return "Top-level decision differs from the selected match decision."
+        for gate in selected.get("hard_gates", []) or []:
+            if not isinstance(gate, dict) or gate.get("severity") not in {"blocker", "critical"}:
+                continue
+            status = str(gate.get("status") or "").upper()
+            if status == "FAIL":
+                return f"Blocking gate {gate.get('id') or 'unknown'} is FAIL."
+            if status == "OPEN" and decision == "pursue":
+                return f"Blocking gate {gate.get('id') or 'unknown'} is OPEN; PURSUE is forbidden."
+        return None
+
     def list_studies(self) -> list[dict[str, Any]]:
         studies_root = self.root / "studies"
         if not studies_root.is_dir():
@@ -38,6 +70,8 @@ class QualificationCockpit:
             demand_ready = self._demand_ready(profile)
             snapshots_ready = bool(snapshots)
             matching_ready = bool(fit.get("matches") and fit.get("decision"))
+            fit_violation = self._fit_violation(fit) if matching_ready else None
+            fit_progression_allowed = matching_ready and fit_violation is None and fit.get("decision") in {"pursue", "validate"}
             contact_path = study_dir / "06b_contact_targets.yaml"
             contacts_ready = contact_path.is_file()
             engagement_path = study_dir / "07_engagement_hypothesis.md"
@@ -59,6 +93,11 @@ class QualificationCockpit:
                 next_skill = "opportunity-fit-matching"
                 next_action = "Run matching"
                 blocked_reason = None
+            elif fit_violation:
+                stage = "matching_invalid"
+                next_skill = "opportunity-fit-matching"
+                next_action = "Repair matching"
+                blocked_reason = fit_violation
             elif decision in {"nurture", "disqualify"}:
                 stage = "stopped"
                 next_skill = None
@@ -83,9 +122,9 @@ class QualificationCockpit:
             steps = [
                 {"id": "demand", "skill": "enterprise-demand-intelligence", "status": "completed" if demand_ready else "ready"},
                 {"id": "snapshots", "skill": "product-icp-intelligence", "status": "completed" if snapshots_ready else ("ready" if demand_ready else "blocked")},
-                {"id": "matching", "skill": "opportunity-fit-matching", "status": "completed" if matching_ready else ("ready" if demand_ready and snapshots_ready else "blocked")},
-                {"id": "contacts", "skill": "person-opportunity-targeting", "status": "completed" if contacts_ready else ("ready" if matching_ready and decision in {"pursue", "validate"} else "blocked")},
-                {"id": "pilot", "skill": "engagement-pilot-design", "status": "completed" if engagement_ready else ("ready" if matching_ready and decision in {"pursue", "validate"} else "blocked")},
+                {"id": "matching", "skill": "opportunity-fit-matching", "status": "review" if fit_violation else ("completed" if matching_ready else ("ready" if demand_ready and snapshots_ready else "blocked"))},
+                {"id": "contacts", "skill": "person-opportunity-targeting", "status": "completed" if contacts_ready and fit_progression_allowed else ("ready" if fit_progression_allowed else "blocked")},
+                {"id": "pilot", "skill": "engagement-pilot-design", "status": "completed" if engagement_ready and fit_progression_allowed else ("ready" if fit_progression_allowed else "blocked")},
             ]
             rows.append(
                 {
@@ -95,6 +134,7 @@ class QualificationCockpit:
                     "study_path": study_dir.relative_to(self.root).as_posix(),
                     "stage": stage,
                     "decision": decision,
+                    "fit_violation": fit_violation,
                     "next_skill": next_skill,
                     "next_action": next_action,
                     "blocked_reason": blocked_reason,
@@ -102,6 +142,7 @@ class QualificationCockpit:
                         "demand_ready": demand_ready,
                         "snapshots_ready": snapshots_ready,
                         "matching_ready": matching_ready,
+                        "fit_progression_allowed": fit_progression_allowed,
                         "contacts_ready": contacts_ready,
                         "engagement_ready": engagement_ready,
                     },
