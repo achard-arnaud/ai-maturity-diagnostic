@@ -2,21 +2,37 @@ version: 0.3-final
 updated_at: '2026-08-07'
 area: linkedin_plugin
 status: deferred
-decision: Do not implement an authenticated LinkedIn connector before commercial Gold Set and access/privacy gates.
-public_index_lane:
-  status: allowed_bounded
-  runtime: scripts/advanced_research.py --source linkedin
-  classification: public_web_discovery_not_connector
-  purpose:
-    - discover publicly indexed LinkedIn posts and Pulse articles
-    - surface profile-index candidates for manual role validation
-  prohibitions:
-    - authenticated LinkedIn page access
-    - cookie extraction or browser automation
-    - treating indexed profile text as proof of a current role
-    - canonical identity resolution from an indexed result alone
-    - LinkedIn write actions
-  note: This lane does not satisfy or bypass LI-G0..LI-G6 and does not change connector runtime_status.
+decision: Do not implement an authenticated LinkedIn connector before commercial Gold Set and access/privacy gates. When an approved connector becomes available, use it first and keep public-index research as the non-blocking fallback.
+runtime_hierarchy:
+  mode: approved_plugin_first_public_fallback
+  provider_lane:
+    status: deferred_until_gates
+    requirement: official approved read-only access only
+    purpose:
+      - improve freshness and structured role/profile evidence when officially permitted
+      - emit external evidence subject to merge and storage policy
+    fallback_on:
+      - provider unavailable
+      - permission denied
+      - authentication failure
+      - rate limit or transient provider failure
+      - insufficient provider coverage
+  public_fallback_lane:
+    status: allowed_bounded
+    runtime: scripts/advanced_research.py --source linkedin
+    classification: public_web_discovery_fallback_not_connector
+    purpose:
+      - discover publicly indexed LinkedIn posts and Pulse articles
+      - surface profile-index candidates for role validation
+      - maintain useful qualification when no plugin exists or the plugin cannot answer
+    prohibitions:
+      - authenticated LinkedIn page access
+      - cookie extraction or browser automation
+      - treating indexed profile text as proof of a current role
+      - canonical identity resolution from an indexed result alone
+      - LinkedIn write actions
+  decision_rule: Public fallback may improve discovery but cannot upgrade connector-grade identity or role-currentness claims. Sensitive person claims still require an approved source or human validation.
+  note: The fallback does not satisfy or bypass LI-G0..LI-G6 and does not change connector runtime_status.
 items:
   - id: TODO-LI-001
     status: todo_later
@@ -33,27 +49,27 @@ items:
   - id: TODO-LI-004
     status: todo_later
     gate: LI-G2
-    task: Finalize source hierarchy across contact file, CRM, manual validation and LinkedIn.
+    task: Finalize the provider-first/public-fallback source hierarchy across contact file, CRM, manual validation and LinkedIn.
   - id: TODO-LI-005
     status: todo_later
     gate: LI-G3
-    task: Finalize connector capability matrix and bind conceptual tools to officially permitted endpoints.
+    task: Finalize connector capability matrix and bind conceptual tools to officially permitted endpoints while preserving the public-index fallback.
   - id: TODO-LI-006
     status: todo_later
     gate: LI-G3
-    task: Build read-only plugin/app or MCP proof of concept only if official access is available.
+    task: Build read-only plugin/app or MCP proof of concept only if official access is available; prove fallback behavior when unavailable.
   - id: TODO-LI-007
     status: todo_later
     gate: LI-G4
-    task: Run controlled evaluation on at least 30 known contacts.
+    task: Run controlled evaluation on at least 30 known contacts comparing plugin-first, public-only and manual-validation outcomes.
   - id: TODO-LI-008
     status: todo_later
     gate: LI-G4
-    task: Measure incremental lift on TARGET / VALIDATE_ROLE / SECONDARY decisions.
+    task: Measure incremental lift on TARGET / VALIDATE_ROLE / SECONDARY decisions and false-current-role rate.
   - id: TODO-LI-009
     status: todo_later
     gate: LI-G5
-    task: Decide production read-only rollout or remain human-assisted.
+    task: Decide production read-only rollout or remain public-fallback plus human-assisted validation.
   - id: TODO-LI-010
     status: todo_later
     gate: LI-G6
