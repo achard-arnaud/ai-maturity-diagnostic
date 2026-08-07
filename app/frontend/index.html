@@ -9,81 +9,161 @@
 <body>
   <header>
     <div>
-      <p class="eyebrow">AI Maturity Diagnostic · v0.5</p>
+      <p class="eyebrow">AI Maturity Diagnostic · v0.6</p>
       <h1>Control plane</h1>
-      <p class="lede">Orchestration visible des skills, offres, catalogues et backlog. Les artefacts métier restent les sources de vérité.</p>
+      <p class="lede">Parcourir la demande, gérer les offres, qualifier les opportunités et développer les use cases sans mélanger les sources de vérité.</p>
     </div>
     <div id="health" class="status">Chargement…</div>
   </header>
 
-  <nav aria-label="Sections">
-    <button data-target="skills" class="active">Skills</button>
+  <nav aria-label="Sections principales">
+    <button data-target="demand" class="active">Demande</button>
     <button data-target="offers">Offres</button>
-    <button data-target="harvest">Harvest catalogues</button>
-    <button data-target="backlog">Backlog</button>
+    <button data-target="qualification">Qualification</button>
+    <button data-target="nudging">Nudging</button>
+    <button data-target="skills">Skills</button>
+    <button data-target="backlog">Suivi</button>
   </nav>
 
   <main>
-    <section id="skills" class="panel active">
+    <section id="demand" class="panel active">
       <div class="section-head">
-        <div><h2>Appels unitaires des skills</h2><p>Chaque CTA appelle une seule skill et produit une enveloppe d'exécution traçable.</p></div>
-        <input id="skillFilter" type="search" placeholder="Filtrer les skills">
-      </div>
-      <div id="skillGrid" class="grid"></div>
-      <aside id="invokePanel" class="invoke hidden">
-        <div class="section-head">
-          <div><p class="eyebrow">Invocation unitaire</p><h3 id="invokeTitle"></h3></div>
-          <button id="closeInvoke" class="ghost">Fermer</button>
+        <div>
+          <p class="eyebrow">Catalogue de demande</p>
+          <h2>ICB → secteurs → entreprises → études → use cases</h2>
+          <p>Le secteur organise la navigation et le benchmarking. Il ne prouve jamais le besoin d’une entreprise.</p>
         </div>
-        <label>Instruction / input
-          <textarea id="invokeInput" rows="7" placeholder="Décris l'action attendue pour cette skill…"></textarea>
-        </label>
-        <label>Context paths optionnels, un par ligne
-          <textarea id="contextPaths" rows="3" placeholder="studies/acme/05_enterprise_demand_profile.yaml"></textarea>
-        </label>
-        <button id="runSkill" class="primary">Appeler cette skill</button>
-        <pre id="invokeResult"></pre>
-      </aside>
+        <div class="head-actions">
+          <input id="sectorFilter" type="search" placeholder="Secteur, ICB, entreprise…">
+          <button id="globalAddContact" class="primary">Ajouter un contact</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="badge state-empty">0 — vide</span>
+        <span class="badge state-building">1 — construction</span>
+        <span class="badge state-edge">2/3 — ajouter une 3e entreprise</span>
+        <span class="badge state-ready">3+ — benchmark prêt</span>
+      </div>
+      <div id="sectorGrid" class="grid sector-grid"></div>
+      <aside id="sectorDetail" class="detail hidden"></aside>
     </section>
 
     <section id="offers" class="panel">
-      <div class="section-head"><div><h2>Rayonnage des offres</h2><p>Le catalogue canonique est lu depuis <code>product_catalog/</code>.</p></div></div>
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Catalogue d’offres</p>
+          <h2>Rayonnage et cycle de vie de la vérité produit</h2>
+          <p>Les rayons servent à naviguer. Les profils canoniques restent dans <code>product_catalog/</code>.</p>
+        </div>
+      </div>
       <div id="shelfGrid" class="grid"></div>
+
+      <div class="split">
+        <div class="subpanel">
+          <h3>Découvrir un catalogue fournisseur</h3>
+          <form id="discoverForm" class="form">
+            <label>Entreprise / fournisseur<input id="discoverCompany" required placeholder="Nom de l'entreprise"></label>
+            <label>Rayon<select id="discoverShelf" required></select></label>
+            <label>Domaine officiel (optionnel)<input id="discoverDomain" placeholder="example.com"></label>
+            <button class="primary" type="submit">Découvrir et stager</button>
+          </form>
+          <pre id="discoverResult"></pre>
+        </div>
+        <div class="subpanel">
+          <h3>Importer un catalogue déjà récolté</h3>
+          <form id="harvestForm" class="form">
+            <label>Entreprise / fournisseur<input id="company" required placeholder="Nom de l'entreprise"></label>
+            <label>Rayon<select id="shelf" required></select></label>
+            <label>Items JSON<textarea id="catalogItems" rows="7" required>[{"name":"Offre exemple","source_url":"https://example.com","raw_claims":["Claim à vérifier"]}]</textarea></label>
+            <button class="primary" type="submit">Stager le catalogue</button>
+          </form>
+          <pre id="harvestResult"></pre>
+        </div>
+      </div>
     </section>
 
-    <section id="harvest" class="panel">
-      <h2>Catalogues d'entreprise et rayonnage</h2>
-      <p>Tout harvesting crée uniquement des candidats sous <code>data/private/catalog_harvest/</code>. Aucune promotion automatique vers le catalogue canonique.</p>
+    <section id="qualification" class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Qualification & matching</p>
+          <h2>Un cockpit piloté par les artefacts</h2>
+          <p>Demande → snapshots produit → hard gates / fit → personnes → preuve/pilote. Aucun raccourci UI ne contourne le routeur.</p>
+        </div>
+      </div>
+      <div id="qualificationGrid" class="grid"></div>
+    </section>
 
-      <h3>Découverte publique</h3>
-      <form id="discoverForm" class="form">
-        <label>Entreprise / fournisseur<input id="discoverCompany" required placeholder="Nom de l'entreprise"></label>
-        <label>Rayon<select id="discoverShelf" required></select></label>
-        <label>Domaine officiel (optionnel)<input id="discoverDomain" placeholder="example.com"></label>
-        <button class="primary" type="submit">Découvrir et stager les sources publiques</button>
-      </form>
-      <pre id="discoverResult"></pre>
+    <section id="nudging" class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Nudging use cases</p>
+          <h2>Développer ce qui existe déjà, sans requalifier le compte</h2>
+          <p>Cette vue ne charge ni ICB, ni benchmark sectoriel, ni fit produit : seulement l’inventaire des use cases et les retours enregistrés.</p>
+        </div>
+        <div class="head-actions">
+          <select id="nudgeInventory"></select>
+          <button id="fullNudgeFlow">Parcours complet</button>
+        </div>
+      </div>
+      <div class="grid nudge-modes">
+        <article class="card accent-card">
+          <p class="eyebrow">01</p><h3>Productivisation</h3>
+          <p>Mise en série, enrichissement, variantes, actifs réutilisables et baisse du coût marginal d’un use case déjà connu.</p>
+          <button class="primary nudgeBtn" data-mode="productivization">Générer les pistes</button>
+        </article>
+        <article class="card accent-card">
+          <p class="eyebrow">02</p><h3>Upsell par dépendance</h3>
+          <p>Proposer uniquement un use case explicitement dépendant ou activé par un use case déjà recensé.</p>
+          <button class="primary nudgeBtn" data-mode="upsell_dependency">Générer les pistes</button>
+        </article>
+        <article class="card accent-card">
+          <p class="eyebrow">03</p><h3>Cross-sell package</h3>
+          <p>Packager des use cases déjà catalogués pour l’entreprise et raconter la valeur à partir de ses propres retours.</p>
+          <button class="primary nudgeBtn" data-mode="cross_sell_package">Générer les packages</button>
+        </article>
+      </div>
+      <div class="action-row">
+        <button id="nudgeSkillCall">Appel unitaire use-case-nudging</button>
+        <span class="hint">Les sorties restent des hypothèses jusqu’à revue humaine.</span>
+      </div>
+      <div id="nudgeResults" class="grid result-grid"></div>
+    </section>
 
-      <h3>Import d'un catalogue déjà récolté</h3>
-      <form id="harvestForm" class="form">
-        <label>Entreprise / fournisseur<input id="company" required placeholder="Nom de l'entreprise"></label>
-        <label>Rayon<select id="shelf" required></select></label>
-        <label>Items JSON
-          <textarea id="catalogItems" rows="12" required>[{"name":"Offre exemple","source_url":"https://example.com","raw_claims":["Claim à vérifier"]}]</textarea>
-        </label>
-        <button class="primary" type="submit">Stager le catalogue</button>
-      </form>
-      <pre id="harvestResult"></pre>
+    <section id="skills" class="panel">
+      <div class="section-head">
+        <div><p class="eyebrow">Vue technique</p><h2>Appels unitaires des skills</h2><p>Chaque CTA appelle une seule responsabilité et produit une enveloppe versionnée.</p></div>
+        <input id="skillFilter" type="search" placeholder="Filtrer les skills">
+      </div>
+      <div id="skillGrid" class="grid"></div>
     </section>
 
     <section id="backlog" class="panel">
-      <h2>Reste à faire</h2>
-      <p>Vue consolidée des TODO v0.3 et v0.5 ; aucun gate historique n'est fermé silencieusement.</p>
+      <div class="section-head"><div><p class="eyebrow">Suivi</p><h2>Gates, décisions et reste à faire</h2><p>Vue consolidée des TODO historiques, v0.5 et v0.6.</p></div></div>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>Priorité</th><th>État</th><th>Zone</th><th>Tâche</th></tr></thead><tbody id="backlogRows"></tbody></table></div>
     </section>
   </main>
 
-  <footer>Interface d'orchestration uniquement — aucune logique de vérité métier n'est dupliquée dans le frontend.</footer>
+  <aside id="invokePanel" class="drawer hidden" aria-live="polite">
+    <div class="section-head">
+      <div><p class="eyebrow">Invocation unitaire</p><h3 id="invokeTitle"></h3></div>
+      <button id="closeInvoke" class="ghost">Fermer</button>
+    </div>
+    <label>Instruction / input<textarea id="invokeInput" rows="7" placeholder="Décris l'action attendue pour cette skill…"></textarea></label>
+    <label>Context paths optionnels, un par ligne<textarea id="contextPaths" rows="4" placeholder="studies/acme/05_enterprise_demand_profile.yaml"></textarea></label>
+    <button id="runSkill" class="primary">Préparer / exécuter cette skill</button>
+    <pre id="invokeResult"></pre>
+  </aside>
+
+  <aside id="workflowPanel" class="drawer hidden" aria-live="polite">
+    <div class="section-head">
+      <div><p class="eyebrow">Parcours complet</p><h3 id="workflowTitle"></h3></div>
+      <button id="closeWorkflow" class="ghost">Fermer</button>
+    </div>
+    <p id="workflowSummary" class="hint"></p>
+    <div id="workflowSteps" class="workflow-steps"></div>
+  </aside>
+
+  <footer>Les menus orchestrent les handoffs ; ils ne deviennent jamais une seconde source de vérité métier.</footer>
   <script src="/app.js"></script>
 </body>
 </html>
