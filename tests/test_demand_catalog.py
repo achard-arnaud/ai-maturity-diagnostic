@@ -58,6 +58,16 @@ class DemandCatalogTests(unittest.TestCase):
             self.assertTrue(sector["benchmark_enabled"])
             self.assertEqual("launch_benchmark", sector["primary_action"])
 
+    def test_stale_rollup_does_not_unlock_benchmark_below_threshold(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.make_root(tmp, 2)
+            dump_yaml(root / "data/private/sector_rollups/ICB-301010.yaml", {"schema_version": "0.6", "sector_code": "301010"})
+            sector = DemandCatalog(root).snapshot(as_of=date(2026, 8, 7))["sectors"][0]
+            self.assertTrue(sector["rollup_stale"])
+            self.assertFalse(sector["benchmark_enabled"])
+            self.assertEqual("benchmark_edge", sector["benchmark_state"])
+            self.assertEqual("add_third_company", sector["primary_action"])
+
     def test_use_case_inventory_is_counted_without_proving_sector_demand(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = self.make_root(tmp, 1)
