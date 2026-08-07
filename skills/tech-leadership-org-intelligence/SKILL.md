@@ -13,7 +13,8 @@ Lire :
 
 - [references/research-and-evidence.md](references/research-and-evidence.md) avant la collecte ;
 - [references/decision-system-and-deliverable.md](references/decision-system-and-deliverable.md) avant l’analyse et la rédaction ;
-- [references/process-reconstruction.md](references/process-reconstruction.md) seulement pour reproduire ou auditer le workflow ISAGRI de référence.
+- [references/process-reconstruction.md](references/process-reconstruction.md) seulement pour reproduire ou auditer le workflow ISAGRI de référence ;
+- `docs/advanced_research_backends.md` avant d’utiliser la couche d’acquisition partagée.
 
 ## Rechercher en entonnoir
 
@@ -23,6 +24,17 @@ Lire :
 4. Descendre dans les filiales prioritaires selon leur poids dans la décision, la roadmap ou le revenu.
 5. Exploiter les offres d’emploi pour révéler équipe, rattachement, stack et transformation, sans les confondre avec une capacité acquise.
 6. Auditer uniquement la communication IA publique observée ; écrire `Non trouvé publiquement`, jamais une conclusion sur l’intérêt personnel.
+
+### Acquisition avancée
+
+```bash
+python scripts/advanced_research.py "<entreprise> CIO CTO data AI leadership" --source web --days 730 --limit 15 --pretty
+python scripts/advanced_research.py "<personne> <entreprise>" --source linkedin --days 730 --limit 10 --pretty
+python scripts/advanced_research.py "<personne> <entreprise> AI" --source youtube --days 730 --limit 8 --enrich --pretty
+python scripts/advanced_research.py "<entreprise> AI data engineering" --source github --days 365 --limit 10 --pretty
+```
+
+LinkedIn est ici une voie d’index public : un résultat peut identifier une piste à vérifier, jamais établir seul un rôle courant, une identité canonique ou une relation hiérarchique. Les règles `LI-POL-*` restent supérieures à cette méthode de découverte.
 
 ## Tenir le registre de preuve
 
