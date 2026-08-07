@@ -32,3 +32,13 @@ Run:
 ```bash
 python scripts/target_study_contacts.py <study_dir>
 ```
+
+## Public role-validation discovery
+
+When a role is stale or uncertain, the LinkedIn public-index lane may only create a validation candidate:
+
+```bash
+python scripts/advanced_research.py "<personne> <entreprise> <fonction>" --source linkedin --days 730 --limit 8 --pretty
+```
+
+Do **not** set a relationship to `current`, merge identities, or mark outreach `ready` from this result alone. The result is not an authenticated LinkedIn observation; route it to an approved source or human validation under the existing `LI-POL-*` gates. Public discovery must not change company-product fit or infer buying authority.
