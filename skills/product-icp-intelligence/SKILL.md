@@ -18,6 +18,19 @@ Create a versioned, falsifiable description of one product or service offer. Sta
 
 Read [evidence-policy.md](references/evidence-policy.md) before strengthening any claim. Read [icp-model.md](references/icp-model.md) when defining ICP, anti-ICP, and hard gates.
 
+## Optional external evidence acquisition
+
+Use the shared backend only to strengthen **product truth, market alternatives or technical evidence**, never to research a named target account while this skill is active:
+
+```bash
+python scripts/advanced_research.py "<product/category> alternatives architecture" --source web --days 365 --limit 12 --pretty
+python scripts/advanced_research.py "<product/project>" --source github --days 365 --limit 12 --pretty
+python scripts/advanced_research.py "<technical capability>" --source hackernews --days 365 --limit 10 --pretty
+python scripts/advanced_research.py "<technical capability>" --source arxiv --days 730 --limit 10 --pretty
+```
+
+Community or repository activity is supporting evidence, not proof of customer outcome, security, deployability or enterprise readiness. Keep raw sources under `evidence/product/<product>/` and preserve their acquisition limitations.
+
 ## Procedure
 
 1. Identify the canonical problem rather than the feature set.
