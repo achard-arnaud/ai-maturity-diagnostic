@@ -101,6 +101,7 @@ class DemandCatalog:
                 "company_id": str(company_id),
                 "company": manifest.get("company"),
                 "updated_at": manifest.get("updated_at"),
+                "updated_date": updated,
                 "current": current,
                 "complete": complete,
                 "eligible": current and complete,
@@ -108,7 +109,8 @@ class DemandCatalog:
                 "use_case_inventory_path": use_case_path.relative_to(self.root).as_posix() if use_case_path.is_file() else None,
             }
             prior = latest.get(str(company_id))
-            if prior is None or str(record.get("updated_at") or "") >= str(prior.get("updated_at") or ""):
+            prior_date = prior.get("updated_date") if prior else None
+            if prior is None or (updated or date.min) >= (prior_date or date.min):
                 latest[str(company_id)] = record
         return latest
 
@@ -150,7 +152,9 @@ class DemandCatalog:
             company_rows = sorted(sector_companies.get(code, []), key=lambda row: str(row.get("company") or ""))
             eligible = [row for row in company_rows if row["eligible"]]
             rollup_path = self.root / "data" / "private" / "sector_rollups" / f"ICB-{code}.yaml"
-            if rollup_path.is_file():
+            rollup_exists = rollup_path.is_file()
+            # A historical rollup is never sufficient to bypass the current >=3 eligibility gate.
+            if len(eligible) >= 3 and rollup_exists:
                 benchmark_state = "consolidated"
                 primary_action = "refresh_benchmark"
             elif len(eligible) >= 3:
@@ -175,8 +179,9 @@ class DemandCatalog:
                     "primary_action": primary_action,
                     "benchmark_enabled": len(eligible) >= 3,
                     "third_company_cta": len(eligible) == 2,
+                    "rollup_stale": rollup_exists and len(eligible) < 3,
                     "use_case_count": sum(row["use_case_count"] for row in company_rows),
-                    "rollup_path": rollup_path.relative_to(self.root).as_posix() if rollup_path.is_file() else None,
+                    "rollup_path": rollup_path.relative_to(self.root).as_posix() if rollup_exists else None,
                     "companies": company_rows,
                 }
             )
