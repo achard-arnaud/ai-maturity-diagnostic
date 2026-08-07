@@ -1,0 +1,14 @@
+schema_version: "0.2"
+study_id: <company>-<YYYYMMDD>
+company_id: null
+company: ""
+created_at: null
+updated_at: null
+study_stage: enterprise_research
+output_level: A
+catalog_version: "2026-07-23.v0.2"
+candidate_offers: []
+product_snapshots: []
+contracts:
+  enterprise_profile: ../../contracts/enterprise_demand_profile.schema.yaml
+  product_fit: ../../contracts/product_fit.schema.yaml

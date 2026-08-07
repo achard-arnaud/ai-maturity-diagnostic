@@ -1,0 +1,22 @@
+[
+  {"query":"Mappe ces entreprises dans la nomenclature ICB avec un niveau de confiance.","should_trigger":true},
+  {"query":"Quel secteur ICB correspond à cette société selon son activité principale ?","should_trigger":true},
+  {"query":"Assigne industrie, supersector et sector sans forcer les inconnues.","should_trigger":true},
+  {"query":"Valide le candidat ICB de Renault à partir de ses revenus.","should_trigger":true},
+  {"query":"Distingue les entreprises classables des organismes publics hors périmètre ICB.","should_trigger":true},
+  {"query":"Prépare les mappings ICB candidats du registre entreprises.","should_trigger":true},
+  {"query":"Signale les conflits entre deux branches ICB plausibles.","should_trigger":true},
+  {"query":"Ne descends qu’au niveau ICB réellement soutenu par les preuves.","should_trigger":true},
+  {"query":"Révise le secteur ICB après une évolution du mix de revenus.","should_trigger":true},
+  {"query":"Contrôle cette classification avec l’ICB Equity v5.0.","should_trigger":true},
+  {"query":"Importe le fichier de contacts.","should_trigger":false},
+  {"query":"Priorise les comptes qui ont le plus de décideurs.","should_trigger":false},
+  {"query":"Recherche les dirigeants IA de l’entreprise.","should_trigger":false},
+  {"query":"Définis l’ICP produit Astraforge.","should_trigger":false},
+  {"query":"Score le product fit de cette banque.","should_trigger":false},
+  {"query":"Crée une étude pour les comptes de tier A.","should_trigger":false},
+  {"query":"Choisis le contact à approcher.","should_trigger":false},
+  {"query":"Conçois un pilote de huit semaines.","should_trigger":false},
+  {"query":"Consolide trois diagnostics déjà classés dans le même secteur.","should_trigger":false},
+  {"query":"Rédige une fiche produit optimisée.","should_trigger":false}
+]

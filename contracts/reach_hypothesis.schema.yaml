@@ -1,0 +1,19 @@
+schema_version: "0.3"
+title: Evidence-based reach hypothesis contract
+required: [study_id, company_id, offer_id, fit_decision, fit_score, hypotheses]
+hypothesis:
+  reach_id: string
+  person_id: string
+  target_id: string
+  status:
+    enum: [ready, blocked]
+  verified_priority_claim_ids: list
+  capability_gap_claim_ids: list
+  product_evidence_refs: list
+  angle_components: mapping
+  validation_question: string_or_null
+  missing_inputs: list
+rules:
+  - Reach must stop when contact targets are stale relative to the selected fit decision or score.
+  - Do not create feature-led outreach without a verified priority and observed gap.
+  - Do not expose private contact data in public deliverables.

@@ -1,0 +1,16 @@
+digraph G {
+graph [rankdir=TB, bgcolor="white", nodesep=0.28, ranksep=0.42, margin=0.05];
+node [shape=box, style="rounded,filled", fontname="Arial", fontsize=9, margin="0.10,0.07"];
+edge [color="#8A969F", arrowsize=0.55];
+chair [label="Présidence / gouvernance", fillcolor="#EAF3E5", color="#4D8F2A"];
+dg [label="Direction générale Groupe", fillcolor="#EAF1F7", color="#1C6A73"];
+cto [label="CTO global de transition", fillcolor="#FFF4E5", color="#C9841D"];
+dsi [label="DSI Groupe\nTitulaire non confirmé", fillcolor="#FCEAEA", color="#A74444"];
+core [label="CTO / direction technique ISAGRI", fillcolor="#E8F0FA", color="#315E8C"];
+subs [label="Directions R&D / produit des filiales", fillcolor="#F3F6F8", color="#B9C4CC"];
+chair -> dg;
+dg -> cto;
+dg -> dsi [style=dashed];
+cto -> core [style=dashed];
+cto -> subs [style=dashed];
+}

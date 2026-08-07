@@ -1,0 +1,40 @@
+schema_version: "0.2"
+product_id: OFFER-AF-01
+sources:
+  - source_id: AF-SRC-001
+    type: primary_transcript
+    date: "2026-07-07"
+    path_or_ref: primary_product_presentation_transcript_20260707.md
+    reliability: medium_high
+    supports:
+      - progression_from_chat_to_tools_workflows_multi_agent_ambient_sandbox
+      - difficulty_of_collective_roi_from_individual_chat_usage
+      - need_for_secure_isolated_execution
+    limitation: The referenced transcript is not included in this repository snapshot.
+  - source_id: AF-SRC-002
+    type: derived_context_snapshot
+    date: "2026-07-07"
+    path_or_ref: derived_product_context_snapshot_20260707.md
+    reliability: medium
+    supports:
+      - runtime_orchestration_positioning
+      - human_control_observability_logs
+      - demo_use_case_families
+    limitation: Derived synthesis, not an independent primary source.
+  - source_id: AF-SRC-003
+    type: owner_direction
+    date: "2026-07-23"
+    path_or_ref: user_request_2026-07-23
+    reliability: owner_input
+    supports:
+      - commercial_entry_point_roadmap_acceleration
+      - qualification_tunnel_design
+  - source_id: AF-SRC-004
+    type: owner_positioning_note
+    date: "2026-07-23"
+    path_or_ref: owner_positioning_note_20260723
+    reliability: mixed
+    supports:
+      - current_product_thesis
+      - flow_acceleration_positioning
+    caveat: Stronger claims and technology specifics require revalidation against primary product documentation.

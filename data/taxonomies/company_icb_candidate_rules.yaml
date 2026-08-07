@@ -1,0 +1,147 @@
+schema_version: "0.3"
+rules_version: "2026-07-23.v0.1"
+taxonomy_version: "5.0"
+policy:
+  output_status: candidate
+  evidence_grade: N0
+  requires_validation: true
+  note: Name patterns create research candidates only. Validate the revenue-generating activity before confirming an ICB classification.
+out_of_scope_patterns:
+  - '\b(ministere|ministere de|direction generale|ville de|region ile|metropole|cour de cassation|gouvernement|universite|university|opco|af?ev|pole d excellence|chambre|commissaires aux comptes|eu lisa)\b'
+sector_rules:
+  - rule_id: ICB-R001
+    sector_code: "151020"
+    rationale: Telecommunications operator or infrastructure name
+    patterns: ['\b(orange|bouygues telecom|cellnex|sfr|free mobile|telecom)\b']
+  - rule_id: ICB-R002
+    sector_code: "101010"
+    rationale: Software, IT services, cloud, or digital-platform group
+    patterns: ['\b(atos|capgemini|devoteam|sopra|mistral ai|docaposte|dailymotion|deepki|ovh|talend|dassault systemes)\b']
+  - rule_id: ICB-R003
+    sector_code: "301010"
+    rationale: Banking institution or banking business unit
+    patterns: ['\b(bnp paribas|societe generale|credit agricole|bpce|banque populaire|caisse d epargne|la banque postale|natixis|boursobank|boursorama|credit mutuel|spuerkeess|odd[o]? bhf|cofidis|arval|bpifrance|banque|bank)\b']
+  - rule_id: ICB-R004
+    sector_code: "303020"
+    rationale: Insurance or mutual-insurance group
+    patterns: ['\b(axa|allianz|groupama|swisslife|covea|ag2r|apicil|april|matmut|maif|macif|zurich insurance|coface|henner|insurance|assurance|mutuelle)\b']
+  - rule_id: ICB-R005
+    sector_code: "302020"
+    rationale: Asset manager, investment firm, exchange, or financial-services group
+    patterns: ['\b(amundi|ardian|infravia|euronext|asset management|investment|capital partners|tikehau|rothschild|edmond de rothschild|caisse des depots|uff)\b']
+  - rule_id: ICB-R006
+    sector_code: "302010"
+    rationale: Credit, payments, or transaction-processing services
+    patterns: ['\b(edenred|worldline|payment services|credit foncier|lease|leasing)\b']
+  - rule_id: ICB-R007
+    sector_code: "201030"
+    rationale: Pharmaceutical or biotechnology company
+    patterns: ['\b(servier|sanofi|astrazeneca|chiesi|lfb|framatome pharma|unither|innothera|pharma|pharmaceutical|laboratoire thea|laboratoires thea)\b']
+  - rule_id: ICB-R008
+    sector_code: "201010"
+    rationale: Health care facility or care-services operator
+    patterns: ['\b(chu |chu$|clariane|domitys|hospital|clinique|sante|health care)\b']
+  - rule_id: ICB-R009
+    sector_code: "201020"
+    rationale: Medical equipment or testing services
+    patterns: ['\b(centravet|bio merieux|biomerieux|philips france|medical|diagnostic)\b']
+  - rule_id: ICB-R010
+    sector_code: "351010"
+    rationale: Real-estate investment, development, or services company
+    patterns: ['\b(gecina|klepierre|kl[eé]pierre|icade|nexity|fonciere|immobilier|real estate)\b']
+  - rule_id: ICB-R011
+    sector_code: "401010"
+    rationale: Automobile, tire, or automotive-parts group
+    patterns: ['\b(renault|stellantis|forvia|faurecia|michelin|valeo|automotive|automobile)\b']
+  - rule_id: ICB-R012
+    sector_code: "402040"
+    rationale: Luxury, cosmetics, clothing, or personal-goods group
+    patterns: ['\b(lvmh|moet hennessy|kering|hermes|christian dior|dior|chanel|celine|saint laurent|lacoste|l oreal|clarins|shiseido|aroma zone|sephora|luxottica)\b']
+  - rule_id: ICB-R013
+    sector_code: "402030"
+    rationale: Leisure goods or toys
+    patterns: ['\b(asmodee|amer sports|decathlon)\b']
+  - rule_id: ICB-R014
+    sector_code: "403010"
+    rationale: Media, publishing, entertainment, or advertising group
+    patterns: ['\b(vivendi|hachette|cityz media|canal plus|media|publishing|dailymotion)\b']
+  - rule_id: ICB-R015
+    sector_code: "404010"
+    rationale: General, specialty, apparel, or home-improvement retailer
+    patterns: ['\b(la redoute|galeries lafayette|courir|mr bricolage|adeo|leroy merlin|raja group|retail|decathlon france|decathlon digital)\b']
+  - rule_id: ICB-R016
+    sector_code: "405010"
+    rationale: Hotel, gambling, travel, restaurant, or leisure operator
+    patterns: ['\b(accor|pmu|betclic|chateauform|eli(or|or france)|club med|hotel|travel|loisir|francaise des jeux|fdj)\b']
+  - rule_id: ICB-R017
+    sector_code: "451010"
+    rationale: Beverage producer or distributor
+    patterns: ['\b(pernod ricard|castel|beverage|boisson|spirits|champagne)\b']
+  - rule_id: ICB-R018
+    sector_code: "451020"
+    rationale: Food producer, ingredient producer, or agricultural group
+    patterns: ['\b(danone|tereos|louis dreyfus|groupe le duff|carambar|royal canin|food|alimentaire|agro|terrana|terrena)\b']
+  - rule_id: ICB-R019
+    sector_code: "452010"
+    rationale: Food, grocery, or personal-care retail and products
+    patterns: ['\b(carrefour|mousquetaires|monoprix|casino group|intermarche|personal care|grocery|grande distribution)\b']
+  - rule_id: ICB-R020
+    sector_code: "501010"
+    rationale: Construction, engineering contractor, or building-materials group
+    patterns: ['\b(vinci|eiffage|bouygues construction|saint gobain|verallia|smurfit westrock|construction|baticon|materiaux)\b']
+  - rule_id: ICB-R021
+    sector_code: "502010"
+    rationale: Aerospace or defense group
+    patterns: ['\b(airbus|safran|thales|arianegroup|airbus defense|airbus helicopters|defense|aerospace)\b']
+  - rule_id: ICB-R022
+    sector_code: "502020"
+    rationale: Electronic or electrical equipment manufacturer
+    patterns: ['\b(schneider electric|abb|stmicroelectronics|electrical|electronics)\b']
+  - rule_id: ICB-R023
+    sector_code: "502030"
+    rationale: Diversified industrial group or packaging manufacturer
+    patterns: ['\b(groupe seb|aptar|pellenc|gerflor|fareva|descours|general industrial|industrial group)\b']
+  - rule_id: ICB-R024
+    sector_code: "502040"
+    rationale: Industrial machinery or engineering group
+    patterns: ['\b(alstom|framatome|orano|fives|industrial engineering|machinery)\b']
+  - rule_id: ICB-R025
+    sector_code: "502050"
+    rationale: Professional, security, certification, catering, or support services
+    patterns: ['\b(sodexo|apave|securitas|bureau veritas|onet|equans|professional services|business services)\b']
+  - rule_id: ICB-R026
+    sector_code: "502060"
+    rationale: Rail, marine, road, postal, or logistics operator
+    patterns: ['\b(sncf|cma cgm|ceva logistics|geodis|transdev|la poste|stef|ratp|fraikin|europcar|logistics|transport)\b']
+  - rule_id: ICB-R027
+    sector_code: "551010"
+    rationale: Paper, packaging, textile, or diversified material producer
+    patterns: ['\b(munksjo|paper|papier|textile|materials group)\b']
+  - rule_id: ICB-R028
+    sector_code: "551020"
+    rationale: Metals, steel, or mining group
+    patterns: ['\b(arcelormittal|eramet|mining|metal|steel|acier)\b']
+  - rule_id: ICB-R029
+    sector_code: "552010"
+    rationale: Industrial or specialty chemicals group
+    patterns: ['\b(air liquide|syensqo|solvay|iff international flavors|chemicals|chimie)\b']
+  - rule_id: ICB-R030
+    sector_code: "601010"
+    rationale: Integrated oil and gas or oil-services group
+    patterns: ['\b(totalenergies|oil|petroleum|petrole)\b']
+  - rule_id: ICB-R031
+    sector_code: "601020"
+    rationale: Alternative-energy equipment or fuel company
+    patterns: ['\b(renewable energy equipment|alternative fuels|hydrogen equipment)\b']
+  - rule_id: ICB-R032
+    sector_code: "651010"
+    rationale: Electricity generation or distribution group
+    patterns: ['\b(edf|electricite de france|electricity)\b']
+  - rule_id: ICB-R033
+    sector_code: "651020"
+    rationale: Gas, water, or multi-utility group
+    patterns: ['\b(engie|grdf|natran|veolia water|water technologie|water technology|multi utilit)\b']
+  - rule_id: ICB-R034
+    sector_code: "651030"
+    rationale: Waste, recycling, or environmental-services group
+    patterns: ['\b(suez|veolia|cyclife|waste|recycl|environmental services)\b']

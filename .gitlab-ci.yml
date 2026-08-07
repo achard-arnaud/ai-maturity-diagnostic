@@ -1,0 +1,22 @@
+image: python:3.11-slim
+
+stages:
+  - validate
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
+release-check:
+  stage: validate
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends graphviz
+    - python -m pip install --upgrade pip
+    - python -m pip install -e '.[docs,dev]'
+  script:
+    - python scripts/check_release.py

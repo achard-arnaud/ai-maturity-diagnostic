@@ -1,0 +1,4 @@
+interface:
+  display_name: "Opportunity Fit Matching"
+  short_description: "Croise demande entreprise et profils produit"
+  default_prompt: "Use $opportunity-fit-matching to compare the qualified account profile with versioned product snapshots."

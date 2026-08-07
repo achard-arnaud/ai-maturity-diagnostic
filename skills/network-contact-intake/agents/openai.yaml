@@ -1,0 +1,4 @@
+interface:
+  display_name: "Network Contact Intake"
+  short_description: "Normalise les contacts et résout les entités"
+  default_prompt: "Use $network-contact-intake to import this contact file and create canonical people, companies, and relationships."

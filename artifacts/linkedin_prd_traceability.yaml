@@ -1,0 +1,99 @@
+version: 0.1
+updated_at: '2026-07-23'
+area: linkedin_plugin
+status: deferred
+policy:
+  design_status: specified
+  runtime_status: not_implemented
+  rule: Verification of a design contract is not evidence that a connector requirement is operational.
+items:
+  - id: LI-FR-001
+    requirement: Capability discovery
+    component: future plugin routing skill
+    contract_or_artifact: docs/linkedin_capability_matrix.md
+    verification: unavailable-capability design eval
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-002
+    requirement: Approved auth
+    component: future app or MCP adapter
+    contract_or_artifact: connector configuration
+    verification: auth negative test
+    verification_stage: runtime_later
+  - id: LI-FR-003
+    requirement: Read-only
+    component: plugin policy
+    contract_or_artifact: contracts/linkedin_connector_evidence.schema.yaml
+    verification: schema action_class=read
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-004
+    requirement: Structured evidence
+    component: future adapter
+    contract_or_artifact: contracts/linkedin_connector_evidence.schema.yaml
+    verification: schema validation
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-005
+    requirement: Canonical candidate links
+    component: future adapter
+    contract_or_artifact: contracts/linkedin_connector_evidence.schema.yaml
+    verification: internal ID reference test
+    verification_stage: runtime_later
+  - id: LI-FR-006
+    requirement: Internal IDs remain canonical
+    component: merge gate
+    contract_or_artifact: contracts/external_identity_mapping.schema.yaml
+    verification: architecture test
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-007
+    requirement: Provenance metadata
+    component: future adapter
+    contract_or_artifact: contracts/linkedin_connector_evidence.schema.yaml
+    verification: required-fields test
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-008
+    requirement: Retention before persistence
+    component: policy gate
+    contract_or_artifact: docs/linkedin_connector_data_policy.md
+    verification: transient-storage test
+    verification_stage: runtime_later
+  - id: LI-FR-009
+    requirement: Merge gate
+    component: future identity layer
+    contract_or_artifact: contracts/relationship_observation.schema.yaml
+    verification: no-direct-write architecture test
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-010
+    requirement: Graceful fallback
+    component: future routing skill
+    contract_or_artifact: contracts/manual_validation_result.schema.yaml
+    verification: no-access design eval
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-011
+    requirement: Role validation
+    component: future validation skill
+    contract_or_artifact: contracts/role_validation_request.schema.yaml
+    verification: Gold Set precision
+    verification_stage: gold_set_then_runtime
+  - id: LI-FR-012
+    requirement: Mismatch detection
+    component: future validation skill
+    contract_or_artifact: contracts/linkedin_connector_evidence.schema.yaml
+    verification: mismatch design eval
+    verification_stage: design_now_runtime_later
+  - id: LI-FR-013
+    requirement: Audit log
+    component: future adapter
+    contract_or_artifact: contracts/private_integration_audit.schema.yaml
+    verification: audit completeness test
+    verification_stage: runtime_later
+  - id: LI-FR-014
+    requirement: Optional dependency
+    component: global architecture
+    contract_or_artifact: AGENTS.md
+    verification: plugin-disabled integration test
+    verification_stage: design_and_core_now
+  - id: LI-FR-015
+    requirement: Feed targeting only after merge
+    component: person targeting
+    contract_or_artifact: contracts/relationship_observation.schema.yaml
+    verification: contamination architecture test
+    verification_stage: design_now_runtime_later

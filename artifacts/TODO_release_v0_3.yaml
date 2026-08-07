@@ -1,0 +1,71 @@
+schema_version: "0.3"
+milestone: v0.3
+updated_at: "2026-07-23"
+status: accepted_with_followups
+assumptions:
+  - id: ASM-001
+    statement: Python 3.11 and declared dependency ranges remain available in the target GitLab runner.
+    validation: Observe the first remote pipeline.
+  - id: ASM-002
+    statement: The private contact batch checksum identifies the authorized local source without publishing it.
+    validation: Recompute the checksum only in an authorized private workspace.
+  - id: ASM-003
+    statement: Name plus company is an acceptable short-term provisional identity seed.
+    validation: Measure collisions and splits on the commercial Gold Set before any automatic external merge.
+items:
+  - id: TODO-REL-001
+    priority: P0
+    status: open
+    area: security
+    task: Revoke the historical private SSH key and request server-side garbage collection/purge confirmation for unreachable old Git objects.
+    done_when: The old key is revoked and the Git host confirms its retention/purge outcome.
+  - id: TODO-REL-002
+    priority: P0
+    status: completed
+    area: access
+    task: Load the encrypted current SSH key into an agent with its passphrase, or provide an actually unlocked authorized key, then verify git ls-remote.
+    done_when: The repository can be read with the designated authorized identity without committing key material.
+    result: Passphrase removed at owner request; SSH read and push succeeded without committing key material.
+  - id: TODO-REL-003
+    priority: P0
+    status: in_progress
+    area: release
+    task: Push the new root to dev, verify its pipeline, then replace main with force-with-lease and observe the main pipeline.
+    done_when: Remote dev and main resolve to the reviewed root commit and both pipelines pass scripts/check_release.py.
+    result: Remote dev and main replaced with exact leases; pipeline observation remains pending because the private GitLab API is unavailable without a token.
+  - id: TODO-REL-004
+    priority: P1
+    status: open
+    area: evals
+    task: Run trigger and reasoning evals with a model on a reviewed commercial Gold Set.
+    done_when: Precision, collision rate, failures, and approved thresholds are recorded.
+  - id: TODO-REL-005
+    priority: P1
+    status: open
+    area: product_truth
+    task: Validate the three draft offers and Astraforge proof, pricing, architecture, security, and reference unknowns.
+    done_when: Owner-approved product profile versions replace draft/reconstructed status.
+  - id: TODO-REL-006
+    priority: P1
+    status: open
+    area: icb
+    task: Validate ICB mappings for accounts entering decision-grade sector analysis.
+    done_when: At least three current complete studies in a sector have validated mappings and a decision-grade rollup.
+  - id: TODO-REL-007
+    priority: P1
+    status: open
+    area: identity
+    task: Design explicit alias/link/merge handling for verified multi-employer identities without replacing internal IDs.
+    done_when: Gold Set tests cover role changes, concurrent roles, homonyms, subsidiaries, split and merge rollback.
+  - id: TODO-REL-008
+    priority: P2
+    status: open
+    area: contracts
+    task: Migrate legacy readable YAML contracts to complete JSON Schema where runtime validation adds value.
+    done_when: Network and qualification artifacts are schema-validated without duplicating business rules.
+  - id: TODO-REL-009
+    priority: P2
+    status: deferred
+    area: linkedin
+    task: Execute the separately governed LinkedIn backlog only after access, privacy, and Gold Set gates pass.
+    done_when: Follow artifacts/TODO_linkedin_plugin.yaml; no runtime work is implied by this milestone.

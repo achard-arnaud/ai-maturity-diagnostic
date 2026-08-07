@@ -1,0 +1,22 @@
+[
+  {"query":"Crée la file des études à lancer depuis les comptes prioritaires du réseau.","should_trigger":true},
+  {"query":"Un nouveau contact vient d’être ajouté : faut-il rafraîchir son entreprise ?","should_trigger":true},
+  {"query":"Initialise cinq études pour les comptes de tier A.","should_trigger":true},
+  {"query":"Quels diagnostics ont dépassé l’horizon de fraîcheur de six mois ?","should_trigger":true},
+  {"query":"Propage ce nouveau batch de contacts vers les études concernées.","should_trigger":true},
+  {"query":"Prépare les actions CREATE, REFRESH, READY et HOLD.","should_trigger":true},
+  {"query":"Relie les études existantes aux company_id du registre.","should_trigger":true},
+  {"query":"Applique seulement les dix premières créations de la file.","should_trigger":true},
+  {"query":"Vérifie si le diagnostic est actuel avant de le livrer.","should_trigger":true},
+  {"query":"Réinitialise une étude datée après une mise à jour du réseau.","should_trigger":true},
+  {"query":"Analyse la stratégie corporate de ce compte.","should_trigger":false},
+  {"query":"Importe le fichier de personnes.","should_trigger":false},
+  {"query":"Assigne les secteurs ICB.","should_trigger":false},
+  {"query":"Calcule les tiers de screening.","should_trigger":false},
+  {"query":"Score les offres contre le profil entreprise.","should_trigger":false},
+  {"query":"Choisis le sponsor à contacter.","should_trigger":false},
+  {"query":"Rédige une hypothèse de reach.","should_trigger":false},
+  {"query":"Consolide les études du secteur Utilities.","should_trigger":false},
+  {"query":"Définis le produit canonique.","should_trigger":false},
+  {"query":"Produis l’organigramme public du groupe.","should_trigger":false}
+]

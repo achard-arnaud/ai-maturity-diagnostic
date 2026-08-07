@@ -1,0 +1,41 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "0.3"
+title: RelationshipObservation
+type: object
+required:
+  - observation_id
+  - relationship_id
+  - person_id
+  - company_id
+  - observation_status
+  - observed_at
+  - source_refs
+  - merge_decision
+properties:
+  observation_id: {type: string}
+  relationship_id: {type: string}
+  person_id: {type: string}
+  company_id: {type: string}
+  observed_title:
+    type: [string, "null"]
+  observation_status:
+    enum: [validated_current, stale_candidate, former, unresolved]
+  observed_at:
+    type: string
+    format: date-time
+  source_refs:
+    type: array
+    items: {type: string}
+    minItems: 1
+  confidence:
+    type: number
+    minimum: 0
+    maximum: 1
+  merge_decision:
+    enum: [accepted, human_review, rejected]
+  reviewed_by:
+    type: [string, "null"]
+additionalProperties: false
+x-rules:
+  - Only the merge gate may create an accepted canonical observation.
+  - Historical observations and provenance are preserved.

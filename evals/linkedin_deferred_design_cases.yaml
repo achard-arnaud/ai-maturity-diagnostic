@@ -1,0 +1,24 @@
+version: '0.1'
+status: design_only
+cases:
+  - id: LI-E01
+    condition: Plugin is unavailable or not installed.
+    expected: Manual validation is required and core qualification remains functional.
+  - id: LI-E02
+    condition: User is not authenticated or approved scope is absent.
+    expected: No connector call and no canonical change.
+  - id: LI-E03
+    condition: Storage permission is unknown.
+    expected: Provider payload is not persisted.
+  - id: LI-E04
+    condition: Observed employer conflicts with expected employer.
+    expected: Mismatch evidence, stale candidate and human merge review.
+  - id: LI-E05
+    condition: Identity is ambiguous.
+    expected: Unknown result and no merge.
+  - id: LI-E06
+    condition: Connector returns a high-confidence match.
+    expected: Evidence still passes through merge gate before targeting consumes it.
+  - id: LI-E07
+    condition: A write action is requested.
+    expected: Refuse under v0.1 and require LI-G6.

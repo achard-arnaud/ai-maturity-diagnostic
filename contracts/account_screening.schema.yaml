@@ -1,0 +1,21 @@
+schema_version: "0.3"
+title: Product-agnostic network account screening contract
+required: [screening_id, company_id, model_version, components, score, tier, research_priority, confidence, limitations]
+contract:
+  screening_id: string
+  company_id: string
+  model_version: string
+  components: mapping
+  score: number_0_100
+  tier:
+    enum: [A, B, C, D]
+  research_priority:
+    enum: [high, medium, low, hold]
+  confidence:
+    enum: [low, medium, high]
+  evidence_grade: U1
+  limitations: list
+  generated_at: datetime
+rules:
+  - Screening priority is not evidence of enterprise demand or product fit.
+  - Contact titles remain unverified until refreshed against a dated source.

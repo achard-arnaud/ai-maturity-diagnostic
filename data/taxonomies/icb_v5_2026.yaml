@@ -1,0 +1,151 @@
+schema_version: "0.3"
+taxonomy:
+  name: Industry Classification Benchmark (Equity)
+  owner: FTSE Russell / LSEG
+  version: "5.0"
+  publication_date: "2026-03-01"
+  accessed_at: "2026-07-23"
+  source_url: https://www.lseg.com/content/dam/ftse-russell/en_us/documents/ground-rules/icb-ground-rules.pdf
+  source_grade: P1
+  classification_rule: Assign a company from the source of its revenue or the majority of its revenue where available.
+  levels: [industry, supersector, sector, subsector]
+  scope_note: This project stores the complete industry, supersector, and sector levels. Subsector assignment requires company-specific evidence and is deferred.
+industries:
+  - code: "10"
+    name: Technology
+    supersectors:
+      - code: "1010"
+        name: Technology
+        sectors:
+          - {code: "101010", name: Software and Computer Services}
+          - {code: "101020", name: Technology Hardware and Equipment}
+  - code: "15"
+    name: Telecommunications
+    supersectors:
+      - code: "1510"
+        name: Telecommunications
+        sectors:
+          - {code: "151010", name: Telecommunications Equipment}
+          - {code: "151020", name: Telecommunications Service Providers}
+  - code: "20"
+    name: Health Care
+    supersectors:
+      - code: "2010"
+        name: Health Care
+        sectors:
+          - {code: "201010", name: Health Care Providers}
+          - {code: "201020", name: Medical Equipment and Services}
+          - {code: "201030", name: Pharmaceuticals and Biotechnology}
+  - code: "30"
+    name: Financials
+    supersectors:
+      - code: "3010"
+        name: Banks
+        sectors:
+          - {code: "301010", name: Banks}
+      - code: "3020"
+        name: Financial Services
+        sectors:
+          - {code: "302010", name: Finance and Credit Services}
+          - {code: "302020", name: Investment Banking and Brokerage Services}
+          - {code: "302030", name: Mortgage Real Estate Investment Trusts}
+          - {code: "302040", name: Closed End Investments}
+          - {code: "302050", name: Open End and Miscellaneous Investment Vehicles}
+      - code: "3030"
+        name: Insurance
+        sectors:
+          - {code: "303010", name: Life Insurance}
+          - {code: "303020", name: Nonlife Insurance}
+  - code: "35"
+    name: Real Estate
+    supersectors:
+      - code: "3510"
+        name: Real Estate
+        sectors:
+          - {code: "351010", name: Real Estate Investment and Services Development}
+          - {code: "351020", name: Real Estate Investment Trusts}
+  - code: "40"
+    name: Consumer Discretionary
+    supersectors:
+      - code: "4010"
+        name: Automobiles and Parts
+        sectors:
+          - {code: "401010", name: Automobiles and Parts}
+      - code: "4020"
+        name: Consumer Products and Services
+        sectors:
+          - {code: "402010", name: Consumer Services}
+          - {code: "402020", name: Household Goods and Home Construction}
+          - {code: "402030", name: Leisure Goods}
+          - {code: "402040", name: Personal Goods}
+      - code: "4030"
+        name: Media
+        sectors:
+          - {code: "403010", name: Media}
+      - code: "4040"
+        name: Retailers
+        sectors:
+          - {code: "404010", name: Retailers}
+      - code: "4050"
+        name: Travel and Leisure
+        sectors:
+          - {code: "405010", name: Travel and Leisure}
+  - code: "45"
+    name: Consumer Staples
+    supersectors:
+      - code: "4510"
+        name: Food, Beverage and Tobacco
+        sectors:
+          - {code: "451010", name: Beverages}
+          - {code: "451020", name: Food Producers}
+          - {code: "451030", name: Tobacco}
+      - code: "4520"
+        name: Personal Care, Drug and Grocery Stores
+        sectors:
+          - {code: "452010", name: Personal Care, Drug and Grocery Stores}
+  - code: "50"
+    name: Industrials
+    supersectors:
+      - code: "5010"
+        name: Construction and Materials
+        sectors:
+          - {code: "501010", name: Construction and Materials}
+      - code: "5020"
+        name: Industrial Goods and Services
+        sectors:
+          - {code: "502010", name: Aerospace and Defense}
+          - {code: "502020", name: Electronic and Electrical Equipment}
+          - {code: "502030", name: General Industrials}
+          - {code: "502040", name: Industrial Engineering}
+          - {code: "502050", name: Industrial Support Services}
+          - {code: "502060", name: Industrial Transportation}
+  - code: "55"
+    name: Basic Materials
+    supersectors:
+      - code: "5510"
+        name: Basic Resources
+        sectors:
+          - {code: "551010", name: Industrial Materials}
+          - {code: "551020", name: Industrial Metals and Mining}
+          - {code: "551030", name: Precious Metals and Mining}
+      - code: "5520"
+        name: Chemicals
+        sectors:
+          - {code: "552010", name: Chemicals}
+  - code: "60"
+    name: Energy
+    supersectors:
+      - code: "6010"
+        name: Energy
+        sectors:
+          - {code: "601010", name: Oil, Gas and Coal}
+          - {code: "601020", name: Alternative Energy}
+  - code: "65"
+    name: Utilities
+    supersectors:
+      - code: "6510"
+        name: Utilities
+        sectors:
+          - {code: "651010", name: Electricity}
+          - {code: "651020", name: Gas, Water and Multi-utilities}
+          - {code: "651030", name: Waste and Disposal Services}

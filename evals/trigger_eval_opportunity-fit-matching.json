@@ -1,0 +1,22 @@
+[
+  {"query":"Voici le profil de demande du compte et les quatre snapshots produit : classe les offres.","should_trigger":true},
+  {"query":"Astraforge est-il réellement un fit pour ce compte déjà qualifié ?","should_trigger":true},
+  {"query":"Applique les hard gates et le score aux offres candidates.","should_trigger":true},
+  {"query":"Compare l’offre formation, PMBOK, Astraforge et régie sur ce profil entreprise.","should_trigger":true},
+  {"query":"Le profil entreprise est prêt : quelle offre passe les gates ?","should_trigger":true},
+  {"query":"Identifie les invalidateurs du fit Astraforge à partir des deux profils.","should_trigger":true},
+  {"query":"Le score Astraforge est élevé mais la sécurité bloque le runtime : quelle décision ?","should_trigger":true},
+  {"query":"Calcule la sensibilité du matching aux inconnues critiques.","should_trigger":true},
+  {"query":"Classe les offres sans refaire de recherche et explique pourquoi la meilleure gagne.","should_trigger":true},
+  {"query":"À partir des artefacts existants uniquement, décide PURSUE, VALIDATE, NURTURE ou DISQUALIFY.","should_trigger":true},
+  {"query":"Recherche les recrutements récents de l’entreprise.","should_trigger":false},
+  {"query":"Définis le nouvel ICP d’Astraforge.","should_trigger":false},
+  {"query":"Rédige le SOW du pilote.","should_trigger":false},
+  {"query":"Trouve le CTO et le CISO de ce compte.","should_trigger":false},
+  {"query":"Mets à jour le profil produit formation.","should_trigger":false},
+  {"query":"Conçois la baseline du pilote.","should_trigger":false},
+  {"query":"Analyse les dernières annonces corporate de la cible.","should_trigger":false},
+  {"query":"Formalise les preuves brutes d’Astraforge.","should_trigger":false},
+  {"query":"Route cette demande dans le tunnel.","should_trigger":false},
+  {"query":"Rédige un message LinkedIn au sponsor.","should_trigger":false}
+]

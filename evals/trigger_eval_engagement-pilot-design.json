@@ -1,0 +1,22 @@
+[
+  {"query":"Le fit Astraforge est validé : construis le plus petit pilote prouvable.","should_trigger":true},
+  {"query":"À partir du match, prépare la baseline, les KPI, guardrails et critères stop/scale.","should_trigger":true},
+  {"query":"Transforme le fit validé en angle de contact CTO et agenda de discovery.","should_trigger":true},
+  {"query":"Conçois une preuve de valeur limitée pour l’offre PMBOK sélectionnée.","should_trigger":true},
+  {"query":"Le matching est VALIDATE : prépare un engagement de discovery qui ferme les inconnues.","should_trigger":true},
+  {"query":"Définis les responsabilités sponsor, owner terrain et sécurité pour le pilote retenu.","should_trigger":true},
+  {"query":"Quels critères doivent déclencher SCALE, ITERATE ou STOP ?","should_trigger":true},
+  {"query":"Prépare le Roadmap Acceleration Proof à partir du match Astraforge.","should_trigger":true},
+  {"query":"Construis l’hypothèse économique du pilote sans inventer de pricing.","should_trigger":true},
+  {"query":"Fais l’agenda de validation commerciale à partir des gates encore ouverts.","should_trigger":true},
+  {"query":"Recherche le CTO du prospect.","should_trigger":false},
+  {"query":"Quel produit est le plus adapté parmi nos quatre offres ?","should_trigger":false},
+  {"query":"Réécris l’ICP produit Astraforge.","should_trigger":false},
+  {"query":"Analyse les offres d’emploi du compte.","should_trigger":false},
+  {"query":"Vérifie si le problème stratégique est réel à partir du web.","should_trigger":false},
+  {"query":"Formalise les capacités produit à partir du transcript Astraforge.","should_trigger":false},
+  {"query":"Applique les hard gates de fit entre le compte et les offres.","should_trigger":false},
+  {"query":"Route cette étude vers la prochaine étape.","should_trigger":false},
+  {"query":"Crée une nouvelle offre dans le catalogue.","should_trigger":false},
+  {"query":"Construis la control tower entreprise.","should_trigger":false}
+]

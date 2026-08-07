@@ -1,0 +1,28 @@
+schema_version: "0.3"
+title: Evidence-graded company ICB mapping contract
+required: [mapping_id, company_id, taxonomy_version, scope_status, mapping_status, assigned_level, confidence, method, source_ids, requires_validation]
+contract:
+  mapping_id: string
+  company_id: string
+  taxonomy_version: string
+  scope_status:
+    enum: [in_scope, out_of_scope, unknown]
+  mapping_status:
+    enum: [candidate, validated, pending, conflict, out_of_scope]
+  assigned_level:
+    enum: [industry, supersector, sector, subsector, null]
+  industry: mapping_or_null
+  supersector: mapping_or_null
+  sector: mapping_or_null
+  candidate_sector_codes: list
+  confidence:
+    enum: [low, medium, high]
+  method: string
+  rationale: string
+  source_ids: list
+  evidence_grade:
+    enum: [P1, P2, U1, W1, N0]
+  requires_validation: boolean
+rules:
+  - ICB classification follows the business generating most revenue, not the contact's function.
+  - A name-pattern rule produces a candidate, never a validated classification.

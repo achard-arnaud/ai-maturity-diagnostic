@@ -1,0 +1,49 @@
+schema_version: "0.2"
+offer:
+  offer_id: OFFER-CD-01
+  name: AI Consulting & Delivery
+  profile_version: "2026-07-23.v0.2"
+  owner: null
+  status: draft
+  category: bespoke-ai-consulting-delivery
+  positioning:
+    one_liner: Mobilize specialized AI expertise for a defined outcome when the need is urgent, specific, or not covered by a repeatable product offer.
+    commercial_entry_point: Specific high-value AI need or delivery gap
+  problem:
+    canonical: A concrete AI outcome is required but the organization lacks capacity, specialist expertise, or a suitable packaged offer.
+    anti_problem:
+      - Open-ended staff augmentation without definition of done or exit path
+  outcomes:
+    primary: [delivered_use_case, accelerated_delivery, transferred_knowledge]
+  icp:
+    personas:
+      economic_sponsors: [CIO, CTO, CDO, Business_Executive, Transformation_Lead]
+      terrain_owners: [Product_Owner, AI_Lead, Engineering_Lead, Business_Owner]
+      veto_players: [Procurement, CISO, Architecture, Legal]
+    positive_signals:
+      - Urgent specific use case
+      - Capacity or specialist shortage
+      - Prototype-to-production gap
+    anti_icp:
+      - No definition of done
+      - No sponsor or transfer path
+  hard_gates:
+    - id: CD-GATE-01
+      test: Definition of done exists
+      severity: blocker
+    - id: CD-GATE-02
+      test: Sponsor and operational owner exist
+      severity: blocker
+    - id: CD-GATE-03
+      test: Exit or transfer path is explicit
+      severity: critical
+  pilot:
+    canonical_name: Defined Outcome Mission
+    primary_metrics: [outcome_delivery, time_to_value, quality, transfer_readiness]
+  proof:
+    evidence_status: Offer concept supplied by owner; detailed references and staffing model remain to formalize.
+    evidence_grade: U1
+  unknowns:
+    - Delivery capacity and specialist roster
+    - Reference outcomes
+    - Pricing and contracting model

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enterprise Demand Intelligence"
+  short_description: "Qualifie la demande réelle d’un compte"
+  default_prompt: "Use $enterprise-demand-intelligence to build an evidence-based, product-agnostic demand profile for this company."

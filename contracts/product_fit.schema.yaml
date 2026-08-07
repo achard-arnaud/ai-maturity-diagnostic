@@ -1,0 +1,45 @@
+schema_version: "0.2"
+title: Opportunity product-fit contract
+required:
+  - schema_version
+  - study_id
+  - enterprise_profile_version
+  - product_snapshots
+  - matches
+  - decision
+contract:
+  schema_version: string
+  study_id: string
+  enterprise_profile_version: string
+  product_snapshots: list
+  matches: list
+  recommended_offer_id: string_or_null
+  alternative_offer_ids: list
+  decision:
+    enum: [pursue, validate, nurture, disqualify, null]
+  confidence:
+    enum: [low, medium, high]
+  next_validation: list
+match:
+  offer_id: string
+  product_profile_version: string
+  problem_fit: integer_0_5
+  strategic_relevance: integer_0_5
+  urgency: integer_0_5
+  gap_fit: integer_0_5
+  technical_fit: integer_0_5
+  organizational_fit: integer_0_5
+  access_fit: integer_0_5
+  proofability: integer_0_5
+  evidence_confidence: integer_0_5
+  hard_gates: list
+  score: number_0_100_or_null
+  decision:
+    enum: [pursue, validate, nurture, disqualify]
+  invalidators: list
+rules:
+  - Any blocker or critical FAIL forbids PURSUE and VALIDATE.
+  - Any blocker or critical OPEN forbids PURSUE but may support VALIDATE.
+  - The top-level decision must equal the selected match decision.
+  - A stored score must equal the canonical weighted dimension score.
+  - Every positive match must reference account and product claims and state an invalidator.

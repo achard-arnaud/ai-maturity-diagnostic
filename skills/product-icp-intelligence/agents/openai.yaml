@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product ICP Intelligence"
+  short_description: "Formalise l’ICP et la vérité d’une offre"
+  default_prompt: "Use $product-icp-intelligence to formalize this offer’s ICP, hard gates, evidence, and unknowns."

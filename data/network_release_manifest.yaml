@@ -1,0 +1,30 @@
+schema_version: "0.3"
+generated_at: "2026-07-23"
+privacy_class: aggregate_non_personal_manifest
+source_batch:
+  batch_id: CONTACTS-20260723-A2E6BCF0
+  source_sha256: a2e6bcf004cd391bf95405f4db97e3cb136ece3bb1db833db3ec306d9c7f7586
+  effective_date: null
+  columns: [Name, Job title, Company, Country]
+counts:
+  rows: 1308
+  provisional_people: 1308
+  companies: 662
+  relationships: 1308
+  rejected_rows: 0
+icb_mapping_counts:
+  candidate: 272
+  pending: 362
+  out_of_scope: 28
+screening_tier_counts:
+  A: 60
+  B: 76
+  C: 213
+  D: 313
+study_queue_counts:
+  create: 136
+  hold: 526
+limitations:
+  - Raw input and person-level outputs are intentionally excluded from Git.
+  - The checksum permits an authorized maintainer to verify the private source without publishing it.
+  - Roles are undated and unverified; aggregate counts do not prove current employment, demand, or fit.

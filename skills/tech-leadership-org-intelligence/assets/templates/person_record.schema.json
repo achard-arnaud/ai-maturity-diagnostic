@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Tech leadership person record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "role",
+    "perimeter",
+    "experience",
+    "expertise",
+    "ai_communication",
+    "confidence",
+    "source_ids"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+    "name": {"type": "string", "minLength": 1},
+    "role": {"type": "string", "minLength": 1},
+    "legal_mandate": {"type": "string"},
+    "perimeter": {"type": "string", "minLength": 1},
+    "tenure": {"type": "string"},
+    "experience": {"type": "string"},
+    "expertise": {"type": "string"},
+    "ai_communication": {"type": "string"},
+    "confidence": {
+      "enum": [
+        "Confirmé",
+        "Probable",
+        "À confirmer",
+        "Confirmé légal",
+        "Confirmé sur le profil ; périmètre interne à confirmer"
+      ]
+    },
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^S[0-9]{2,}$"}
+    },
+    "last_verified": {"type": "string", "format": "date"}
+  }
+}

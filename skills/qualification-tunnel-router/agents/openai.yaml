@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qualification Tunnel Router"
+  short_description: "Route les étapes de qualification B2B"
+  default_prompt: "Use $qualification-tunnel-router to identify the current stage and route this qualification request."
