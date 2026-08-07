@@ -33,12 +33,17 @@ Run:
 python scripts/target_study_contacts.py <study_dir>
 ```
 
-## Public role-validation discovery
+## Role-validation routing
 
-When a role is stale or uncertain, the LinkedIn public-index lane may only create a validation candidate:
+When a role is stale or uncertain, follow this sequence:
+
+1. if the host exposes an **approved read-only LinkedIn connector** and the `LI-G*` gates permit it, use that provider first;
+2. if the provider is absent, refused, broken, rate-limited or inconclusive, run the public fallback:
 
 ```bash
 python scripts/advanced_research.py "<personne> <entreprise> <fonction>" --source linkedin --days 730 --limit 8 --pretty
 ```
 
-Do **not** set a relationship to `current`, merge identities, or mark outreach `ready` from this result alone. The result is not an authenticated LinkedIn observation; route it to an approved source or human validation under the existing `LI-POL-*` gates. Public discovery must not change company-product fit or infer buying authority.
+3. if the combined evidence still cannot establish role currency or identity, require an approved primary source or human validation.
+
+Do **not** set a relationship to `current`, merge identities, infer authority, or mark outreach `ready` from a public-index result alone. Public discovery must not change company-product fit. The fallback exists to avoid losing useful research when the plugin is unavailable, not to bypass `LI-POL-*`.
