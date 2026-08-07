@@ -10,9 +10,10 @@ from app.core import ControlPlaneError
 from app.nudging import UseCaseNudger
 
 
-def write_inventory(root: Path) -> None:
+def write_inventory(root: Path, *, with_feedback: bool = True) -> None:
     path = root / "studies/acme/05b_use_case_inventory.yaml"
     path.parent.mkdir(parents=True)
+    feedback = [{"statement": "Cycle time fell.", "outcome": "faster", "evidence_status": "observed", "source_claim_ids": ["F1"]}] if with_feedback else []
     path.write_text(
         yaml.safe_dump(
             {
@@ -33,7 +34,7 @@ def write_inventory(root: Path) -> None:
                         "repeatability": "high",
                         "variant_axes": ["country", "segment"],
                         "reusable_assets": ["prompt", "knowledge-base"],
-                        "feedback": [{"statement": "Cycle time fell.", "outcome": "faster", "evidence_status": "observed", "source_claim_ids": ["F1"]}],
+                        "feedback": feedback,
                         "confidence": "high",
                         "unknowns": [],
                     },
@@ -81,6 +82,13 @@ class NudgingTests(unittest.TestCase):
             result = UseCaseNudger(root).generate("acme-1", "upsell_dependency")
             self.assertEqual(1, len(result["nudges"]))
             self.assertEqual(["UC-B"], result["nudges"][0]["target_use_case_ids"])
+
+    def test_cross_sell_requires_recorded_company_feedback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_inventory(root, with_feedback=False)
+            result = UseCaseNudger(root).generate("acme-1", "cross_sell_package")
+            self.assertEqual([], result["nudges"])
 
     def test_sector_or_product_context_is_rejected_at_api_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
