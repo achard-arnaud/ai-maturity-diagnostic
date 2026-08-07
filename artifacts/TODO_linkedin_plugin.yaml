@@ -1,8 +1,22 @@
 version: 0.3-final
-updated_at: '2026-07-23'
+updated_at: '2026-08-07'
 area: linkedin_plugin
 status: deferred
-decision: Do not implement before commercial Gold Set and access/privacy gates.
+decision: Do not implement an authenticated LinkedIn connector before commercial Gold Set and access/privacy gates.
+public_index_lane:
+  status: allowed_bounded
+  runtime: scripts/advanced_research.py --source linkedin
+  classification: public_web_discovery_not_connector
+  purpose:
+    - discover publicly indexed LinkedIn posts and Pulse articles
+    - surface profile-index candidates for manual role validation
+  prohibitions:
+    - authenticated LinkedIn page access
+    - cookie extraction or browser automation
+    - treating indexed profile text as proof of a current role
+    - canonical identity resolution from an indexed result alone
+    - LinkedIn write actions
+  note: This lane does not satisfy or bypass LI-G0..LI-G6 and does not change connector runtime_status.
 items:
   - id: TODO-LI-001
     status: todo_later
