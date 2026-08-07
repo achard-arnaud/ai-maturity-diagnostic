@@ -1,0 +1,17 @@
+{
+  "document": {
+    "title": "Note business — décision structurée",
+    "language": "fr",
+    "template": "business-note",
+    "theme": "../../themes/nice-corporate.json",
+    "footer": "Exemple synthétique — faits, inférences et inconnues doivent rester séparés."
+  },
+  "pages": [
+    {"kicker":"1 · Décision", "title":"La réponse courte avant l'analyse", "subtitle":"Une note de cinq à sept pages conserve une colonne vertébrale inductive.", "decision":"Décider sous conditions explicites.", "sections":[{"title":"Executive answer", "layout":"two", "blocks":[{"title":"Verdict", "status":"inference", "body":"L'option étudiée est pertinente si deux prérequis sont confirmés."},{"title":"Décision demandée", "bullets":["Autoriser une validation bornée", "Nommer un owner", "Fixer les critères d'arrêt"]}]}], "footer":"La conclusion gouverne la profondeur des pages suivantes."},
+    {"kicker":"2 · Contexte", "title":"Problème, périmètre et baseline", "subtitle":"Définir la réalité avant de comparer les solutions.", "decision":"Le problème est matériel et mesurable.", "sections":[{"title":"Situation", "layout":"two", "blocks":[{"title":"Baseline", "metric":"12 j", "body":"Cycle actuel documenté."},{"title":"Contrainte", "body":"Qualité, conformité et charge opérationnelle doivent être mesurées ensemble."}]}], "footer":"Aucune valeur sans baseline comparable."},
+    {"kicker":"3 · Preuves", "title":"Ce qui est établi, plausible ou inconnu", "subtitle":"La force de la recommandation suit la force des preuves.", "decision":"Deux inconnues restent structurantes.", "sections":[{"title":"Registre", "layout":"three", "blocks":[{"title":"Établi", "status":"verified", "bullets":["Processus récurrent", "Owner identifié"]},{"title":"Plausible", "status":"inference", "bullets":["Gain de cycle", "Réduction de reprises"]},{"title":"Inconnu", "status":"unknown", "bullets":["Coût complet", "Effet à l'échelle"]}]}], "footer":"Ne jamais convertir une assertion en fait par mise en page."},
+    {"kicker":"4 · Options", "title":"Arbitrages et conditions de succès", "subtitle":"Comparer avec l'alternative humaine, processuelle ou technologique.", "decision":"Une preuve courte domine un déploiement large.", "sections":[{"title":"Choix", "layout":"two", "blocks":[{"title":"Pilote", "body":"Petit périmètre représentatif, baseline et gates définis avant lancement."},{"title":"Alternative", "body":"Simplifier le processus ou la règle lorsque la technologie n'est pas le goulot."}]}], "footer":"L'inaction et la solution non-IA font partie du benchmark."},
+    {"kicker":"5 · Action", "title":"Plan, responsabilités et stop criteria", "subtitle":"Finir sur une décision opérable plutôt qu'un résumé.", "decision":"Lancer quatre semaines, puis scale, iterate ou stop.", "sections":[{"title":"Plan", "layout":"one", "blocks":[{"title":"Gates de sortie", "table":{"headers":["Gate","Mesure","Décision"],"rows":[["Valeur","Gain net vs baseline","Scale"],["Qualité","Seuil minimum","Iterate"],["Risque","Écart critique","Stop"]]}}]}], "footer":"Owner, date et décision suivante sont obligatoires."
+    }
+  ]
+}

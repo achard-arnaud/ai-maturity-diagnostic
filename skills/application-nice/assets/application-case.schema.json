@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Application Nice case",
+  "type": "object",
+  "required": ["active_persona", "opportunity", "company_truth", "role_truth", "candidate_truth", "gates", "decision", "deliverables"],
+  "properties": {
+    "active_persona": {"enum": ["francois-pro", "sarah-pro"]},
+    "opportunity": {"type": "object", "required": ["company", "role", "stage"]},
+    "company_truth": {"type": "object"},
+    "role_truth": {"type": "object"},
+    "candidate_truth": {"type": "object"},
+    "gates": {"type": "array"},
+    "decision": {"enum": ["PURSUE", "VALIDATE", "NURTURE", "DECLINE"]},
+    "deliverables": {"type": "array"}
+  },
+  "additionalProperties": true
+}
