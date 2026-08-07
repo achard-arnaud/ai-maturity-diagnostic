@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: blocker.schema.yaml
+title: Workflow blocker with resolver action
+schema_version: "0.7"
+type: object
+required: [blocker_id, category, message, required_state, cta_label, postcondition, prepare_only_safe]
+properties:
+  blocker_id: {type: string, minLength: 1}
+  category: {enum: [demand, product, fit_gate, role, organization, use_case, value_chain, sector, nudging, security, human_review, runtime]}
+  severity: {enum: [blocker, critical, warning]}
+  message: {type: string, minLength: 1}
+  required_state: {type: string, minLength: 1}
+  owner_skill: {type: [string, 'null']}
+  human_action: {type: [string, 'null']}
+  cta_label: {type: string, minLength: 1}
+  cta_input: {type: [string, 'null']}
+  context_paths:
+    type: array
+    items: {type: string}
+  postcondition: {type: string, minLength: 1}
+  prepare_only_safe: {type: boolean}
+additionalProperties: true
