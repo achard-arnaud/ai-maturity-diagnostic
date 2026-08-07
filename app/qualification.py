@@ -67,6 +67,21 @@ class QualificationCockpit:
             return False, "Reach strategy has no ready first-wave stakeholder."
         return True, None
 
+    @staticmethod
+    def _contact_targets_consistent(manifest: dict[str, Any], fit: dict[str, Any], contacts: dict[str, Any]) -> bool:
+        if not contacts:
+            return False
+        study_id = manifest.get("study_id")
+        company_id = manifest.get("company_id")
+        offer_id = fit.get("recommended_offer_id")
+        if study_id and contacts.get("study_id") not in {None, study_id}:
+            return False
+        if company_id and contacts.get("company_id") != company_id:
+            return False
+        if offer_id and contacts.get("offer_id") != offer_id:
+            return False
+        return True
+
     def list_studies(self) -> list[dict[str, Any]]:
         studies_root = self.root / "studies"
         if not studies_root.is_dir():
@@ -90,7 +105,8 @@ class QualificationCockpit:
             contact_path = study_dir / "06b_contact_targets.yaml"
             contacts_doc = _read_yaml(contact_path) if contact_path.is_file() else {}
             contacts_artifact = contact_path.is_file()
-            contacts_ready = bool(contacts_doc.get("targets")) and fit_progression_allowed
+            contacts_consistent = self._contact_targets_consistent(manifest, fit, contacts_doc) if contacts_artifact else False
+            contacts_ready = bool(contacts_doc.get("targets")) and fit_progression_allowed and contacts_consistent
 
             reach_path = study_dir / "06c_reach_strategy.yaml"
             reach_doc = _read_yaml(reach_path) if reach_path.is_file() else {}
@@ -100,51 +116,65 @@ class QualificationCockpit:
             engagement_path = study_dir / "07_engagement_hypothesis.md"
             engagement_ready = self._engagement_ready(engagement_path)
             decision = fit.get("decision")
+            current_study_id = manifest.get("study_id") or study_dir.name
 
             demand_blocker = blocker(
-                category="demand", key=f"{manifest.get('study_id') or study_dir.name}:demand",
+                category="demand", key=f"{current_study_id}:demand",
                 message="Enterprise demand profile is missing or not sufficiently evidenced.",
                 required_state="Evidence claims + capability gaps with medium/high confidence",
                 owner_skill="enterprise-demand-intelligence", cta_label="Compléter la demande",
-                cta_input=f"Complète le profil de demande product-blind du study {manifest.get('study_id') or study_dir.name}.",
+                cta_input=f"Complète le profil de demande product-blind du study {current_study_id}.",
                 context_paths=[study_rel], postcondition="05_enterprise_demand_profile.yaml is decision-usable",
             )
             snapshot_blocker = blocker(
-                category="product", key=f"{manifest.get('study_id') or study_dir.name}:snapshot",
+                category="product", key=f"{current_study_id}:snapshot",
                 message="Matching requires at least one immutable product snapshot.", required_state="Versioned product snapshot in the study manifest",
                 owner_skill="product-icp-intelligence", cta_label="Préparer les snapshots",
                 cta_input="Valide la vérité produit nécessaire puis prépare les snapshots immuables sans ajouter de faits compte au catalogue.",
                 context_paths=["product_catalog/index.yaml", study_rel], postcondition="study manifest references immutable candidate-offer snapshots",
             )
             matching_blocker = blocker(
-                category="fit_gate", key=f"{manifest.get('study_id') or study_dir.name}:matching",
+                category="fit_gate", key=f"{current_study_id}:matching",
                 message=fit_violation or "No completed product-fit decision exists.", required_state="Valid product-fit matrix with hard gates applied before score",
                 owner_skill="opportunity-fit-matching", cta_label="Résoudre le matching",
-                cta_input=f"Exécute ou répare le matching du study {manifest.get('study_id') or study_dir.name}; les hard gates priment sur le score.",
+                cta_input=f"Exécute ou répare le matching du study {current_study_id}; les hard gates priment sur le score.",
                 context_paths=[study_rel], postcondition="06_product_fit_matrix.yaml contains a valid decision or explicit stop",
             )
+            if contacts_artifact and not contacts_consistent:
+                contacts_message = "Contact targets are stale or inconsistent with the current company/selected offer."
+                contacts_owner = "person-opportunity-targeting"
+                contacts_label = "Recalculer les contacts"
+                contacts_input = f"Régénère les contact targets du study {current_study_id} depuis le fit sélectionné actuel et les relations de la même entreprise."
+            elif contacts_artifact:
+                contacts_message = "No usable company contact targets exist after the positive fit."
+                contacts_owner = "tech-leadership-org-intelligence"
+                contacts_label = "Élargir le 2e tour"
+                contacts_input = f"Complète l'organigramme et les rôles pertinents du study {current_study_id} pour élargir le second tour de contacts."
+            else:
+                contacts_message = "Contact targeting has not been run after the positive fit."
+                contacts_owner = "person-opportunity-targeting"
+                contacts_label = "Cibler les contacts"
+                contacts_input = f"Cible les contacts du study {current_study_id} après le fit sans inférer l'autorité depuis le titre."
             contacts_blocker = blocker(
-                category="role", key=f"{manifest.get('study_id') or study_dir.name}:contacts",
-                message="No usable company contact targets exist after the positive fit." if contacts_artifact else "Contact targeting has not been run after the positive fit.",
-                required_state="At least one company-linked target with explicit role currency/validation needs",
-                owner_skill="person-opportunity-targeting" if not contacts_artifact else "tech-leadership-org-intelligence",
-                cta_label="Cibler les contacts" if not contacts_artifact else "Élargir le 2e tour",
-                cta_input=(f"Cible les contacts du study {manifest.get('study_id') or study_dir.name} après le fit sans inférer l'autorité depuis le titre." if not contacts_artifact else f"Complète l'organigramme et les rôles pertinents du study {manifest.get('study_id') or study_dir.name} pour élargir le second tour de contacts."),
-                context_paths=[study_rel], postcondition="06b_contact_targets.yaml contains evidence-bounded candidates",
+                category="role", key=f"{current_study_id}:contacts",
+                message=contacts_message,
+                required_state="At least one current-opportunity company-linked target with explicit role currency/validation needs",
+                owner_skill=contacts_owner, cta_label=contacts_label, cta_input=contacts_input,
+                context_paths=[study_rel], postcondition="06b_contact_targets.yaml is consistent with the current company and selected offer and contains evidence-bounded candidates",
             )
             reach_blocker = blocker(
-                category="organization", key=f"{manifest.get('study_id') or study_dir.name}:reach",
+                category="organization", key=f"{current_study_id}:reach",
                 message=reach_blocked_reason or "Reach strategy has not been built from contacts, ICP, org and newsflow.",
                 required_state="Reviewed first/second-wave stakeholder map with role-currentness and lane coverage",
                 owner_skill="iterative-reach-matchmaking", cta_label="Construire / résoudre le reach",
-                cta_input=f"Construis ou corrige la stratégie de reach du study {manifest.get('study_id') or study_dir.name} en first wave / second wave / validation-only.",
+                cta_input=f"Construis ou corrige la stratégie de reach du study {current_study_id} en first wave / second wave / validation-only.",
                 context_paths=[study_rel], postcondition="06c_reach_strategy.yaml has at least one ready stakeholder and no unresolved blocking reach gate",
             )
             pilot_blocker = blocker(
-                category="human_review", key=f"{manifest.get('study_id') or study_dir.name}:pilot",
+                category="human_review", key=f"{current_study_id}:pilot",
                 message="Engagement/pilot hypothesis is incomplete.", required_state="Falsifiable proof/discovery design with sponsor/terrain and measurable workflow",
                 owner_skill="engagement-pilot-design", cta_label="Designer la preuve / pilote",
-                cta_input=f"Transforme le fit et le reach validés du study {manifest.get('study_id') or study_dir.name} en preuve falsifiable.",
+                cta_input=f"Transforme le fit et le reach validés du study {current_study_id} en preuve falsifiable.",
                 context_paths=[study_rel], postcondition="07_engagement_hypothesis.md is complete and reviewable",
             )
 
@@ -156,7 +186,7 @@ class QualificationCockpit:
                 stage, next_skill, next_action, blocked_reason, current_blocker = "matching" if not fit_violation else "matching_invalid", "opportunity-fit-matching", "Run / repair matching", matching_blocker["message"], matching_blocker
             elif decision in {"nurture", "disqualify"}:
                 stage, next_skill, next_action, blocked_reason = "stopped", None, "Review decision", f"Current matching decision is {decision}."
-                current_blocker = human_review_blocker(key=f"{manifest.get('study_id') or study_dir.name}:stopped:{decision}", message=blocked_reason, required_state="Human decision to keep stopped, refresh evidence or restart qualification", cta_label="Revoir la décision", postcondition="decision remains stopped or qualification is explicitly reopened")
+                current_blocker = human_review_blocker(key=f"{current_study_id}:stopped:{decision}", message=blocked_reason, required_state="Human decision to keep stopped, refresh evidence or restart qualification", cta_label="Revoir la décision", postcondition="decision remains stopped or qualification is explicitly reopened")
             elif not contacts_ready:
                 stage, next_skill, next_action, blocked_reason, current_blocker = "contact_targeting", contacts_blocker["owner_skill"], contacts_blocker["cta_label"], contacts_blocker["message"], contacts_blocker
             elif not reach_artifact or not reach_ready:
@@ -170,18 +200,18 @@ class QualificationCockpit:
                 attach_resolution({"id": "demand", "skill": "enterprise-demand-intelligence", "status": "completed" if demand_ready else "blocked", "gate": "Evidence-backed product-blind demand"}, None if demand_ready else demand_blocker),
                 attach_resolution({"id": "snapshots", "skill": "product-icp-intelligence", "status": "completed" if snapshots_ready else ("blocked" if demand_ready else "locked"), "gate": "Immutable versioned product snapshots"}, None if snapshots_ready or not demand_ready else snapshot_blocker),
                 attach_resolution({"id": "matching", "skill": "opportunity-fit-matching", "status": "review" if fit_violation else ("completed" if matching_ready else ("blocked" if demand_ready and snapshots_ready else "locked")), "gate": "Hard gates before scoring"}, matching_blocker if (demand_ready and snapshots_ready and (not matching_ready or fit_violation)) else None),
-                attach_resolution({"id": "contacts", "skill": "person-opportunity-targeting", "status": "completed" if contacts_ready else ("blocked" if fit_progression_allowed else "locked"), "gate": "Positive valid fit before person targeting"}, contacts_blocker if fit_progression_allowed and not contacts_ready else None),
+                attach_resolution({"id": "contacts", "skill": "person-opportunity-targeting", "status": "completed" if contacts_ready else ("blocked" if fit_progression_allowed else "locked"), "gate": "Positive valid fit and current handoff before person targeting/reuse"}, contacts_blocker if fit_progression_allowed and not contacts_ready else None),
                 attach_resolution({"id": "reach", "skill": "iterative-reach-matchmaking", "status": "completed" if reach_ready else ("blocked" if contacts_ready else "locked"), "gate": "Stakeholder lanes, role currency, first/second wave"}, reach_blocker if contacts_ready and not reach_ready else None),
                 attach_resolution({"id": "pilot", "skill": "engagement-pilot-design", "status": "completed" if engagement_ready and reach_ready else ("blocked" if reach_ready else "locked"), "gate": "Reach + measurable workflow before proof design"}, pilot_blocker if reach_ready and not engagement_ready else None),
             ]
             rows.append({
-                "study_id": manifest.get("study_id") or study_dir.name,
+                "study_id": current_study_id,
                 "company": manifest.get("company") or profile.get("company") or study_dir.name,
                 "company_id": manifest.get("company_id"), "study_path": study_rel,
                 "offer_id": fit.get("recommended_offer_id"),
                 "stage": stage, "decision": decision, "fit_violation": fit_violation,
                 "next_skill": next_skill, "next_action": next_action, "blocked_reason": blocked_reason, "current_blocker": current_blocker,
-                "artifacts": {"demand_ready": demand_ready, "snapshots_ready": snapshots_ready, "matching_ready": matching_ready, "fit_progression_allowed": fit_progression_allowed, "contacts_artifact": contacts_artifact, "contacts_ready": contacts_ready, "reach_artifact": reach_artifact, "reach_ready": reach_ready, "engagement_ready": engagement_ready},
+                "artifacts": {"demand_ready": demand_ready, "snapshots_ready": snapshots_ready, "matching_ready": matching_ready, "fit_progression_allowed": fit_progression_allowed, "contacts_artifact": contacts_artifact, "contacts_consistent": contacts_consistent, "contacts_ready": contacts_ready, "reach_artifact": reach_artifact, "reach_ready": reach_ready, "engagement_ready": engagement_ready},
                 "steps": steps,
             })
         return rows
