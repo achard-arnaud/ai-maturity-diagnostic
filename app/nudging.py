@@ -129,7 +129,9 @@ class UseCaseNudger:
     def _cross_sell(self, use_cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
         groups: dict[str, list[dict[str, Any]]] = {}
         for use_case in use_cases:
-            key = str(use_case.get("outcome_family") or use_case.get("line_of_business") or "").strip()
+            # Cross-sell requires an explicit shared outcome family. A broad line-of-business
+            # match is not enough to manufacture a package narrative.
+            key = str(use_case.get("outcome_family") or "").strip()
             if not key:
                 continue
             groups.setdefault(key, []).append(use_case)
@@ -142,18 +144,22 @@ class UseCaseNudger:
             if len(ids) < 2:
                 continue
             feedback = self._feedback(active)
+            # The user-facing story must be levered by this company's recorded experience.
+            # No feedback means no cross-sell hypothesis yet.
+            if not feedback:
+                continue
             nudges.append(
                 {
                     "nudge_id": f"NUD-{uuid.uuid4().hex[:10]}",
                     "mode": "cross_sell_package",
                     "source_use_case_ids": ids,
                     "target_use_case_ids": ids,
-                    "rationale": f"Package already-catalogued company use cases around shared operating theme '{group}'.",
+                    "rationale": f"Package already-catalogued company use cases around shared outcome family '{group}', anchored in recorded company feedback.",
                     "evidence_feedback": feedback,
                     "prerequisites": ["Keep the package narrative anchored in the company’s recorded use-case evidence and feedback."],
-                    "unknowns": [] if feedback else ["No recorded company feedback is available yet for this package."],
-                    "falsifier": "Reject the package if the use cases do not share a real operating narrative for this company.",
-                    "confidence": "medium" if feedback else "low",
+                    "unknowns": [],
+                    "falsifier": "Reject the package if the recorded experience does not support a coherent combined value story for this company.",
+                    "confidence": "medium",
                     "status": "hypothesis",
                 }
             )
