@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enterprise ICB Mapping"
+  short_description: "Classe les entreprises dans la taxonomie ICB"
+  default_prompt: "Use $enterprise-icb-mapping to assign evidence-graded ICB candidates to these company records."

@@ -1,0 +1,46 @@
+version: 0.3-final
+updated_at: '2026-07-23'
+area: linkedin_plugin
+status: deferred
+decision: Do not implement before commercial Gold Set and access/privacy gates.
+items:
+  - id: TODO-LI-001
+    status: todo_later
+    gate: LI-G0
+    task: Quantify stale-role/contact-data failure rate on the first real commercial Gold Set.
+  - id: TODO-LI-002
+    status: todo_later
+    gate: LI-G1
+    task: Inventory actual LinkedIn and Sales Navigator licences, developer programs and workspace plugin/app permissions.
+  - id: TODO-LI-003
+    status: todo_later
+    gate: LI-G2
+    task: Approve purpose, lawful basis, retention, deletion, allowed fields and combining restrictions.
+  - id: TODO-LI-004
+    status: todo_later
+    gate: LI-G2
+    task: Finalize source hierarchy across contact file, CRM, manual validation and LinkedIn.
+  - id: TODO-LI-005
+    status: todo_later
+    gate: LI-G3
+    task: Finalize connector capability matrix and bind conceptual tools to officially permitted endpoints.
+  - id: TODO-LI-006
+    status: todo_later
+    gate: LI-G3
+    task: Build read-only plugin/app or MCP proof of concept only if official access is available.
+  - id: TODO-LI-007
+    status: todo_later
+    gate: LI-G4
+    task: Run controlled evaluation on at least 30 known contacts.
+  - id: TODO-LI-008
+    status: todo_later
+    gate: LI-G4
+    task: Measure incremental lift on TARGET / VALIDATE_ROLE / SECONDARY decisions.
+  - id: TODO-LI-009
+    status: todo_later
+    gate: LI-G5
+    task: Decide production read-only rollout or remain human-assisted.
+  - id: TODO-LI-010
+    status: todo_later
+    gate: LI-G6
+    task: Create separate PRD/ADR before any messaging, connection, comment, post or other write action.

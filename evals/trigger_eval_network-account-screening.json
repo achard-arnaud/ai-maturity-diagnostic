@@ -1,0 +1,22 @@
+[
+  {"query":"Priorise les entreprises de mon réseau à rechercher en premier.","should_trigger":true},
+  {"query":"Calcule l’ICP théorique réseau à partir de la couverture de contacts.","should_trigger":true},
+  {"query":"Classe les comptes en tiers A, B, C et D sans parler de produits.","should_trigger":true},
+  {"query":"Quels comptes ont la meilleure couverture sponsor, terrain et veto ?","should_trigger":true},
+  {"query":"Construis la file de recherche à partir des fonctions présentes dans le fichier.","should_trigger":true},
+  {"query":"Évalue l’attractivité de recherche du réseau, pas la demande commerciale.","should_trigger":true},
+  {"query":"Score l’accès aux dirigeants et la proximité IA/data des entreprises.","should_trigger":true},
+  {"query":"Identifie les comptes où plusieurs familles de décisionnaires sont accessibles.","should_trigger":true},
+  {"query":"Recalcule le screening réseau après l’ajout de contacts.","should_trigger":true},
+  {"query":"Sépare priorité de recherche et product fit.","should_trigger":true},
+  {"query":"Importe et déduplique le fichier de contacts.","should_trigger":false},
+  {"query":"Quel est le secteur ICB de cette entreprise ?","should_trigger":false},
+  {"query":"Fais le diagnostic public complet du compte.","should_trigger":false},
+  {"query":"Quelle offre faut-il proposer ?","should_trigger":false},
+  {"query":"Sélectionne une personne après le match Astraforge.","should_trigger":false},
+  {"query":"Conçois le Roadmap Acceleration Proof.","should_trigger":false},
+  {"query":"Crée les dossiers d’étude maintenant.","should_trigger":false},
+  {"query":"Consolide les signaux de trois banques.","should_trigger":false},
+  {"query":"Ajoute une nouvelle offre au catalogue.","should_trigger":false},
+  {"query":"Rédige un angle de contact personnalisé.","should_trigger":false}
+]

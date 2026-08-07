@@ -1,0 +1,20 @@
+schema_version: "0.3"
+title: Canonical network company contract
+required: [company_id, canonical_name, aliases, countries, relationship_ids, status, last_updated, stale_after_months]
+contract:
+  company_id: string
+  canonical_name: string
+  normalized_name: string
+  aliases: list
+  countries: list
+  relationship_ids: list
+  linked_person_ids: list
+  contact_count: integer
+  icb_mapping: mapping_or_null
+  network_screening: mapping_or_null
+  study: mapping_or_null
+  source_batch_ids: list
+  status:
+    enum: [seeded, active, refresh_due]
+  last_updated: date
+  stale_after_months: integer

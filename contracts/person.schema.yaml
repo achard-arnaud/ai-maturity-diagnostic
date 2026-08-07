@@ -1,0 +1,23 @@
+schema_version: "0.3"
+title: Canonical private person contract
+required: [person_id, display_name, seed_company_id, identity_key_basis, relationship_ids, role_hypotheses, status, last_updated, stale_after_months]
+contract:
+  person_id: string
+  display_name: string
+  normalized_name: string
+  seed_company_id: string
+  identity_key_basis:
+    enum: [normalized_name_and_company]
+  relationship_ids: list
+  role_hypotheses: list
+  identity_confidence:
+    enum: [low, medium, high]
+  requires_identity_validation: boolean
+  source_batch_ids: list
+  status:
+    enum: [seeded, active, refresh_due]
+  last_updated: date
+  stale_after_months: integer
+rules:
+  - The seed identity is provisional and employer-scoped until explicit identity resolution.
+  - External profile URLs may become aliases in the identity layer but never replace internal person_id values directly.

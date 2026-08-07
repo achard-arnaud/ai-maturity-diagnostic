@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Newsflow Sourcing Intelligence"
+  short_description: "Analyse momentum IA et choix de sourcing"
+  default_prompt: "Use $ai-newsflow-sourcing-intelligence to distinguish AI execution from narrative and assess make-buy-partner choices."

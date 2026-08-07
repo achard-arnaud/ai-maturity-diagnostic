@@ -1,0 +1,94 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "0.3"
+title: LinkedInConnectorEvidence
+type: object
+required:
+  - connector_evidence_id
+  - request_id
+  - provider
+  - capability
+  - acquisition_method
+  - authorization_program
+  - retrieved_at
+  - canonical_entity_candidate
+  - match_status
+  - confidence
+  - limitations
+  - policy
+properties:
+  connector_evidence_id:
+    type: string
+    minLength: 1
+  request_id:
+    type: string
+    minLength: 1
+  provider:
+    const: linkedin
+  capability:
+    type: string
+    minLength: 1
+  acquisition_method:
+    type: string
+    minLength: 1
+  authorization_program:
+    type: [string, "null"]
+  auth_subject:
+    type: [string, "null"]
+  retrieved_at:
+    type: string
+    format: date-time
+  source_object_id:
+    type: [string, "null"]
+  canonical_entity_candidate:
+    type: object
+    required: [entity_type, entity_id]
+    properties:
+      entity_type:
+        enum: [person, company, relationship]
+      entity_id:
+        type: string
+    additionalProperties: false
+  observed_fields:
+    type: object
+    additionalProperties: true
+  match_status:
+    enum: [match, mismatch, unknown, unavailable]
+  confidence:
+    type: number
+    minimum: 0
+    maximum: 1
+  limitations:
+    type: array
+    items:
+      type: string
+  policy:
+    type: object
+    required: [storage_permission, action_class, policy_version]
+    properties:
+      storage_permission:
+        enum: [unknown, transient_only, allowed_with_retention, user_owned]
+      action_class:
+        const: read
+      retention_until:
+        type: [string, "null"]
+        format: date-time
+      policy_version:
+        type: string
+        minLength: 1
+    additionalProperties: false
+    allOf:
+      - if:
+          properties:
+            storage_permission:
+              const: allowed_with_retention
+          required: [storage_permission]
+        then:
+          required: [retention_until]
+          properties:
+            retention_until:
+              type: string
+              format: date-time
+additionalProperties: false
+x-rules:
+  - Connector evidence never overwrites canonical entities directly.
+  - Unknown storage permission prohibits provider-payload persistence.

@@ -1,0 +1,131 @@
+schema_version: "0.2"
+offer:
+  offer_id: OFFER-AF-01
+  name: Astraforge
+  profile_version: "2026-07-23.v0.2"
+  owner: null
+  status: reconstructed
+  category: agentic-execution-roadmap-acceleration
+  positioning:
+    category_statement: Controlled agentic execution and orchestration for measurable flow acceleration.
+    one_liner: Transform individual AI-assisted development into controlled team workflows that accelerate a measurable delivery bottleneck.
+    commercial_entry_point: Roadmap or engineering flow acceleration
+  problem:
+    canonical: AI usage is already present, but delivery bottlenecks remain collective and cannot be solved by isolated copilots alone.
+    anti_problem:
+      - Need is only a general chatbot or individual coding assistant
+      - Simple deterministic automation is already covered by workflow tooling
+      - No measurable workflow bottleneck
+      - No owner, access path, or baseline
+  outcomes:
+    primary: [cycle_time_reduction, throughput_improvement, quality_or_rework_improvement]
+    secondary: [documentation_freshness, remediation_acceleration, reusable_agentic_assets, traceability_and_control]
+  icp:
+    maturity:
+      must_have:
+        - Existing or recent use of AI copilots or agents
+        - Instrumentable engineering or operational workflow
+      positive_signals:
+        - Roadmap under delivery pressure
+        - Backlog or recurring quality and remediation bottleneck
+        - API-accessible SDLC or tooling
+        - Platform or engineering owner
+        - Need to move from local experiments to shared execution
+    personas:
+      economic_sponsors: [CTO, CPO, CIO, Head_of_Engineering]
+      terrain_owners: [Engineering_Manager, Platform_Lead, Product_Engineering_Lead]
+      veto_players: [CISO, Architecture, Data_or_Security_Governance]
+    anti_icp:
+      - AI exploration only, with no operational use case
+      - Expectation of full autonomy without human control
+      - Security model blocks any controlled execution environment
+      - No access to required systems or no pilotable team
+  market_context:
+    epistemic_status: hypothesis
+    evidence_grade: W1
+    category_reality_2026:
+      - Isolated execution is available in major coding-agent platforms
+      - Parallel and asynchronous agent work is increasingly native
+      - Skills and custom-agent orchestration are becoming platform primitives
+    implication: Sandboxing, multi-agent execution, and skills cannot be treated as sufficient standalone differentiation.
+  differentiation_hypotheses:
+    - Enterprise workflow orchestration across internal systems, rules, and human gates
+    - Reusable organizational harnesses and artifacts rather than session-local context
+    - Governed execution with explicit control points and traceability
+    - Flow-level value measurement rather than isolated task productivity
+  differentiation_to_validate:
+    - Depth of integration versus coding-agent and orchestration platforms
+    - Portability across models and agent runtimes
+    - Operational governance and audit advantages
+    - Reusable workflow assets that materially improve time to value
+  capabilities:
+    - id: AF-CAP-01
+      name: Controlled agent runtime
+      epistemic_status: inference
+      evidence_grade: P2
+    - id: AF-CAP-02
+      name: Workflow and job orchestration
+      epistemic_status: inference
+      evidence_grade: P2
+    - id: AF-CAP-03
+      name: Tool and enterprise integration
+      epistemic_status: inference
+      evidence_grade: P2
+    - id: AF-CAP-04
+      name: Shared artifacts and working context
+      epistemic_status: inference
+      evidence_grade: P2
+    - id: AF-CAP-05
+      name: Human control gates
+      epistemic_status: inference
+      evidence_grade: P2
+    - id: AF-CAP-06
+      name: Observability and execution trace
+      epistemic_status: inference
+      evidence_grade: P2
+  use_case_families:
+    - roadmap_acceleration
+    - code_review_and_quality_remediation
+    - bug_triage_and_incident_preparation
+    - documentation_and_knowledge_renewal
+    - legacy_modernization
+    - operational_signal_to_action
+  hard_gates:
+    - id: AF-GATE-01
+      test: Measurable workflow problem exists
+      severity: blocker
+    - id: AF-GATE-02
+      test: Terrain owner is identified
+      severity: blocker
+    - id: AF-GATE-03
+      test: Required code, data, and tool access is feasible
+      severity: blocker
+    - id: AF-GATE-04
+      test: Security can approve an isolated controlled execution pattern
+      severity: blocker
+    - id: AF-GATE-05
+      test: Baseline can be measured or reconstructed
+      severity: critical
+    - id: AF-GATE-06
+      test: Pilot can produce a decision within an agreed horizon
+      severity: critical
+  pilot:
+    canonical_name: Roadmap Acceleration Proof
+    hypothesis: A controlled agentic workflow can improve a real delivery flow without increasing quality, supervision, or security costs disproportionately.
+    primary_metrics: [cycle_time, throughput, accepted_quality, rework]
+    guardrail_metrics: [human_supervision_effort, incidents, model_and_infra_cost, escalation_rate]
+  delivery:
+    recommended_sequence: [qualification, readiness, pilot, scale]
+    commercial_model: unknown
+    pricing: unknown
+  proof:
+    source_registry: ../evidence/product/astraforge/source_registry.yaml
+    evidence_status: Partial primary evidence and owner guidance; external commercial proof is incomplete.
+    evidence_grade: P2
+  unknowns:
+    - Official architecture and deployed sandbox technology
+    - Deployment models and supported environments
+    - Security certifications and formal compliance claims
+    - Commercial pricing and contracting model
+    - Validated external customer references
+    - Quantified reference-case baseline and attributable results

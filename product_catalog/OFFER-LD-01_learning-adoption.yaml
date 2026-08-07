@@ -1,0 +1,46 @@
+schema_version: "0.2"
+offer:
+  offer_id: OFFER-LD-01
+  name: Learning, Adoption & Train-the-Trainer
+  profile_version: "2026-07-23.v0.2"
+  owner: null
+  status: draft
+  category: human-capability-and-adoption
+  positioning:
+    one_liner: Build the human capabilities, judgment, and internal relay network required to adopt AI safely and sustainably.
+    commercial_entry_point: Capability or adoption gap
+  problem:
+    canonical: The organization has tools or ambition but lacks the skills, judgment, managerial practices, or internal transmission mechanisms required for adoption.
+    anti_problem:
+      - The primary blocker is a technical runtime or product-delivery capacity.
+  outcomes:
+    primary: [role_based_capability, adoption, trainer_network, safer_ai_practice]
+  icp:
+    personas:
+      economic_sponsors: [CHRO, CLO, Transformation_Lead, Business_Leader]
+      terrain_owners: [L_and_D, Academy, Change_Lead, AI_Champions]
+      veto_players: [HR_Compliance, Legal, AI_Governance]
+    positive_signals:
+      - AI rollout with uneven adoption
+      - Inconsistent role practices or judgment
+      - Need for an internal train-the-trainer network
+    anti_icp:
+      - No sponsor for behavior or capability change
+      - The binding constraint is engineering execution rather than adoption
+  hard_gates:
+    - id: LD-GATE-01
+      test: Target population and capability gap are identifiable
+      severity: blocker
+    - id: LD-GATE-02
+      test: Sponsor can allocate participants and managers
+      severity: critical
+  pilot:
+    canonical_name: Role-based Capability Sprint
+    primary_metrics: [capability_progression, adoption, task_quality, trainer_readiness]
+  proof:
+    evidence_status: Offer concept supplied by owner; detailed references and commercial proof remain to formalize.
+    evidence_grade: U1
+  unknowns:
+    - Validated role curricula and assessment instruments
+    - External references and attributable outcomes
+    - Pricing and delivery capacity

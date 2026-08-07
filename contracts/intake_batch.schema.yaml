@@ -1,0 +1,22 @@
+schema_version: "0.3"
+title: Private contact intake batch contract
+required: [batch_id, source, imported_at, privacy, input_schema, counts, outputs]
+contract:
+  batch_id: string
+  source:
+    original_path: string
+    raw_snapshot_path: string
+    sha256: string
+    effective_date: date_or_null
+  imported_at: datetime
+  privacy:
+    classification: confidential_contact_data
+    publishable: false
+  input_schema: list
+  counts:
+    rows: integer
+    people: integer
+    companies: integer
+    relationships: integer
+    rejected_rows: integer
+  outputs: mapping

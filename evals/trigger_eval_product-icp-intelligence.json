@@ -1,0 +1,22 @@
+[
+  {"query":"Formalise l’ICP, l’anti-ICP, les hard gates et les preuves d’Astraforge.","should_trigger":true},
+  {"query":"Audite notre offre formation et précise qui ne devrait pas l’acheter.","should_trigger":true},
+  {"query":"Mets à jour la fiche produit PMBOK avec ses résultats et prérequis.","should_trigger":true},
+  {"query":"Sépare les capacités prouvées, plausibles et inconnues de notre produit.","should_trigger":true},
+  {"query":"Définis le problème canonique et l’anti-problème de l’offre de régie IA.","should_trigger":true},
+  {"query":"Versionne le profil Astraforge après de nouvelles preuves produit.","should_trigger":true},
+  {"query":"Quels signaux ICP doivent exister avant de considérer cette offre ?","should_trigger":true},
+  {"query":"Revois le positionnement, les outcomes et les alternatives de l’offre sans regarder de compte précis.","should_trigger":true},
+  {"query":"Formalise les sponsors, terrain owners et veto players typiques de ce produit.","should_trigger":true},
+  {"query":"Crée le contrat produit de cette nouvelle offre avec ses hard gates et sa preuve canonique.","should_trigger":true},
+  {"query":"Recherche la stratégie IA d’ISAGRI.","should_trigger":false},
+  {"query":"Parmi les quatre offres, laquelle matche le profil de ce compte ?","should_trigger":false},
+  {"query":"Rédige le pilote commercial du compte déjà matché.","should_trigger":false},
+  {"query":"Qui est le CTO de LDLC ?","should_trigger":false},
+  {"query":"Analyse le newsflow récent de cette cible.","should_trigger":false},
+  {"query":"Applique le score de fit à Astraforge et ce prospect.","should_trigger":false},
+  {"query":"Prépare l’agenda de discovery avec le sponsor du compte.","should_trigger":false},
+  {"query":"Calcule le niveau de confiance de la demande de cette entreprise.","should_trigger":false},
+  {"query":"Route cette étude vers la prochaine étape.","should_trigger":false},
+  {"query":"Construis le buying committee du prospect.","should_trigger":false}
+]

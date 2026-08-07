@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sector Intelligence Consolidation"
+  short_description: "Consolide les diagnostics par secteur ICB"
+  default_prompt: "Use $sector-intelligence-consolidation to consolidate at least three current company studies in one ICB sector."

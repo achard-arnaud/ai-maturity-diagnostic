@@ -1,0 +1,35 @@
+schema_version: "0.2"
+title: Qualification claim contract
+required:
+  - claim_id
+  - scope
+  - owner_skill
+  - statement
+  - epistemic_status
+  - evidence_grade
+  - confidence
+  - source_ids
+  - contradictions
+  - requires_validation
+claim:
+  claim_id: string
+  scope:
+    enum: [product, account, matching, engagement]
+  owner_skill: string
+  statement: string
+  epistemic_status:
+    enum: [fact, inference, hypothesis, unknown]
+  evidence_grade:
+    enum: [P1, P2, U1, W1, N0]
+  confidence:
+    enum: [low, medium, high]
+  source_ids: list
+  observed_at: date_or_null
+  valid_until: date_or_null
+  contradictions: list
+  requires_validation: boolean
+rules:
+  - A claim may only be strengthened by its owner skill or explicit human validation.
+  - Matching claims must reference at least one account claim and one product claim.
+  - Product claims cannot cite account-study sources unless the account is a formal reference case.
+  - Account claims cannot cite the product catalog as evidence of demand.

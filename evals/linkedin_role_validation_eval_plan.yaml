@@ -1,0 +1,24 @@
+version: '0.1'
+status: deferred
+minimum_sample_size: 30
+sample_strata:
+  - current_role_correct
+  - role_changed
+  - company_changed
+  - same_name_collision
+  - parent_subsidiary_ambiguity
+  - multiple_concurrent_roles
+  - former_employee
+  - insufficient_visibility
+metrics:
+  - identity_precision
+  - current_role_precision
+  - employer_mismatch_precision
+  - false_merge_rate
+  - stale_data_detection_rate
+  - human_correction_rate
+  - manual_validation_required_rate
+  - connector_unavailable_rate
+  - targeting_decision_change_rate
+  - incremental_target_precision
+acceptance_principle: No production rollout based on API connectivity alone; require measurable improvement in contact targeting quality.

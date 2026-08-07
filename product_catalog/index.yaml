@@ -1,0 +1,19 @@
+schema_version: "0.2"
+catalog_version: "2026-07-23.v0.2"
+offers:
+  - offer_id: OFFER-LD-01
+    file: OFFER-LD-01_learning-adoption.yaml
+    name: Learning, Adoption & Train-the-Trainer
+    status: draft
+  - offer_id: OFFER-PM-01
+    file: OFFER-PM-01_project-governance.yaml
+    name: Project & Portfolio Governance Product
+    status: draft
+  - offer_id: OFFER-AF-01
+    file: OFFER-AF-01_astraforge.yaml
+    name: Astraforge
+    status: reconstructed
+  - offer_id: OFFER-CD-01
+    file: OFFER-CD-01_ai-consulting-delivery.yaml
+    name: AI Consulting & Delivery
+    status: draft

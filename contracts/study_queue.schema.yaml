@@ -1,0 +1,12 @@
+schema_version: "0.3"
+title: Company research and refresh queue contract
+required: [generated_at, stale_after_months, entries]
+entry:
+  company_id: string
+  company_name: string
+  screening_tier: string
+  action:
+    enum: [create, refresh, ready, hold]
+  reason: string
+  current_study_path: string_or_null
+  last_updated: date_or_null

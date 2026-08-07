@@ -1,0 +1,22 @@
+[
+  {"query":"Analyse la stratégie, l’organisation, les recrutements et le newsflow d’ISAGRI pour identifier ses gaps.","should_trigger":true},
+  {"query":"Qui décide réellement de l’IA chez ce prospect et quels signaux montrent une urgence ?","should_trigger":true},
+  {"query":"Évalue la maturité IA publique de LDLC sans recommander de produit.","should_trigger":true},
+  {"query":"Croise le plan stratégique et les recrutements récents de cette entreprise.","should_trigger":true},
+  {"query":"Construis la cartographie des sponsors, owners et veto players à partir de sources publiques.","should_trigger":true},
+  {"query":"Quels capability gaps peut-on réellement soutenir par les preuves publiques de ce compte ?","should_trigger":true},
+  {"query":"Analyse le newsflow des six derniers mois et distingue signal de communication et priorité financée.","should_trigger":true},
+  {"query":"Prépare une control tower de qualification de compte sans parler de nos offres.","should_trigger":true},
+  {"query":"Reconstitue la posture build/buy/partner de ce groupe à partir de ses annonces et recrutements.","should_trigger":true},
+  {"query":"Fais le profil de demande de ce prospect avant toute recommandation commerciale.","should_trigger":true},
+  {"query":"Quel est l’ICP idéal d’Astraforge ?","should_trigger":false},
+  {"query":"Score Astraforge contre cette entreprise à partir des profils existants.","should_trigger":false},
+  {"query":"Dessine un pilote de 8 semaines pour le compte déjà qualifié.","should_trigger":false},
+  {"query":"Mets à jour le catalogue des quatre offres.","should_trigger":false},
+  {"query":"Quels sont les hard gates de l’offre PMBOK ?","should_trigger":false},
+  {"query":"Compare les quatre offres avec le profil entreprise déjà produit.","should_trigger":false},
+  {"query":"Rédige l’angle de contact à partir du match validé.","should_trigger":false},
+  {"query":"Formalise les capacités prouvées d’Astraforge à partir de son transcript.","should_trigger":false},
+  {"query":"Construis les critères stop/scale du pilote.","should_trigger":false},
+  {"query":"Quelle offre doit-on poursuivre sur ce compte ?","should_trigger":false}
+]

@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.ssh/
+.venv/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+
+# Private network data generated from contact files.
+data/private/
+
+# Private person-level study outputs and recoverable local backups.
+studies/**/06b_contact_targets.yaml
+studies/**/07b_reach_hypotheses.yaml
+studies/*.bak-*/

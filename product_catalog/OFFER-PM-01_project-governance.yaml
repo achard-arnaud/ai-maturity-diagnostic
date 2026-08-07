@@ -1,0 +1,45 @@
+schema_version: "0.2"
+offer:
+  offer_id: OFFER-PM-01
+  name: Project & Portfolio Governance Product
+  profile_version: "2026-07-23.v0.2"
+  owner: null
+  status: draft
+  category: project-portfolio-governance
+  positioning:
+    one_liner: Structure intake, governance, dependencies, risk, and benefit tracking for complex project portfolios using a PMBOK-aligned operating model.
+    commercial_entry_point: Delivery governance or portfolio control gap
+  problem:
+    canonical: Projects exist but prioritization, accountability, dependency management, risk control, or benefits realization are structurally weak.
+    anti_problem:
+      - The primary blocker is engineering execution rather than project governance.
+  outcomes:
+    primary: [portfolio_visibility, prioritization_quality, risk_control, benefits_realization]
+  icp:
+    personas:
+      economic_sponsors: [COO, CIO, Transformation_Lead, PMO_Director]
+      terrain_owners: [PMO, Program_Director, Portfolio_Manager]
+      veto_players: [Finance, Risk, Business_Unit_Leaders]
+    positive_signals:
+      - Portfolio complexity
+      - Missed milestones or recurring dependency issues
+      - Unclear prioritization or benefit ownership
+    anti_icp:
+      - A single delivery team has an execution bottleneck but no portfolio-control problem
+  hard_gates:
+    - id: PM-GATE-01
+      test: Governance problem is material and recurrent
+      severity: blocker
+    - id: PM-GATE-02
+      test: Portfolio or project data can be accessed
+      severity: critical
+  pilot:
+    canonical_name: Portfolio Control Pilot
+    primary_metrics: [decision_latency, risk_visibility, milestone_predictability, benefit_traceability]
+  proof:
+    evidence_status: Offer concept supplied by owner; product scope and proof remain to formalize.
+    evidence_grade: U1
+  unknowns:
+    - Exact product boundary versus advisory delivery
+    - Validated external references
+    - Pricing and implementation model

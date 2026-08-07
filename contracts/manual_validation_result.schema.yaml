@@ -1,0 +1,26 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "0.3"
+title: ManualValidationResult
+type: object
+required:
+  - validation_id
+  - request_id
+  - result
+  - validated_at
+  - validator_type
+properties:
+  validation_id: {type: string}
+  request_id: {type: string}
+  result:
+    enum: [match, mismatch, unknown, unavailable]
+  validated_at:
+    type: string
+    format: date-time
+  validator_type:
+    const: human
+  source_refs:
+    type: array
+    items: {type: string}
+  notes:
+    type: string
+additionalProperties: false

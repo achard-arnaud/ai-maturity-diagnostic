@@ -1,0 +1,18 @@
+schema_version: "0.2"
+study_id: ""
+profile_version: "0.2"
+company: ""
+evidence_claims: []
+strategic_priorities: []
+capability_gaps: []
+buying_context:
+  sponsors: []
+  terrain_owners: []
+  veto_players: []
+  timing_signals: []
+constraints:
+  technical: []
+  organizational: []
+  regulatory: []
+unknowns: []
+confidence: low

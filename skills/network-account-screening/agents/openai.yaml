@@ -1,0 +1,4 @@
+interface:
+  display_name: "Network Account Screening"
+  short_description: "Priorise les comptes du réseau sans matcher"
+  default_prompt: "Use $network-account-screening to rank network companies for research without inferring product fit."

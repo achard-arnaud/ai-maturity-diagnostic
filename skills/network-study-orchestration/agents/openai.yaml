@@ -1,0 +1,4 @@
+interface:
+  display_name: "Network Study Orchestration"
+  short_description: "Crée et rafraîchit la file des études"
+  default_prompt: "Use $network-study-orchestration to queue or initialize company studies from the network registry."

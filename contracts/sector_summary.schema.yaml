@@ -1,0 +1,30 @@
+schema_version: "0.3"
+title: ICB sector consolidation contract
+required: [sector_code, sector_name, taxonomy_version, generated_at, threshold, classification_basis, publication_status, covered_accounts, evidence_pool, synthesis]
+contract:
+  sector_code: string
+  sector_name: string
+  taxonomy_version: string
+  generated_at: datetime
+  threshold: integer
+  classification_basis:
+    enum: [candidate, validated, mixed]
+  publication_status:
+    enum: [exploratory, decision_grade]
+  covered_accounts: list
+  evidence_pool: mapping
+  synthesis:
+    recurring_priorities: list
+    recurring_capability_gaps: list
+    maturity_patterns: list
+    training_and_upskilling_themes: list
+    use_cases_by_line_of_business: list
+    contradictions: list
+    unknowns: list
+  confidence:
+    enum: [low, medium, high]
+rules:
+  - Require at least three current, sufficiently complete account studies in the same ICB sector.
+  - Candidate or mixed mappings may produce only an exploratory low-confidence rollup.
+  - Decision-grade publication requires validated ICB mappings for every covered account.
+  - Preserve account claim IDs and never convert repeated hypotheses into sector facts.
