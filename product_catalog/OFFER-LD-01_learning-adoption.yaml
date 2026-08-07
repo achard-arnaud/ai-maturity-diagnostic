@@ -2,45 +2,123 @@ schema_version: "0.2"
 offer:
   offer_id: OFFER-LD-01
   name: Learning, Adoption & Train-the-Trainer
-  profile_version: "2026-07-23.v0.2"
-  owner: null
+  profile_version: "2026-08-07.v0.3"
+  owner: "Sarah Achard / Isabelle Roche"
   status: draft
   category: human-capability-and-adoption
   positioning:
-    one_liner: Build the human capabilities, judgment, and internal relay network required to adopt AI safely and sustainably.
-    commercial_entry_point: Capability or adoption gap
+    one_liner: Build the role-based AI capabilities, judgment, safe practices, internal transmission and human conditions required for useful and sustainable adoption.
+    commercial_entry_point: A diagnosed capability, adoption or work-transformation gap for which learning or human support is an appropriate response.
+  principles:
+    - Training is a possible consequence of diagnosis, not the default answer to every weakness.
+    - Individual capability, human posture, organizational maturity, risk and commercial qualification remain separate constructs.
+    - More frequent or more automated AI use is not automatically a higher level of capability.
+    - Critical safety, compliance or governance gaps are not solved by training alone.
   problem:
-    canonical: The organization has tools or ambition but lacks the skills, judgment, managerial practices, or internal transmission mechanisms required for adoption.
+    canonical: The organization has AI tools, projects or ambition but lacks the role-specific capability, judgment, managerial practices, internal transmission mechanisms or human support required to turn adoption into safe and durable working practices.
     anti_problem:
-      - The primary blocker is a technical runtime or product-delivery capacity.
+      - The binding constraint is primarily technical runtime, architecture or engineering delivery.
+      - The issue is a missing policy, decision right, tool or process that should be fixed directly rather than reframed as a training need.
+      - A critical compliance or security control is absent and requires remediation before ordinary learning recommendations.
   outcomes:
-    primary: [role_based_capability, adoption, trainer_network, safer_ai_practice]
+    primary:
+      - role_based_capability
+      - sound_use_case_framing
+      - judgment_and_verification
+      - safer_ai_practice
+      - supervision_and_delegation
+      - adoption
+      - trainer_network
+      - learning_and_practice_evolution
+    measurement_notes:
+      - Prefer observable work decisions, practices and outputs to self-declared enthusiasm or jargon knowledge.
+      - Keep capability progression separate from human posture and commercial lead temperature.
+  offer_architecture:
+    diagnostic_inputs:
+      - actual AI use and work situations
+      - framing and choice of when to use or not use AI
+      - interaction quality
+      - judgment, verification and discernment
+      - safety, confidentiality and responsible practice
+      - supervision and delegation
+      - learning, experimentation and practice evolution
+      - human and cognitive conditions of adoption
+    response_families:
+      - role_based_training
+      - practical_workshop
+      - manager_enablement
+      - HR_and_L_and_D_enablement
+      - executive_and_COMEX_learning
+      - governance_risk_and_responsible_AI_learning
+      - train_the_trainer
+      - community_of_practice
+      - human_change_support
+      - deeper_diagnostic_or_non_training_referral
+    non_training_referrals:
+      - policy_or_rule
+      - tool_or_access
+      - process_redesign
+      - role_or_responsibility_clarification
+      - management_action
+      - governance_or_control_remediation
+      - technical_delivery
   icp:
     personas:
-      economic_sponsors: [CHRO, CLO, Transformation_Lead, Business_Leader]
-      terrain_owners: [L_and_D, Academy, Change_Lead, AI_Champions]
-      veto_players: [HR_Compliance, Legal, AI_Governance]
+      economic_sponsors: [CHRO, CLO, Transformation_Lead, Business_Leader, Executive_Sponsor]
+      terrain_owners: [L_and_D, Academy, Change_Lead, AI_Champions, Managers]
+      veto_players: [HR_Compliance, Legal, AI_Governance, Security]
     positive_signals:
-      - AI rollout with uneven adoption
-      - Inconsistent role practices or judgment
-      - Need for an internal train-the-trainer network
+      - AI rollout with uneven adoption or inconsistent role practices
+      - Difficulty distinguishing good AI use cases from tool-first experimentation
+      - Weak judgment, verification, supervision or safe-use practices
+      - Need for role-based learning rather than generic prompting training
+      - Need for an internal train-the-trainer or community relay network
+      - Managers, HR or L&D need a framework for changes in work, capability and learning
     anti_icp:
-      - No sponsor for behavior or capability change
+      - No sponsor for behavior, capability or work-practice change
       - The binding constraint is engineering execution rather than adoption
+      - The organization wants a maturity badge or marketing score rather than observable capability development
+  capabilities:
+    owner_defined:
+      - capability-gap framing and learning orientation
+      - role-based curriculum architecture
+      - judgment and verification development
+      - safe and responsible AI practice
+      - supervision and delegation practices
+      - manager, HR and L&D enablement
+      - train-the-trainer and internal relay design
+      - human-change and adoption support
+    evidence_status: Owner-supplied design scope; detailed curriculum validation and attributable external outcomes remain to formalize.
   hard_gates:
     - id: LD-GATE-01
-      test: Target population and capability gap are identifiable
+      test: Target population, work situations and capability gap are identifiable
       severity: blocker
     - id: LD-GATE-02
-      test: Sponsor can allocate participants and managers
+      test: Sponsor can allocate participants, managers or internal relays to the intervention
       severity: critical
+    - id: LD-GATE-03
+      test: Learning or human support is an appropriate response rather than a substitute for a missing rule, process, tool or technical fix
+      severity: blocker
+    - id: LD-GATE-04
+      test: Critical safety, compliance or governance remediation is handled separately and takes priority where required
+      severity: blocker
   pilot:
-    canonical_name: Role-based Capability Sprint
-    primary_metrics: [capability_progression, adoption, task_quality, trainer_readiness]
+    canonical_name: Role-based Capability & Adoption Sprint
+    primary_metrics:
+      - capability_progression
+      - task_quality
+      - judgment_and_verification_quality
+      - safe_practice
+      - adoption
+      - trainer_readiness
+    proof_pattern: Compare observable decisions or work outputs before and after the intervention and record where non-training remediation was required.
   proof:
-    evidence_status: Offer concept supplied by owner; detailed references and commercial proof remain to formalize.
+    evidence_status: Owner-supplied Sarah/Isabelle design corpus reviewed for scope. Commercial proof, external references, pricing, delivery capacity and validated assessment instruments remain unproven in this repository.
     evidence_grade: U1
   unknowns:
+    - Owner-approved commercial packaging and final division of delivery responsibilities
     - Validated role curricula and assessment instruments
-    - External references and attributable outcomes
+    - Attributable external references and measured outcomes
     - Pricing and delivery capacity
+    - Formal validation protocol for capability measures
+    - International localization and country-specific legal modules
