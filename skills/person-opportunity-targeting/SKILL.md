@@ -1,13 +1,13 @@
 ---
 name: person-opportunity-targeting
-description: Select and rank private network contacts only after an existing company-product fit decision. Use when a qualified study has a recommended offer and the user wants likely sponsor, terrain-owner, technical-sponsor, or veto contacts, persona overlap, validation priorities, or a person-company-product target list. Do not research the company, change product fit, or infer buying authority from a title.
+description: Select and rank private network contacts only after an existing company-product fit decision. Use when a qualified study has a recommended offer and the user wants initial sponsor, terrain-owner, technical-sponsor, veto or persona-overlap contact candidates, validation priorities, or a person-company-product target list. Do not research the company, change product fit, infer buying authority from a title, or decide the final first/second outreach wave.
 ---
 
 # Person Opportunity Targeting
 
 ## Responsibility
 
-Overlay private person records on an existing account × product match. Do not recompute the match.
+Overlay private person records on an existing account × product match and create the **candidate contact layer**. Do not recompute the match and do not own the final stakeholder/reach sequence.
 
 Read [persona-targeting-policy.md](references/persona-targeting-policy.md) before ranking contacts.
 
@@ -22,16 +22,29 @@ Read [persona-targeting-policy.md](references/persona-targeting-policy.md) befor
 
 1. Load the selected offer personas from its snapshot.
 2. Load only relationships for the linked company.
-3. Compare generic role hypotheses and title patterns with sponsor, terrain, and veto personas.
+3. Compare generic role hypotheses and title patterns with sponsor, terrain, technical and veto personas.
 4. Rank targets while preserving current-role uncertainty and require a dated observation for a `current` role.
 5. State validation required before outreach.
 6. Write `06b_contact_targets.yaml` using opaque person IDs.
+7. Hand the candidates to `iterative-reach-matchmaking` for promoter/prescriber/user/technical/veto role hypotheses, first/second wave sequencing, newsflow timing and coverage-gap resolution.
 
 Run:
 
 ```bash
 python scripts/target_study_contacts.py <study_dir>
 ```
+
+## Iterative second-round handoff
+
+This skill may return zero or incomplete target coverage. That is not a reason to infer authority or weaken the fit gates.
+
+Downstream `iterative-reach-matchmaking` can identify a missing stakeholder lane and route back to:
+
+- this skill for current-role validation or newly available private contacts;
+- `tech-leadership-org-intelligence` for organization/decision-system expansion;
+- human validation when provider/public evidence remains insufficient.
+
+The first/second-wave decision belongs downstream because it can combine target evidence with org context, UC relevance and current newsflow. This skill stays focused on person-company-product eligibility and rank.
 
 ## Role-validation routing
 
