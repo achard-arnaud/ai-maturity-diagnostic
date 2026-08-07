@@ -90,7 +90,25 @@ def main() -> int:
     errors: list[str] = []
     run("package validator", [sys.executable, "scripts/validate_package.py"], errors)
     run("LinkedIn deferred-design validator", [sys.executable, "scripts/validate_linkedin_design.py"], errors)
-    run("unit and integration tests", [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], errors)
+    run(
+        "unit and integration tests with app coverage",
+        [
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "--branch",
+            "--source=app",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-v",
+        ],
+        errors,
+    )
+    run("app line coverage >=80%", [sys.executable, "-m", "coverage", "report", "--show-missing", "--fail-under=80"], errors)
     parse_structured_files(errors)
     markdown_links(errors)
     privacy_and_portability(errors)
