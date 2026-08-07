@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: contracts/uc_graph.schema.yaml
+title: Derived use-case graph
+schema_version: "0.7"
+type: object
+required: [schema_version, scope, nodes, edges]
+properties:
+  schema_version: {const: "0.7"}
+  scope:
+    type: object
+    required: [kind]
+    properties:
+      kind: {enum: [company, sector]}
+      study_id: {type: [string, 'null']}
+      company: {type: [string, 'null']}
+      sector_code: {type: [string, 'null']}
+  nodes:
+    type: array
+    items:
+      type: object
+      required: [node_id, node_type, label, provenance]
+      properties:
+        node_id: {type: string}
+        node_type: {enum: [use_case, workflow_hypothesis]}
+        label: {type: string}
+        company: {type: [string, 'null']}
+        study_id: {type: [string, 'null']}
+        use_case_id: {type: [string, 'null']}
+        provenance: {type: object}
+  edges:
+    type: array
+    items:
+      type: object
+      required: [edge_id, source, target, relation, scope, basis, confidence, evidence_refs]
+      properties:
+        edge_id: {type: string}
+        source: {type: string}
+        target: {type: string}
+        relation:
+          enum: [depends_on, enables, variant_of, shares_asset, same_outcome, value_chain_neighbor, causal_neighbor, similar_pattern]
+        scope: {enum: [same_company, cross_company, sector]}
+        basis: {type: string}
+        confidence: {enum: [low, medium, high]}
+        evidence_refs:
+          type: array
+          items: {type: string}
+        demand_proof: {const: false}
+additionalProperties: true
