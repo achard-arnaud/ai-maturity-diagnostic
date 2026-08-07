@@ -1,11 +1,13 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import sys
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "advanced_research.py"
 SPEC = spec_from_file_location("advanced_research", MODULE_PATH)
 assert SPEC and SPEC.loader
 research = module_from_spec(SPEC)
+sys.modules[SPEC.name] = research
 SPEC.loader.exec_module(research)
 
 
