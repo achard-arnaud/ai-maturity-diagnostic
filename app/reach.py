@@ -55,9 +55,17 @@ class ReachMatchmaker:
         return sorted(result)
 
     @staticmethod
-    def _wave(target: dict[str, Any], stakeholder_roles: list[str]) -> str:
+    def _target_score(target: dict[str, Any]) -> int:
+        try:
+            score = int(target.get("target_score") or 0)
+        except (TypeError, ValueError):
+            return 0
+        return max(0, min(score, 100))
+
+    @classmethod
+    def _wave(cls, target: dict[str, Any], stakeholder_roles: list[str]) -> str:
         current = target.get("current_role_status") == "current"
-        score = int(target.get("target_score") or 0)
+        score = cls._target_score(target)
         if not current:
             return "validation_only"
         if score >= 60 and any(role in stakeholder_roles for role in ("promoter", "terrain_user", "prescriber", "technical_sponsor")):
