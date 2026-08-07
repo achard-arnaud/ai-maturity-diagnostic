@@ -1,0 +1,22 @@
+[
+  {"query":"Productivise ce use case existant en variantes moins coûteuses à délivrer.","should_trigger":true},
+  {"query":"À partir de l’inventaire de use cases de cette entreprise, propose les dépendances éligibles à un upsell.","should_trigger":true},
+  {"query":"Quels packages cross-sell peut-on raconter uniquement avec les cas d’usage déjà recensés et leur feedback ?","should_trigger":true},
+  {"query":"Génère les trois familles de nudges depuis 05b_use_case_inventory.yaml.","should_trigger":true},
+  {"query":"Suggère une mise en série du use case RFP sans inventer de nouveau besoin.","should_trigger":true},
+  {"query":"Propose uniquement les use cases explicitement activés par UC-A.","should_trigger":true},
+  {"query":"Construis un package de deux use cases existants en t’appuyant sur le retour d’expérience de l’entreprise.","should_trigger":true},
+  {"query":"Trouve des pistes de baisse du coût marginal pour les use cases répétables déjà en production.","should_trigger":true},
+  {"query":"Crée des hypothèses d’upsell avec falsifier à partir des edges depends_on et enables.","should_trigger":true},
+  {"query":"Fais un preview de nudging sans ICB, sans fit produit et sans benchmark secteur.","should_trigger":true},
+  {"query":"Quel est le secteur ICB de cette entreprise ?","should_trigger":false},
+  {"query":"Quels produits de notre catalogue correspondent à ce compte ?","should_trigger":false},
+  {"query":"Recense les use cases présents dans les preuves de l’entreprise.","should_trigger":false},
+  {"query":"Lance le benchmark de trois entreprises du secteur bancaire.","should_trigger":false},
+  {"query":"Calcule le fit entre le profil de demande et Astraforge.","should_trigger":false},
+  {"query":"Importe un fichier de contacts.","should_trigger":false},
+  {"query":"Rafraîchis la stratégie IA publique de cette entreprise.","should_trigger":false},
+  {"query":"Choisis les personnes à contacter après le fit.","should_trigger":false},
+  {"query":"Mets à jour l’offre Learning & Adoption.","should_trigger":false},
+  {"query":"Initialise une nouvelle étude entreprise.","should_trigger":false}
+]
