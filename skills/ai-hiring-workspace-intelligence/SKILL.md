@@ -24,7 +24,7 @@ python scripts/advanced_research.py "<entreprise> AI data careers hiring" --sour
 python scripts/advanced_research.py "<entreprise> AI hiring data platform" --source linkedin --days 365 --limit 12 --pretty
 ```
 
-La voie LinkedIn est un index public, pas un connecteur. Un snippet de profil ou de post ne prouve ni rôle courant, ni rattachement, ni capacité acquise. Conserver `metadata.acquisition_method` et les `limitations` avec le corpus.
+Pour LinkedIn, tenter d’abord un connecteur read-only officiel uniquement s’il est disponible dans le host et autorisé par les gates `LI-G*`. En cas d’absence, refus, panne ou couverture insuffisante, utiliser immédiatement le runner public comme fallback. Le public index et un éventuel provider servent à la découverte ; un snippet de profil ou de post ne prouve ni rôle courant, ni rattachement, ni capacité acquise. Conserver le provider/mode d’acquisition et ses limitations avec le corpus.
 
 ## Extraire les signaux
 
