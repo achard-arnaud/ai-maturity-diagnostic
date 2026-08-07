@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Maturity Diagnostic — Control Plane</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">AI Maturity Diagnostic · v0.5</p>
+      <h1>Control plane</h1>
+      <p class="lede">Orchestration visible des skills, offres, catalogues et backlog. Les artefacts métier restent les sources de vérité.</p>
+    </div>
+    <div id="health" class="status">Chargement…</div>
+  </header>
+
+  <nav aria-label="Sections">
+    <button data-target="skills" class="active">Skills</button>
+    <button data-target="offers">Offres</button>
+    <button data-target="harvest">Harvest catalogues</button>
+    <button data-target="backlog">Backlog</button>
+  </nav>
+
+  <main>
+    <section id="skills" class="panel active">
+      <div class="section-head">
+        <div><h2>Appels unitaires des skills</h2><p>Chaque CTA appelle une seule skill et produit une enveloppe d'exécution traçable.</p></div>
+        <input id="skillFilter" type="search" placeholder="Filtrer les skills">
+      </div>
+      <div id="skillGrid" class="grid"></div>
+      <aside id="invokePanel" class="invoke hidden">
+        <div class="section-head">
+          <div><p class="eyebrow">Invocation unitaire</p><h3 id="invokeTitle"></h3></div>
+          <button id="closeInvoke" class="ghost">Fermer</button>
+        </div>
+        <label>Instruction / input
+          <textarea id="invokeInput" rows="7" placeholder="Décris l'action attendue pour cette skill…"></textarea>
+        </label>
+        <label>Context paths optionnels, un par ligne
+          <textarea id="contextPaths" rows="3" placeholder="studies/acme/05_enterprise_demand_profile.yaml"></textarea>
+        </label>
+        <button id="runSkill" class="primary">Appeler cette skill</button>
+        <pre id="invokeResult"></pre>
+      </aside>
+    </section>
+
+    <section id="offers" class="panel">
+      <div class="section-head"><div><h2>Rayonnage des offres</h2><p>Le catalogue canonique est lu depuis <code>product_catalog/</code>.</p></div></div>
+      <div id="shelfGrid" class="grid"></div>
+    </section>
+
+    <section id="harvest" class="panel">
+      <h2>Catalogues d'entreprise et rayonnage</h2>
+      <p>Tout harvesting crée uniquement des candidats sous <code>data/private/catalog_harvest/</code>. Aucune promotion automatique vers le catalogue canonique.</p>
+
+      <h3>Découverte publique</h3>
+      <form id="discoverForm" class="form">
+        <label>Entreprise / fournisseur<input id="discoverCompany" required placeholder="Nom de l'entreprise"></label>
+        <label>Rayon<select id="discoverShelf" required></select></label>
+        <label>Domaine officiel (optionnel)<input id="discoverDomain" placeholder="example.com"></label>
+        <button class="primary" type="submit">Découvrir et stager les sources publiques</button>
+      </form>
+      <pre id="discoverResult"></pre>
+
+      <h3>Import d'un catalogue déjà récolté</h3>
+      <form id="harvestForm" class="form">
+        <label>Entreprise / fournisseur<input id="company" required placeholder="Nom de l'entreprise"></label>
+        <label>Rayon<select id="shelf" required></select></label>
+        <label>Items JSON
+          <textarea id="catalogItems" rows="12" required>[{"name":"Offre exemple","source_url":"https://example.com","raw_claims":["Claim à vérifier"]}]</textarea>
+        </label>
+        <button class="primary" type="submit">Stager le catalogue</button>
+      </form>
+      <pre id="harvestResult"></pre>
+    </section>
+
+    <section id="backlog" class="panel">
+      <h2>Reste à faire</h2>
+      <p>Vue consolidée des TODO v0.3 et v0.5 ; aucun gate historique n'est fermé silencieusement.</p>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Priorité</th><th>État</th><th>Zone</th><th>Tâche</th></tr></thead><tbody id="backlogRows"></tbody></table></div>
+    </section>
+  </main>
+
+  <footer>Interface d'orchestration uniquement — aucune logique de vérité métier n'est dupliquée dans le frontend.</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

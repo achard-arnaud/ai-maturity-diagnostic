@@ -124,3 +124,28 @@ L’intégration LinkedIn reste documentée comme un capteur read-only optionnel
 - [Revue de readiness v0.3](docs/06_release_readiness_v0_3.md)
 - [Catalogue des skills](skills/README.md)
 - [Contrat global d’agent](AGENTS.md)
+
+## Control plane v0.5 — exploitation locale
+
+La couche v0.5 ajoute une interface locale d’orchestration sans modifier les responsabilités, handoffs ou invariants ci-dessus. Elle est documentée dans le [PRD v0.5](docs/PRD_productized_diagnostic_v0_5.md), l’[ADR de frontière web](docs/ADR-004-web-control-plane-boundary.md) et la [boucle SDLC](docs/SDLC_superpowers_loop.md).
+
+Démarrage local :
+
+```bash
+python -m app.server
+# http://127.0.0.1:8080
+```
+
+L’interface permet de :
+
+- découvrir les packages `skills/*/SKILL.md` et préparer un appel unitaire explicitement versionné ;
+- consulter les offres canoniques par rayonnage sans dupliquer leur vérité produit ;
+- découvrir des sources publiques de catalogues d’entreprise ou importer un catalogue déjà récolté ;
+- conserver tout résultat de harvesting comme claim non revu sous `data/private/catalog_harvest/` ;
+- consulter les TODO historiques et les gates de productisation v0.5.
+
+Sans variable `AI_DIAGNOSTIC_SKILL_EXECUTOR`, un CTA de skill retourne une enveloppe `prepared` et ne prétend pas qu’un agent a exécuté la demande. La sélection d’un runtime de production reste un gate explicite.
+
+Le harvesting ne promeut jamais automatiquement un claim vers `product_catalog/` : toute canonicalisation passe par `product-icp-intelligence` puis une revue humaine.
+
+Le serveur écoute uniquement `127.0.0.1` par défaut. Aucune exposition réseau ou production n’est considérée prête tant que l’authentification, l’autorisation, l’audit et le hardening documentés dans `artifacts/TODO_productization_v0_5.yaml` ne sont pas fermés et vérifiés.

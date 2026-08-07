@@ -1,5 +1,5 @@
 schema_version: "0.2"
-catalog_version: "2026-07-23.v0.2"
+catalog_version: "2026-08-07.v0.3"
 offers:
   - offer_id: OFFER-LD-01
     file: OFFER-LD-01_learning-adoption.yaml
