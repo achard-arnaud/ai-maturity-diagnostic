@@ -15,6 +15,18 @@ description: Reconstituer la trajectoire corporate d’une entreprise avant d’
 
 Lire [references/corporate-research-method.md](references/corporate-research-method.md) pour coder les signaux et arbitrer le rôle de l’IA.
 
+## Acquisition avancée
+
+Le backend sert à découvrir et trianguler, pas à remplacer les sources corporate primaires :
+
+```bash
+python scripts/advanced_research.py "<entreprise> annual results strategy AI transformation" --source web --days 730 --limit 15 --pretty
+python scripts/advanced_research.py "<CEO/CIO> <entreprise> AI strategy" --source youtube --days 365 --limit 8 --enrich --pretty
+python scripts/advanced_research.py "<entreprise> AI strategy" --source twitter --days 180 --limit 10 --pretty
+```
+
+`perplexity` peut accélérer la découverte si une clé first-party existe déjà, mais chaque conclusion structurante doit revenir à un rapport, une présentation investisseurs, une prise de parole datée ou une autre preuve primaire.
+
 ## Construire la chaîne d’implication
 
 Pour chaque priorité, rendre explicite :

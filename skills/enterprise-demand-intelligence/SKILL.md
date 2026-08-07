@@ -16,7 +16,25 @@ Reconstruct what the company is trying to accomplish, who owns it, what capabili
 - available public or internal sources;
 - prior study artifacts when continuing a study.
 
-Read [source-policy.md](references/source-policy.md) before external research. Read [research-lenses.md](references/research-lenses.md) before planning the four evidence passes.
+Read [source-policy.md](references/source-policy.md) before external research. Read [research-lenses.md](references/research-lenses.md) before planning the four evidence passes. Read `docs/advanced_research_backends.md` before using the shared acquisition runner.
+
+## Advanced acquisition routing
+
+Use `scripts/advanced_research.py` only to acquire normalized public evidence for the appropriate pass. Do not treat its `relevance` field as enterprise-demand confidence or commercial priority.
+
+- strategy: `web`, then primary corporate/IR sources;
+- organization: `web`, `linkedin` public index, `youtube`, `github` where relevant;
+- capability/hiring: `web`, `linkedin` public index, `github`;
+- newsflow: `web`, `twitter`, `youtube`, `hackernews`, `github`, `arxiv` as relevant;
+- `perplexity`: optional discovery lane only when a first-party key already exists.
+
+Example:
+
+```bash
+python scripts/advanced_research.py "<entreprise> artificial intelligence strategy" --source web --days 365 --limit 15 --pretty
+```
+
+Every acquired result must keep its acquisition method and limitations when it enters the evidence ledger. LinkedIn indexed material cannot validate a live role or canonical identity.
 
 ## Procedure
 
