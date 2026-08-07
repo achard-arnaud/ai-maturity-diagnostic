@@ -34,7 +34,7 @@ python scripts/advanced_research.py "<personne> <entreprise> AI" --source youtub
 python scripts/advanced_research.py "<entreprise> AI data engineering" --source github --days 365 --limit 10 --pretty
 ```
 
-LinkedIn est ici une voie d’index public : un résultat peut identifier une piste à vérifier, jamais établir seul un rôle courant, une identité canonique ou une relation hiérarchique. Les règles `LI-POL-*` restent supérieures à cette méthode de découverte.
+Pour LinkedIn, appliquer une hiérarchie **provider-first / public-fallback** : si le host dispose d’un connecteur LinkedIn read-only officiellement approuvé et que les gates `LI-G*` sont ouverts, l’utiliser d’abord. En cas d’absence, refus, panne ou couverture insuffisante, exécuter le runner public ci-dessus (`/pulse/`, `/posts/`, `/in/`). Le fallback peut identifier une piste à vérifier mais jamais établir seul un rôle courant, une identité canonique ou une relation hiérarchique. Les règles `LI-POL-*` restent supérieures aux deux tiers.
 
 ## Tenir le registre de preuve
 
