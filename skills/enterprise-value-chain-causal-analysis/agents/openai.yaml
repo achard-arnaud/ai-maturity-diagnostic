@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enterprise Value Chain & Causal Analysis"
+  short_description: "Décompose un use case via Porter et Ishikawa"
+  default_prompt: "Use $enterprise-value-chain-causal-analysis to map the target company use case across its evidence-bounded operating value chain and causal constraints without loading product truth."

@@ -19,21 +19,26 @@ ROOT = Path(__file__).resolve().parents[1]
 TUNNEL_SKILLS = {
     "qualification-tunnel-router",
     "enterprise-demand-intelligence",
+    "enterprise-use-case-intelligence",
+    "enterprise-value-chain-causal-analysis",
     "product-icp-intelligence",
     "opportunity-fit-matching",
+    "person-opportunity-targeting",
+    "iterative-reach-matchmaking",
     "engagement-pilot-design",
+    "use-case-nudging",
 }
 NETWORK_SKILLS = {
     "network-contact-intake",
     "enterprise-icb-mapping",
     "network-account-screening",
     "network-study-orchestration",
-    "person-opportunity-targeting",
     "sector-intelligence-consolidation",
 }
 EXPECTED_SKILLS = TUNNEL_SKILLS | NETWORK_SKILLS
 REQUIRED_CONTRACTS = {
     "account_screening.schema.yaml",
+    "blocker.schema.yaml",
     "claim.schema.yaml",
     "company.schema.yaml",
     "contact_opportunity.schema.yaml",
@@ -43,16 +48,21 @@ REQUIRED_CONTRACTS = {
     "intake_batch.schema.yaml",
     "linkedin_connector_evidence.schema.yaml",
     "manual_validation_result.schema.yaml",
+    "nudge_recommendation.schema.yaml",
     "person.schema.yaml",
     "private_integration_audit.schema.yaml",
     "product_fit.schema.yaml",
     "product_profile.schema.yaml",
     "reach_hypothesis.schema.yaml",
+    "reach_strategy.schema.yaml",
     "relationship.schema.yaml",
     "relationship_observation.schema.yaml",
     "role_validation_request.schema.yaml",
     "sector_summary.schema.yaml",
     "study_queue.schema.yaml",
+    "uc_graph.schema.yaml",
+    "use_case_inventory.schema.yaml",
+    "value_chain_causal.schema.yaml",
 }
 REQUIRED_TEMPLATES = {
     "study_manifest.yaml",
@@ -81,6 +91,7 @@ REQUIRED_RELEASE_RESOURCES = {
     "data/network_release_manifest.yaml",
     "scripts/check_release.py",
 }
+ALLOWED_CONTRACT_VERSIONS = {"0.2", "0.3", "0.5", "0.6", "0.7"}
 
 
 def load_yaml(path: Path) -> Any:
@@ -173,8 +184,8 @@ def check_contracts_and_templates(errors: list[str]) -> None:
             continue
         try:
             data = load_yaml(path)
-            if str(data.get("schema_version")) not in {"0.2", "0.3"}:
-                errors.append(f"{name}: schema_version must be 0.2 or 0.3")
+            if str(data.get("schema_version")) not in ALLOWED_CONTRACT_VERSIONS:
+                errors.append(f"{name}: unsupported schema_version {data.get('schema_version')}")
             if not data.get("required"):
                 errors.append(f"{name}: required list is missing")
         except Exception as exc:

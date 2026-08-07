@@ -12,9 +12,13 @@ from urllib.parse import urlparse
 
 from app.catalog import CatalogHarvester
 from app.core import ControlPlaneError, RepoControlPlane
+from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
+from app.reach import ReachMatchmaker
+from app.uc_graph import UseCaseGraph
+from app.value_chain import ValueChainCatalog
 from app.workflows import WorkflowPlanner
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,11 +28,16 @@ HARVESTER = CatalogHarvester(ROOT)
 DEMAND = DemandCatalog(ROOT)
 QUALIFICATION = QualificationCockpit(ROOT)
 NUDGING = UseCaseNudger(ROOT)
+VALUE_CHAIN = ValueChainCatalog(ROOT)
+UC_GRAPH = UseCaseGraph(ROOT)
+REACH = ReachMatchmaker(ROOT)
+FOLLOWUP = FollowUpDashboard(ROOT)
+HERITAGE = UseCaseHeritage(ROOT)
 WORKFLOWS = WorkflowPlanner(ROOT)
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "AIMaturityDiagnostic/0.6"
+    server_version = "AIMaturityDiagnostic/0.7"
 
     def _json(self, status: int, payload: Any) -> None:
         raw = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
@@ -78,7 +87,7 @@ class Handler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 {
                     "status": "ok",
-                    "version": "0.6",
+                    "version": "0.7",
                     "executor_configured": bool(os.getenv("AI_DIAGNOSTIC_SKILL_EXECUTOR", "").strip()),
                 },
             )
@@ -92,6 +101,9 @@ class Handler(BaseHTTPRequestHandler):
             "/api/demand/inventories": DEMAND.inventories,
             "/api/qualification": QUALIFICATION.list_studies,
             "/api/nudging/inventories": NUDGING.list_inventories,
+            "/api/value-chain": VALUE_CHAIN.list_studies,
+            "/api/reach": REACH.list_ready,
+            "/api/follow-up": FOLLOWUP.items,
         }
         if path in routes:
             self._json(HTTPStatus.OK, routes[path]())
@@ -126,6 +138,30 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/api/nudging/generate":
                 self._json(HTTPStatus.OK, NUDGING.generate_request(payload))
+                return
+            if path == "/api/value-chain/study":
+                self._json(HTTPStatus.OK, VALUE_CHAIN.study(str(payload.get("study_id") or "").strip()))
+                return
+            if path == "/api/value-chain/prepare":
+                self._json(HTTPStatus.OK, VALUE_CHAIN.prepare_request(payload))
+                return
+            if path == "/api/uc-graph/company":
+                self._json(HTTPStatus.OK, UC_GRAPH.company(str(payload.get("study_id") or "").strip()))
+                return
+            if path == "/api/uc-graph/sector":
+                self._json(HTTPStatus.OK, UC_GRAPH.sector(str(payload.get("sector_code") or "").strip()))
+                return
+            if path == "/api/heritage/company":
+                self._json(HTTPStatus.OK, HERITAGE.company(str(payload.get("study_id") or "").strip()))
+                return
+            if path == "/api/heritage/sector":
+                self._json(HTTPStatus.OK, HERITAGE.sector(str(payload.get("sector_code") or "").strip()))
+                return
+            if path == "/api/reach/preview":
+                self._json(HTTPStatus.OK, REACH.preview(str(payload.get("study_id") or "").strip()))
+                return
+            if path == "/api/reach/prepare":
+                self._json(HTTPStatus.OK, REACH.prepare_request(payload))
                 return
             if path == "/api/workflows/plan":
                 self._json(HTTPStatus.OK, WORKFLOWS.plan(payload))

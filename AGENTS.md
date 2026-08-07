@@ -165,3 +165,55 @@ Pour une note d’organisation tech, suivre `skills/tech-leadership-org-intellig
 - Les données privées ne contaminent ni les preuves publiques ni la vérité produit.
 - Les intégrations optionnelles peuvent être retirées sans casser le cœur.
 - Les validateurs pertinents et les tests d’intégration passent avant livraison.
+
+## Extension opératoire v0.7 — use cases, chaîne de valeur, reach et blockers
+
+Cette extension complète les handoffs précédents sans modifier leurs frontières de preuve.
+
+### Chaîne d’artefacts v0.7
+
+```text
+network / ICB / study queue
+-> 05_enterprise_demand_profile.yaml
+-> 05b_use_case_inventory.yaml
+-> 05c_value_chain_causal_map.yaml
+-> immutable product snapshots
+-> 06_product_fit_matrix.yaml
+-> 06b_contact_targets.yaml
+-> 06c_reach_strategy.yaml
+-> 07_engagement_hypothesis.md
+-> sector rollup / nudging only through their own boundaries
+```
+
+Règles additionnelles :
+
+- `05b` reste la vérité canonique des use cases observés d’une entreprise ;
+- `05c` applique Porter/Ishikawa comme **lentilles analytiques**, jamais comme nouvelles sources ;
+- un workflow adjacent issu de `05c` reste `hypothesis` tant que `enterprise-use-case-intelligence` ne l’a pas validé avec une preuve entreprise ;
+- le patrimoine UC est un graphe dérivé de `05b`/`05c`, sans store canonique supplémentaire ;
+- une relation sectorielle/cross-company porte toujours `demand_proof: false` ;
+- `06b` sélectionne les candidats personnes après fit ; `06c` organise ensuite promoteur, prescripteur, terrain/user, sponsor technique et veto en `first`, `second` ou `validation_only` ;
+- un titre ne suffit jamais à rendre une personne `ready` ni à prouver son autorité ;
+- le newsflow peut expliquer le `why_now`, l’ordre de validation ou l’angle de discovery, jamais le fit ni l’autorité ;
+- un `OPEN` blocker/critical gate reste une contrainte de validation ; un `FAIL` interdit la progression commerciale ;
+- le pilote/proof design n’est prêt qu’après un chemin reach suffisamment qualifié ou une discovery explicitement destinée à établir les rôles manquants.
+
+### Resolver contract
+
+Tout état bloqué exposé par le control plane doit préciser :
+
+1. pourquoi il bloque ;
+2. l’état ou la preuve requis ;
+3. la skill propriétaire ou l’action humaine ;
+4. un CTA de résolution ;
+5. la postcondition attendue.
+
+Un resolver route vers le prérequis manquant. Il ne modifie jamais un score, une confiance ou un statut pour faire disparaître artificiellement le blocker.
+
+### Value-for-money du graphe UC
+
+La v0.7 adopte seulement les principes Zettelkasten utiles : unités atomiques, IDs stables, liens typés et backlinks. Aucun graph DB, vector store, système de notes parallèle ou moteur CRM n’est ajouté tant qu’un usage réel ne démontre pas un problème mesurable de recherche, de volume, de latence ou de coût de maintenance.
+
+### Frontières de navigation
+
+Les menus principaux restent `Demande`, `Offres`, `Qualification`, `Nudging`, `Suivi`, `Skills`. Porter/Ishikawa, patrimoine UC et Reach sont des vues contextuelles reliées aux artefacts existants ; ils ne deviennent pas des silos ou vérités concurrentes.

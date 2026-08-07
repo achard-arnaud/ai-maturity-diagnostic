@@ -1,0 +1,36 @@
+schema_version: "0.7"
+release: value-chain-reach-graph
+verified_at: "2026-08-07"
+status: release_candidate_ready
+verification:
+  local_release_gate: pass
+  github_actions_qa: pass
+  app_line_coverage_gate:
+    threshold_percent: 80
+    result: pass
+  blocker_resolver_contract: pass
+  stale_contact_handoff_regression: pass
+  direct_reach_resolver_regression: pass
+  porter_ishikawa_boundary_tests: pass
+  uc_graph_demand_proof_boundary_tests: pass
+release_scope:
+  - evidence-bounded Porter/Ishikawa analysis from canonical company use cases
+  - derived company and sector UC heritage graph without a second canonical store
+  - iterative first/second-wave stakeholder reach after valid product fit
+  - blocker resolver CTAs across active workflow states
+  - cross-menu demand/offer/qualification/nudging/follow-up journeys
+post_holiday_open_gates:
+  - UX validation on real private company/contact/study data
+  - Gold Set for UC extraction, adjacency, dependencies, sector similarities and reach false positives
+  - calibration of promoter/prescriber/terrain/technical/veto taxonomy and wave heuristics
+  - persistence/history decision after observed usage
+historical_open_gates:
+  - auth/RBAC/audit/hardening before network exposure
+  - production skill executor
+  - historical security evidence and global Gold Set gates
+  - final owner validation of commercial offer truth where still draft/reconstructed
+non_claims:
+  production_network_ready: false
+  decision_grade_nudging: false
+  autonomous_outbound: false
+  graph_database_required: false

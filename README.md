@@ -91,7 +91,7 @@ python scripts/init_study.py "Entreprise" --date YYYY-MM-DD --offers all
 python scripts/validate_study.py studies/entreprise-YYYYMMDD
 ```
 
-`check_release.py` contrôle notamment les packages, schémas, liens, tests, chemins non portables et fuites de clés privées. Le réseau privé est validé lorsqu’il est présent et explicitement ignoré dans un clone public.
+`check_release.py` contrôle notamment les packages, schémas, liens, tests, chemins non portables et fuites de clés privées. Depuis v0.7, il instrumente également l’application Python du control plane (`app/`) et échoue sous **80 % de couverture de lignes**. Les scripts CLI restent couverts par les tests d’intégration existants ; ils ne sont pas inclus artificiellement dans le pourcentage lorsque les tests les lancent en sous-processus.
 
 ## Structure du dépôt
 
@@ -188,3 +188,69 @@ Chaque nudge reste une `hypothesis` avec preuves/feedback, préconditions, incon
 Le menu **Suivi** remonte les prochaines actions métier calculées — 3e entreprise, benchmark, étape de qualification, inventaire éligible au nudging — avant le backlog de gouvernance et de release.
 
 La posture de déploiement reste celle de v0.5 : local-first, non production-network-ready tant que les gates sécurité, executor, persistence et évaluations correspondantes restent ouverts.
+
+## Control plane v0.7 — chaîne de valeur, patrimoine UC, reach itératif et blockers actionnables
+
+La v0.7 prolonge le parcours sans créer de nouvelle source de vérité. Voir le [PRD v0.7](docs/PRD_control_plane_v0_7.md), l’[ADR-006](docs/ADR-006-uc-graph-reach-blocker-resolution.md), les [user flows v0.7](docs/USER_FLOWS_v0_7.md) et la [trousse de reprise](docs/POST_HOLIDAY_KIT_v0_7.md).
+
+Le parcours fonctionnel devient :
+
+```text
+ICB / secteur
+-> entreprise / étude
+-> 05 demande
+-> 05b use cases
+-> 05c chaîne de valeur + causes
+-> snapshots produit
+-> 06 fit
+-> 06b contacts
+-> 06c reach first/second wave
+-> 07 preuve / pilote
+```
+
+### Porter + Ishikawa depuis un use case
+
+Le deep dive entreprise expose **Analyse chaîne de valeur** sur chaque UC canonique. `enterprise-value-chain-causal-analysis` cartographie de façon evidence-bounded :
+
+- activités amont, activité focale, aval et support ;
+- handoffs et points de contrôle ;
+- effets valeur/coût/qualité/délai/risque ;
+- causes `people`, `process`, `technology`, `data`, `governance/control`, `environment/external`.
+
+Une activité adjacente issue de cette analyse reste une hypothèse. Seul `enterprise-use-case-intelligence` peut la transformer en UC après validation avec des preuves de l’entreprise.
+
+### Patrimoine UC — principes Zettelkasten sans nouvelle infrastructure
+
+La v0.7 retient seulement les principes utiles : UC atomiques avec IDs stables, liens typés et backlinks. Le graphe est recalculé depuis `05b`/`05c` et n’est **pas** une base canonique supplémentaire.
+
+Relations possibles : `depends_on`, `enables`, `variant_of`, `shares_asset`, `same_outcome`, `value_chain_neighbor`, `causal_neighbor`, `similar_pattern`. Une relation cross-company/sectorielle reste une hypothèse comparative et porte `demand_proof: false`.
+
+Aucun graph DB, vector store ou moteur Zettelkasten n’est ajouté avant qu’un usage réel démontre un problème de recherche, de volume ou de coût de maintenance.
+
+### Matchmaker reach itératif
+
+Après un fit valide, `iterative-reach-matchmaking` bridge les artefacts déjà collectés : produit/ICP, contacts privés, organigramme/système de décision, use cases et newsflow. Il classe des hypothèses de rôles :
+
+- promoteur / sponsor ;
+- prescripteur / influenceur ;
+- terrain owner / utilisateur ;
+- sponsor technique ;
+- veto / contrôle.
+
+Les personnes sont organisées en `first`, `second` et `validation_only`. Un rôle obsolète déclenche **Valider le rôle actuel** ; une lane manquante déclenche **Élargir le 2e tour**. Le newsflow explique le `why_now` ou l’ordre de validation, jamais le fit ni l’autorité.
+
+### Blocker = action à résoudre
+
+Un blocker exposé par un workflow comprend désormais son ID/type, pourquoi il bloque, l’état attendu, la skill ou action humaine propriétaire, un CTA, ses context paths et la postcondition. L’interface n’utilise plus un bouton désactivé comme seule réponse à un blocker actif : le resolver remonte vers le prérequis approprié.
+
+### Navigation et suivi
+
+Les menus principaux restent volontairement compacts : **Demande · Offres · Qualification · Nudging · Suivi · Skills**. Les vues Reach, Porter/Ishikawa et Patrimoine UC sont contextuelles afin d’éviter un CRM parallèle.
+
+- Offre -> audit vérité produit -> opportunités utilisant cette offre -> qualification.
+- Entreprise -> organisation -> UC -> chaîne de valeur -> patrimoine -> qualification.
+- Qualification -> contacts -> reach -> pilote.
+- Nudging -> même-company UC graph -> hypothèses -> revue/feedback.
+- Suivi -> blockers métier et pending avant TODO techniques.
+
+La v0.7 ne change pas la posture de sécurité : elle reste locale/interne. Elle ne constitue ni un CRM outbound, ni une autorisation d’exposition réseau, ni une automatisation décisionnelle sans Gold Set.

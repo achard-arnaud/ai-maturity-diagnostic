@@ -1,0 +1,74 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: contracts/value_chain_causal.schema.yaml
+title: Company use-case value-chain and causal analysis
+schema_version: "0.7"
+type: object
+required: [schema_version, study_id, company, analyses]
+properties:
+  schema_version: {const: "0.7"}
+  study_id: {type: string, minLength: 1}
+  company: {type: string, minLength: 1}
+  generated_at: {type: [string, 'null']}
+  analyses:
+    type: array
+    items:
+      type: object
+      required: [use_case_id, evidence_refs, porter, ishikawa, adjacent_workflow_hypotheses, validation_questions, confidence]
+      properties:
+        use_case_id: {type: string, minLength: 1}
+        evidence_refs:
+          type: array
+          items: {type: string}
+        porter:
+          type: object
+          required: [upstream, focal_activity, downstream, support_activities, handoffs, control_points, value_effects]
+          properties:
+            upstream: {type: array}
+            focal_activity: {type: [object, string, 'null']}
+            downstream: {type: array}
+            support_activities: {type: array}
+            handoffs: {type: array}
+            control_points: {type: array}
+            value_effects:
+              type: object
+              properties:
+                value: {type: array}
+                cost: {type: array}
+                quality: {type: array}
+                time: {type: array}
+                risk: {type: array}
+              additionalProperties: false
+          additionalProperties: true
+        ishikawa:
+          type: object
+          required: [people, process, technology, data, governance_control, environment_external]
+          properties:
+            people: {type: array}
+            process: {type: array}
+            technology: {type: array}
+            data: {type: array}
+            governance_control: {type: array}
+            environment_external: {type: array}
+          additionalProperties: false
+        adjacent_workflow_hypotheses:
+          type: array
+          items:
+            type: object
+            required: [label, relation, basis, status]
+            properties:
+              label: {type: string}
+              relation: {enum: [upstream, downstream, support, control, causal]}
+              basis: {type: string}
+              evidence_refs:
+                type: array
+                items: {type: string}
+              status: {const: hypothesis}
+              candidate_use_case_id: {type: [string, 'null']}
+        validation_questions:
+          type: array
+          items: {type: string}
+        unknowns:
+          type: array
+          items: {type: string}
+        confidence: {enum: [low, medium, high]}
+additionalProperties: true

@@ -1,0 +1,22 @@
+[
+  {"query":"Décompose ce use case de traitement de réclamations avec Porter et Ishikawa.","should_trigger":true},
+  {"query":"Analyse les étapes amont et aval autour de UC-14 et ses points de contrôle.","should_trigger":true},
+  {"query":"Quelles causes people process data tech expliquent les limites de ce workflow IA ?","should_trigger":true},
+  {"query":"Fais une analyse chaîne de valeur du use case déjà recensé.","should_trigger":true},
+  {"query":"Identifie les handoffs et activités support autour du use flow sans proposer de produit.","should_trigger":true},
+  {"query":"Quels workflows adjacents faut-il valider autour de ce use case ?","should_trigger":true},
+  {"query":"Construis la carte Porter/Ishikawa pour le UC du dossier de sinistre.","should_trigger":true},
+  {"query":"Cartographie coût qualité délai risque autour de ce use case connu.","should_trigger":true},
+  {"query":"Rafraîchis l'analyse causale 05c à partir des nouvelles preuves entreprise.","should_trigger":true},
+  {"query":"Analyse la chaîne opérationnelle complète autour du use case sans inventer les étapes manquantes.","should_trigger":true},
+  {"query":"Ajoute un nouveau contact au réseau.","should_trigger":false},
+  {"query":"Quel produit correspond le mieux à cette entreprise ?","should_trigger":false},
+  {"query":"Classe cette société dans l'ICB.","should_trigger":false},
+  {"query":"Génère un package cross-sell de use cases.","should_trigger":false},
+  {"query":"Qui dois-je contacter en premier pour cette offre ?","should_trigger":false},
+  {"query":"Construis l'organigramme de la DSI.","should_trigger":false},
+  {"query":"Lance le benchmark de trois banques.","should_trigger":false},
+  {"query":"Mets à jour le catalogue produit.","should_trigger":false},
+  {"query":"Rédige le message LinkedIn de prospection.","should_trigger":false},
+  {"query":"Score la maturité IA de l'entreprise.","should_trigger":false}
+]

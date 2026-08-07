@@ -31,5 +31,10 @@ addopts = "-ra"
 
 [tool.coverage.run]
 branch = true
-source = ["scripts"]
+source = ["app"]
 omit = ["tests/*"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = false
