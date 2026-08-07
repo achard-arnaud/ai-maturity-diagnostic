@@ -1,0 +1,4 @@
+interface:
+  display_name: "Use-Case Nudging"
+  short_description: "Génère des nudges à partir des use cases existants"
+  default_prompt: "Use $use-case-nudging to generate productivization, dependency-upsell or cross-sell-package hypotheses from one company’s use-case inventory only."
