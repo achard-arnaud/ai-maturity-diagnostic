@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Business Intelligence Nice content",
+  "type": "object",
+  "required": ["decision", "scope", "executive_answer", "evidence", "analysis", "options", "recommendation", "next_action", "output_contract"],
+  "properties": {
+    "decision": {"type": "string", "minLength": 1},
+    "scope": {"type": "object"},
+    "executive_answer": {"type": "string", "minLength": 1},
+    "evidence": {"type": "array", "items": {"type": "object", "required": ["claim_id", "statement", "epistemic_status", "evidence_grade"]}},
+    "analysis": {"type": "array", "items": {"type": "object"}},
+    "options": {"type": "array", "minItems": 1},
+    "recommendation": {"type": "object", "required": ["decision", "conditions", "falsifier"]},
+    "next_action": {"type": "object", "required": ["owner", "action", "decision_gate"]},
+    "output_contract": {"type": "object", "required": ["template", "pages"]}
+  },
+  "additionalProperties": true
+}

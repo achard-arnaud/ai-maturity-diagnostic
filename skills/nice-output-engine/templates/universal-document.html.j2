@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="{{ document.language | default('fr') }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ document.title }}</title>
+  <style>
+    {{ css | safe }}
+    @page { size: A4 {{ contract.orientation }}; margin: 0; }
+    .page.universal {
+      width: {% if contract.orientation == 'portrait' %}210mm{% else %}297mm{% endif %};
+      height: {% if contract.orientation == 'portrait' %}297mm{% else %}210mm{% endif %};
+      display: grid; grid-template-rows: auto 1fr auto; position: relative;
+      padding: 0; background: var(--bg); break-after: page;
+    }
+    .universal-header { padding: 11mm var(--page-margin) 7mm; color: white; background: linear-gradient(105deg,var(--navy),var(--teal)); }
+    .universal-kicker { color:#9be4ec; font-size:9pt; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .universal-title { margin-top:2.5mm; max-width:75%; font-size:22pt; line-height:1.02; font-weight:800; }
+    .universal-subtitle { margin-top:2.5mm; max-width:78%; color:#d7e2eb; font-size:10.5pt; }
+    .universal-decision { position:absolute; top:8mm; right:var(--page-margin); width:56mm; padding:var(--card-pad); border:.35mm solid #6692a2; border-radius:var(--radius); background:rgba(15,53,70,.92); font-size:9pt; }
+    .universal-main { min-height:0; display:grid; align-content:start; gap:var(--gap); padding:6mm var(--page-margin); }
+    .universal-section { min-height:0; }
+    .universal-section-title { margin:0 0 2.5mm; color:var(--cyan-dark); font-size:12pt; text-transform:uppercase; }
+    .universal-grid { display:grid; gap:var(--gap); min-height:0; }
+    .universal-grid.one { grid-template-columns:1fr; }
+    .universal-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .universal-grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .universal-block { min-width:0; min-height:0; }
+    .universal-block .block-title { margin:0 0 2mm; color:var(--navy); font-size:11.5pt; font-weight:800; }
+    .universal-block .block-body { font-size:10.5pt; line-height:1.25; }
+    .universal-block .block-metric { margin-bottom:2mm; color:var(--navy); font-size:22pt; font-weight:800; }
+    .universal-block ul { margin:0; padding-left:5mm; }
+    .universal-block li { margin:0 0 1.2mm; font-size:10pt; line-height:1.2; }
+    .universal-block .status { display:inline-block; margin-bottom:2mm; padding:1mm 2.5mm; border-radius:4mm; font-size:9pt; font-weight:800; text-transform:uppercase; }
+    .status.verified { color:#087b55; background:var(--pale-green); }
+    .status.inference { color:#a75f00; background:var(--pale-orange); }
+    .status.unknown { color:#b82f3d; background:var(--pale-red); }
+    .universal-footer { margin:0 var(--page-margin) 5mm; display:grid; grid-template-columns:1fr auto; gap:4mm; align-items:center; padding:2.5mm 4mm; border-radius:3mm; color:white; background:var(--teal); font-size:9pt; }
+    .universal-source { color:#e1f3f5; }
+  </style>
+</head>
+<body data-template="{{ template_name }}" data-min-pages="{{ contract.page_range[0] }}" data-max-pages="{{ contract.page_range[1] }}">
+{% for page in pages %}
+<section class="page universal" data-page="{{ loop.index }}" data-no-overflow>
+  <header class="universal-header">
+    <div class="universal-kicker">{{ page.kicker | default(document.title) }}</div>
+    <div class="universal-title">{{ page.title | default(document.title) }}</div>
+    {% if page.subtitle is defined and page.subtitle %}<div class="universal-subtitle">{{ page.subtitle }}</div>{% endif %}
+    {% if page.decision is defined and page.decision %}<div class="universal-decision" data-card data-no-overflow>{{ page.decision | safe }}</div>{% endif %}
+  </header>
+  <main class="universal-main">
+    {% for section in page.sections %}
+    <section class="universal-section">
+      {% if section.title is defined and section.title %}<h2 class="universal-section-title">{{ section.title }}</h2>{% endif %}
+      <div class="universal-grid {{ section.layout | default('one') }}" data-overlap-check>
+        {% for block in section.blocks %}
+        <article class="card universal-block" data-layout-box data-card data-no-overflow>
+          {% if block.status is defined and block.status %}<span class="status {{ block.status }}">{{ block.status }}</span>{% endif %}
+          {% if block.title is defined and block.title %}<h3 class="block-title">{{ block.title }}</h3>{% endif %}
+          {% if block.metric is defined and block.metric %}<div class="block-metric">{{ block.metric }}</div>{% endif %}
+          {% if block.body is defined and block.body %}<div class="block-body">{{ block.body | safe }}</div>{% endif %}
+          {% if block.bullets is defined and block.bullets %}<ul>{% for item in block.bullets %}<li>{{ item | safe }}</li>{% endfor %}</ul>{% endif %}
+          {% if block.table is defined and block.table %}
+          <table class="table"><thead><tr>{% for h in block.table.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in block.table.rows %}<tr>{% for cell in row %}<td>{{ cell | safe }}</td>{% endfor %}</tr>{% endfor %}</tbody></table>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+  <footer class="universal-footer"><div>{{ page.footer | default(document.footer) | safe }}</div><div class="universal-source">{{ loop.index }}/{{ pages|length }}</div></footer>
+</section>
+{% endfor %}
+</body>
+</html>

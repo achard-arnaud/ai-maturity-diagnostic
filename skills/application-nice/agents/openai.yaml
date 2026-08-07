@@ -1,0 +1,14 @@
+interface:
+  display_name: Application Nice
+  short_description: Evidence-led job applications for two personas
+  default_prompt: Use $application-nice to analyse this opportunity and prepare the
+    right persona-specific application pack.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

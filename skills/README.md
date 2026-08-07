@@ -34,3 +34,15 @@ Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` et
 | `sector-intelligence-consolidation` | Synthèse de trois études comparables ou plus | `sector_rollups/ICB-*.yaml` |
 
 `engagement-pilot-design` transforme ensuite les cibles et le fit en hypothèses de reach ou de preuve, sans inventer d’autorité ni de besoin.
+
+## Intelligence exécutive et candidatures v0.4
+
+| Skill | Responsabilité exclusive | Sortie |
+|---|---|---|
+| `business-intelligence-nice` | Recherche, preuve, analyse et recommandation Sarah-Pro | Contenu décisionnel structuré et gelé |
+| `application-nice` | Qualification d’opportunité et candidature, après confirmation François-Pro ou Sarah-Pro | Verdict, narratif et dossier persona-spécifique |
+| `nice-output-engine` | Mise en page, rendu HTML/PDF/PNG et QA visuelle, sans analyse métier | Brief, benchmark, business note ou application pack |
+
+Le flux impose une séparation nette entre le fond et la forme : les skills fonctionnelles établissent les vérités, les preuves et la recommandation, puis `nice-output-engine` rend le contenu gelé. `application-nice` partage uniquement un système opératoire ; ses sources, exemples, règles de narration et thèmes restent séparés par persona.
+
+Le dépôt public contient le code, les contrats, les méthodes et les politiques de templates. Les CV, coordonnées, transcriptions et dossiers de candidature privés sont volontairement exclus et doivent être fournis dans l’environnement d’exécution selon `assets/private-assets.manifest.example.json`.

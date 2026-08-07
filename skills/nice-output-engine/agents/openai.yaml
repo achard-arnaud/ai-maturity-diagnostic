@@ -1,0 +1,14 @@
+interface:
+  display_name: Nice Output Engine
+  short_description: Validated multi-template business document rendering
+  default_prompt: Use $nice-output-engine to render this validated content specification
+    into the appropriate polished artifact.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

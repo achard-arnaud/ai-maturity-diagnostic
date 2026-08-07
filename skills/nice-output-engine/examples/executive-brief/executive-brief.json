@@ -1,0 +1,30 @@
+{
+  "document": {
+    "title": "Décision exécutive — exemple",
+    "language": "fr",
+    "template": "executive-brief",
+    "theme": "../../themes/nice-corporate.json"
+  },
+  "pages": [
+    {
+      "kicker": "Qualification · Décision · Preuve",
+      "subtitle": "Une conclusion conditionnelle, ses preuves et son prochain test",
+      "gate": {"label": "Decision gate", "main": "Valider sur un périmètre borné", "sub": "Ne pas généraliser avant fermeture des inconnues critiques."},
+      "top_cards": [
+        {"title": "Problème", "pill": {"text": "Établi", "status": "green"}, "body": "Un cycle récurrent crée un délai mesurable et des reprises."},
+        {"title": "Valeur", "metric": {"value": "-30 %", "meta": "objectif à tester<br><span class='pill orange'>hypothèse</span>"}, "body": "Mesurer le gain net après qualité, supervision et coût complet."},
+        {"title": "Risque", "pill": {"text": "Gate ouverte", "status": "red"}, "body": "L'accès aux données et le fallback ne sont pas encore démontrés."}
+      ],
+      "flow": {"title": "Mécanisme de valeur", "note": "Chaque étape possède un owner et une preuve.", "columns": "five", "steps": [
+        {"num": "01", "name": "Entrée", "sub": "Cas représentatifs"}, {"num": "02", "name": "Traitement", "sub": "Règles et contrôle"}, {"num": "03", "name": "Revue", "sub": "Qualité humaine"}, {"num": "04", "name": "Décision", "sub": "Accept / rework"}, {"num": "05", "name": "Mesure", "sub": "Valeur nette", "warn": true}
+      ]},
+      "layout": "three_columns",
+      "columns": [
+        {"title": "Fit", "type": "fit", "rows": [{"label": "Fort", "level": "strong", "text": "Problème fréquent et baseline disponible."}, {"label": "Faible", "level": "weak", "text": "Accès et contrôle encore non prouvés."}]},
+        {"title": "Alternatives", "type": "benchmark", "items": [{"name": "Process", "text": "simplifier avant d'automatiser"}, {"name": "Outil", "text": "solution standard si le besoin est générique"}, {"name": "Pilote", "text": "preuve courte si l'incertitude reste matérielle"}]},
+        {"title": "Gates", "type": "bullets", "items": [{"status": "green", "text": "Baseline et owner établis."}, {"status": "orange", "text": "Valeur plausible mais non mesurée."}, {"status": "red", "text": "Fallback et coût complet inconnus."}]}
+      ],
+      "footer": {"title": "Prochaine décision", "body": "Tester quatre semaines puis choisir SCALE, ITERATE ou STOP selon des seuils définis avant le lancement."}
+    }
+  ]
+}

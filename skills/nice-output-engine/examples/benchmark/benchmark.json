@@ -1,0 +1,44 @@
+{
+  "document": {
+    "title": "Benchmark décisionnel",
+    "language": "fr",
+    "template": "benchmark-matrix",
+    "theme": "../../themes/nice-corporate.json",
+    "footer": "Exemple synthétique — remplacer par les sources et critères du dossier."
+  },
+  "pages": [
+    {
+      "kicker": "Benchmark · Décision",
+      "title": "Trois options, une décision conditionnelle",
+      "subtitle": "Comparer l'aptitude à résoudre le problème plutôt que la longueur des fonctionnalités.",
+      "decision": "Option B à valider sous deux conditions de preuve.",
+      "sections": [
+        {"title": "Lecture exécutive", "layout": "three", "blocks": [
+          {"title": "Option A", "status": "verified", "metric": "72/100", "body": "Couverture robuste, coût complet élevé."},
+          {"title": "Option B", "status": "inference", "metric": "78/100", "body": "Meilleur potentiel, preuves encore partielles."},
+          {"title": "Option C", "status": "unknown", "metric": "61/100", "body": "Économie attractive mais prérequis non établis."}
+        ]},
+        {"title": "Critères", "layout": "one", "blocks": [
+          {"title": "Matrice", "table": {"headers": ["Critère", "A", "B", "C"], "rows": [["Valeur", "Forte", "Forte", "Moyenne"], ["Risque", "Faible", "Moyen", "Élevé"], ["Réversibilité", "Moyenne", "Forte", "Faible"]]}}
+        ]}
+      ],
+      "footer": "Décision provisoire — valider coût complet et intégration."
+    },
+    {
+      "kicker": "Benchmark · Preuves",
+      "title": "Ce qui peut encore changer le verdict",
+      "subtitle": "Les écarts de score restent secondaires face aux gates critiques.",
+      "decision": "Ne pas contractualiser avant fermeture des deux gates.",
+      "sections": [
+        {"title": "Gates", "layout": "two", "blocks": [
+          {"title": "Gate 1 — données", "status": "inference", "bullets": ["Accès démontré sur un échantillon représentatif", "Traçabilité des transformations", "Fallback documenté"]},
+          {"title": "Gate 2 — économie", "status": "unknown", "bullets": ["TCO à trois ans", "Coûts d'intégration", "Seuil de sortie sans pénalité"]}
+        ]},
+        {"title": "Prochaine action", "layout": "one", "blocks": [
+          {"title": "Test falsifiable", "body": "Exécuter le même workflow sur les trois options, avec un jeu de données commun, une baseline humaine et des critères d'arrêt définis avant le test."}
+        ]}
+      ],
+      "footer": "Le benchmark recommande une preuve, pas une croyance."
+    }
+  ]
+}
