@@ -15,6 +15,17 @@ description: Interpréter un corpus daté et dédupliqué d’offres d’emploi,
 
 Lire [references/hiring-corpus-method.md](references/hiring-corpus-method.md) pour l’extraction et les tests d’inférence.
 
+## Acquisition avancée
+
+Utiliser `scripts/advanced_research.py` comme couche de découverte, puis revenir aux pages carrière et descriptions officielles avant de renforcer un claim :
+
+```bash
+python scripts/advanced_research.py "<entreprise> AI data careers hiring" --source web --days 365 --limit 15 --pretty
+python scripts/advanced_research.py "<entreprise> AI hiring data platform" --source linkedin --days 365 --limit 12 --pretty
+```
+
+La voie LinkedIn est un index public, pas un connecteur. Un snippet de profil ou de post ne prouve ni rôle courant, ni rattachement, ni capacité acquise. Conserver `metadata.acquisition_method` et les `limitations` avec le corpus.
+
 ## Extraire les signaux
 
 Coder pour chaque offre : finalité, séniorité, sponsor ou rattachement, équipe d’accueil, interactions, métiers et géographies, delivery, gouvernance, data/IA/cloud, plateforme et run, adoption, risque/sécurité/conformité et indices faire/acheter/s’allier.
