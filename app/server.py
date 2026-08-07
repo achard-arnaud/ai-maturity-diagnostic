@@ -12,15 +12,23 @@ from urllib.parse import urlparse
 
 from app.catalog import CatalogHarvester
 from app.core import ControlPlaneError, RepoControlPlane
+from app.demand import DemandCatalog
+from app.nudging import UseCaseNudger
+from app.qualification import QualificationCockpit
+from app.workflows import WorkflowPlanner
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "app" / "frontend"
 CONTROL = RepoControlPlane(ROOT)
 HARVESTER = CatalogHarvester(ROOT)
+DEMAND = DemandCatalog(ROOT)
+QUALIFICATION = QualificationCockpit(ROOT)
+NUDGING = UseCaseNudger(ROOT)
+WORKFLOWS = WorkflowPlanner(ROOT)
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "AIMaturityDiagnostic/0.5"
+    server_version = "AIMaturityDiagnostic/0.6"
 
     def _json(self, status: int, payload: Any) -> None:
         raw = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
@@ -70,7 +78,7 @@ class Handler(BaseHTTPRequestHandler):
                 HTTPStatus.OK,
                 {
                     "status": "ok",
-                    "version": "0.5",
+                    "version": "0.6",
                     "executor_configured": bool(os.getenv("AI_DIAGNOSTIC_SKILL_EXECUTOR", "").strip()),
                 },
             )
@@ -80,6 +88,10 @@ class Handler(BaseHTTPRequestHandler):
             "/api/offers": CONTROL.list_offers,
             "/api/shelves": CONTROL.list_shelves,
             "/api/backlog": CONTROL.backlog,
+            "/api/demand": DEMAND.snapshot,
+            "/api/demand/inventories": DEMAND.inventories,
+            "/api/qualification": QUALIFICATION.list_studies,
+            "/api/nudging/inventories": NUDGING.list_inventories,
         }
         if path in routes:
             self._json(HTTPStatus.OK, routes[path]())
@@ -111,6 +123,12 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(persist, bool):
                     raise ControlPlaneError("persist must be a boolean")
                 self._json(HTTPStatus.CREATED, HARVESTER.discover_public(payload, persist=persist))
+                return
+            if path == "/api/nudging/generate":
+                self._json(HTTPStatus.OK, NUDGING.generate_request(payload))
+                return
+            if path == "/api/workflows/plan":
+                self._json(HTTPStatus.OK, WORKFLOWS.plan(payload))
                 return
             self.send_error(HTTPStatus.NOT_FOUND)
         except ControlPlaneError as exc:
