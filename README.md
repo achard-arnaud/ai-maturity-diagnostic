@@ -149,3 +149,42 @@ Sans variable `AI_DIAGNOSTIC_SKILL_EXECUTOR`, un CTA de skill retourne une envel
 Le harvesting ne promeut jamais automatiquement un claim vers `product_catalog/` : toute canonicalisation passe par `product-icp-intelligence` puis une revue humaine.
 
 Le serveur écoute uniquement `127.0.0.1` par défaut. Aucune exposition réseau ou production n’est considérée prête tant que l’authentification, l’autorisation, l’audit et le hardening documentés dans `artifacts/TODO_productization_v0_5.yaml` ne sont pas fermés et vérifiés.
+
+## Control plane v0.6 — parcours demande, matching et nudging
+
+La couche v0.6 conserve tous les invariants précédents et réorganise l’interface autour du parcours utilisateur. Elle est spécifiée dans le [PRD v0.6](docs/PRD_control_plane_v0_6.md), l’[ADR des frontières demande/use cases/nudging](docs/ADR-005-demand-use-case-nudging-boundaries.md) et les [user flows v0.6](docs/USER_FLOWS_v0_6.md).
+
+Quatre surfaces opérationnelles restent séparées :
+
+```text
+DEMANDE        ICB -> secteurs -> entreprises -> études -> use cases
+OFFRES         rayons -> preuves -> profils canoniques -> revue owner
+QUALIFICATION  demande -> snapshots -> hard gates / fit -> personnes -> pilote
+NUDGING        inventaire use cases -> productivisation / dépendance / package -> revue
+```
+
+### Catalogue de demande
+
+ICB est utilisé comme nomenclature de navigation et de consolidation, jamais comme preuve de besoin. Un secteur passe progressivement de `0` étude éligible à `1`, puis `2/3` avec CTA **Ajouter une 3e entreprise**, puis `3+` avec CTA **Lancer le benchmark**. La règle existante de trois études courantes et suffisamment complètes reste inchangée.
+
+Chaque étude peut produire `05b_use_case_inventory.yaml` via `enterprise-use-case-intelligence`. Les use cases conservent leur entreprise, étude, preuve, maturité, dépendances, réutilisabilité et feedback. Le rollup sectoriel peut les consolider comme evidence pool sans les transformer en vérité d’un autre compte.
+
+### Qualification et matching
+
+Le menu Qualification dérive son état des artefacts persistés et expose la prochaine action autorisée : demande, snapshot, matching, ciblage personne ou pilote. Le **Parcours complet** montre l’ensemble des gates mais ne les exécute pas silencieusement. `qualification-tunnel-router` et `opportunity-fit-matching` restent les frontières autorisées.
+
+### Nudging
+
+Le menu Nudging est volontairement isolé de la qualification initiale. Il ne charge ni ICB, ni benchmark sectoriel, ni profil de demande, ni catalogue produit, ni matrice de fit.
+
+Il propose trois familles d’hypothèses à partir du seul inventaire de use cases de l’entreprise :
+
+- **Productivisation** : mise en série, enrichissement, variantes, actifs réutilisables et réduction du coût marginal d’un use case existant ;
+- **Upsell par dépendance** : proposition uniquement lorsqu’un edge `depends_on` ou `enables` relie explicitement les use cases ;
+- **Cross-sell package** : assemblage de use cases déjà recensés partageant une famille d’outcome, uniquement lorsqu’un retour d’expérience de l’entreprise permet d’ancrer le storytelling.
+
+Chaque nudge reste une `hypothesis` avec preuves/feedback, préconditions, inconnues et falsifier. L’absence de relation ou de feedback produit zéro suggestion plutôt qu’une inférence commerciale opportuniste.
+
+Le menu **Suivi** remonte les prochaines actions métier calculées — 3e entreprise, benchmark, étape de qualification, inventaire éligible au nudging — avant le backlog de gouvernance et de release.
+
+La posture de déploiement reste celle de v0.5 : local-first, non production-network-ready tant que les gates sécurité, executor, persistence et évaluations correspondantes restent ouverts.
