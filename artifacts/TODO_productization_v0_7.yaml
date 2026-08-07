@@ -1,0 +1,60 @@
+schema_version: "0.7"
+milestone: value-chain-reach-graph
+updated_at: "2026-08-07"
+status: in_progress
+items:
+  - id: TODO-V07-001
+    priority: P0
+    status: in_progress
+    area: value_chain
+    task: Add Porter/Ishikawa company use-case deep dive and evidence-bounded 05c artifact.
+  - id: TODO-V07-002
+    priority: P0
+    status: in_progress
+    area: uc_graph
+    task: Add lightweight derived typed UC graph with company and sector heritage views.
+  - id: TODO-V07-003
+    priority: P0
+    status: in_progress
+    area: reach
+    task: Bridge valid fit, ICP, org, newsflow, contacts and use-case context into iterative first/second-wave reach matchmaking.
+  - id: TODO-V07-004
+    priority: P0
+    status: in_progress
+    area: blockers
+    task: Normalize every workflow blocker with a resolver CTA, owner action and postcondition.
+  - id: TODO-V07-005
+    priority: P0
+    status: in_progress
+    area: ux
+    task: Review cross-menu handoffs, contextual navigation, dashboards and full user journeys.
+  - id: TODO-V07-006
+    priority: P0
+    status: in_progress
+    area: quality
+    task: Enforce at least 80 percent line coverage on the documented Python control-plane scope and keep release QA green.
+  - id: TODO-V07-007
+    priority: P1
+    status: open
+    area: feedback
+    task: Run UX feedback on real private company/contact/use-case data after the holiday and tune CTA priorities.
+  - id: TODO-V07-008
+    priority: P1
+    status: open
+    area: evals
+    task: Extend Gold Set with Porter/Ishikawa adjacency, graph-edge and stakeholder-wave false positives before decision-grade automation.
+  - id: TODO-V07-009
+    priority: P1
+    status: open
+    area: reach
+    task: Validate promoter/prescriber/user/veto role taxonomy and second-wave expansion on live opportunities.
+  - id: TODO-V07-010
+    priority: P2
+    status: deferred
+    area: architecture
+    task: Reassess graph database/vector retrieval only if measured usage shows file-derived graph navigation or retrieval is insufficient.
+  - id: TODO-V07-011
+    priority: P1
+    status: open
+    area: persistence
+    task: Decide after real usage whether reach/feedback/blocker resolution history needs durable event storage beyond study artifacts.
