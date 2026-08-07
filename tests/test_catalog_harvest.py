@@ -3,9 +3,11 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from app.catalog import CatalogHarvester
 from app.core import ControlPlaneError
+from scripts.advanced_research import EvidenceHit, SEARCHERS
 
 
 class CatalogHarvesterTests(unittest.TestCase):
@@ -65,6 +67,33 @@ class CatalogHarvesterTests(unittest.TestCase):
                     },
                     persist=False,
                 )
+
+    def test_public_discovery_stages_evidence_as_candidates_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.make_root(tmp)
+            hit = EvidenceHit(
+                source="web",
+                title="Example Co AI Academy",
+                url="https://example.com/academy",
+                snippet="Public source claim.",
+                relevance=0.8,
+            )
+            with patch.dict(SEARCHERS, {"web": lambda query, days, limit, enrich: [hit]}):
+                result = CatalogHarvester(root).discover_public(
+                    {
+                        "company": "Example Co",
+                        "shelf_id": "learning-adoption",
+                        "source": "web",
+                    },
+                    persist=False,
+                )
+            self.assertEqual("preview", result["status"])
+            candidate = result["harvest"]["items"][0]
+            self.assertEqual("unreviewed_source_claim", candidate["epistemic_status"])
+            self.assertEqual("candidate", candidate["promotion_status"])
+            self.assertFalse(
+                result["harvest"]["promotion_contract"]["automatic_promotion_to_product_catalog"]
+            )
 
 
 if __name__ == "__main__":

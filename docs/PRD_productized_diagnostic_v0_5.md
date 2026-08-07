@@ -10,7 +10,7 @@ The repository already contains mature skills, contracts, scripts, product profi
 - discovering the available skills;
 - invoking one skill deliberately;
 - seeing canonical offers by lightweight shelf;
-- staging company/vendor offer catalogs before product review;
+- discovering and staging company/vendor offer catalogs before product review;
 - seeing the remaining release/productization backlog.
 
 This makes the system harder to operate and easier to misuse despite strong internal contracts.
@@ -21,7 +21,7 @@ This makes the system harder to operate and easier to misuse despite strong inte
 |---|---|
 | Maintainer | Inspect the current skills and run one responsibility at a time. |
 | Product owner | See offers and unresolved product-truth gates without loading account evidence. |
-| Research/operator | Stage a vendor/company catalog as unreviewed candidates. |
+| Research/operator | Discover public vendor/company offer sources or stage an existing catalog as unreviewed candidates. |
 | Reviewer | Inspect backlog, invocation versions and promotion gates. |
 | Future runtime | Consume a stable unit-invocation envelope and return structured execution results. |
 
@@ -36,7 +36,11 @@ If `AI_DIAGNOSTIC_SKILL_EXECUTOR` is absent, the system returns `status=prepared
 Shelves are a lightweight navigation taxonomy in `catalog_sources/shelves.yaml`. They point to `offer_id` values already present in `product_catalog/index.yaml`; they do not copy the canonical profiles.
 
 ### Company/vendor catalog harvest
-Raw catalog items can be staged under ignored `data/private/catalog_harvest/<company>/`. Every item is `unreviewed_source_claim`. Automatic promotion to `product_catalog/` is forbidden. Canonicalization requires `product-icp-intelligence` plus human review.
+Two acquisition paths are supported:
+- public discovery through the existing public-first `advanced_research` backend (`web`, or optional first-party Perplexity when already configured);
+- import of a catalog harvested elsewhere.
+
+Both paths stage source-derived candidates under ignored `data/private/catalog_harvest/<company>/`. Every claim remains `unreviewed_source_claim`. Automatic promotion to `product_catalog/` is forbidden. Canonicalization requires `product-icp-intelligence` plus human review.
 
 ### Backlog
 The UI consolidates the historical v0.3 release TODO with the v0.5 productization TODO. Historical gates remain open until independently closed.
@@ -57,10 +61,11 @@ The UI consolidates the historical v0.3 release TODO with the v0.5 productizatio
 2. `/api/skills` reflects actual `SKILL.md` packages.
 3. Each frontend skill card has an `Appel unitaire` CTA.
 4. A call without a configured executor returns an honest prepared envelope.
-5. Catalog staging never writes into `product_catalog/`.
-6. Shelves reference canonical offers rather than copy their truth.
-7. Existing `scripts/check_release.py` remains the release gate.
-8. No existing README/AGENTS invariant is weakened.
+5. Public catalog discovery and imported catalogs both remain unreviewed candidates.
+6. Catalog staging never writes into `product_catalog/`.
+7. Shelves reference canonical offers rather than copy their truth.
+8. Existing `scripts/check_release.py` remains the release gate.
+9. No existing README/AGENTS invariant is weakened.
 
 ## Explicit exclusions
 

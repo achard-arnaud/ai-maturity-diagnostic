@@ -52,8 +52,19 @@
     </section>
 
     <section id="harvest" class="panel">
-      <h2>Staging de catalogues d'entreprise</h2>
-      <p>Le harvesting crée uniquement des candidats sous <code>data/private/catalog_harvest/</code>. Aucune promotion automatique vers le catalogue canonique.</p>
+      <h2>Catalogues d'entreprise et rayonnage</h2>
+      <p>Tout harvesting crée uniquement des candidats sous <code>data/private/catalog_harvest/</code>. Aucune promotion automatique vers le catalogue canonique.</p>
+
+      <h3>Découverte publique</h3>
+      <form id="discoverForm" class="form">
+        <label>Entreprise / fournisseur<input id="discoverCompany" required placeholder="Nom de l'entreprise"></label>
+        <label>Rayon<select id="discoverShelf" required></select></label>
+        <label>Domaine officiel (optionnel)<input id="discoverDomain" placeholder="example.com"></label>
+        <button class="primary" type="submit">Découvrir et stager les sources publiques</button>
+      </form>
+      <pre id="discoverResult"></pre>
+
+      <h3>Import d'un catalogue déjà récolté</h3>
       <form id="harvestForm" class="form">
         <label>Entreprise / fournisseur<input id="company" required placeholder="Nom de l'entreprise"></label>
         <label>Rayon<select id="shelf" required></select></label>

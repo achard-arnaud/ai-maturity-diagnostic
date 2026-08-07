@@ -18,6 +18,8 @@ properties:
     minLength: 1
   source_kind:
     type: string
+  acquisition:
+    type: object
   items:
     type: array
     minItems: 1
@@ -29,6 +31,7 @@ properties:
         name: {type: string, minLength: 1}
         source_url: {type: [string, "null"]}
         raw_claims: {type: array}
+        source_metadata: {type: object}
         epistemic_status: {const: unreviewed_source_claim}
         promotion_status: {enum: [candidate, reviewed, rejected, promoted]}
   promotion_contract:

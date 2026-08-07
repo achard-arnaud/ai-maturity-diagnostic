@@ -101,15 +101,21 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(HTTPStatus.OK, CONTROL.invoke(skill_id, payload))
                 return
             if path == "/api/catalog/harvest":
-                self._json(
-                    HTTPStatus.CREATED,
-                    HARVESTER.stage(payload, persist=bool(payload.get("persist", True))),
-                )
+                persist = payload.get("persist", True)
+                if not isinstance(persist, bool):
+                    raise ControlPlaneError("persist must be a boolean")
+                self._json(HTTPStatus.CREATED, HARVESTER.stage(payload, persist=persist))
+                return
+            if path == "/api/catalog/discover":
+                persist = payload.get("persist", True)
+                if not isinstance(persist, bool):
+                    raise ControlPlaneError("persist must be a boolean")
+                self._json(HTTPStatus.CREATED, HARVESTER.discover_public(payload, persist=persist))
                 return
             self.send_error(HTTPStatus.NOT_FOUND)
         except ControlPlaneError as exc:
             self._json(HTTPStatus.BAD_REQUEST, {"status": "error", "error": str(exc)})
-        except subprocess.TimeoutExpired:  # pragma: no cover - integration boundary
+        except subprocess.TimeoutExpired:
             self._json(HTTPStatus.GATEWAY_TIMEOUT, {"status": "error", "error": "skill executor timed out"})
 
     def log_message(self, fmt: str, *args: object) -> None:

@@ -49,7 +49,9 @@ function renderShelves() {
       <div>${cards.map(o => `<div class="meta"><span class="badge">${esc(o.offer_id)}</span><span>${esc(o.name)}</span><span class="badge">${esc(o.status)}</span></div>`).join("") || "<small>Aucune offre canonique.</small>"}</div>
     </article>`;
   }).join("");
-  document.querySelector("#shelf").innerHTML = state.shelves.map(s => `<option value="${esc(s.shelf_id)}">${esc(s.name)}</option>`).join("");
+  const options = state.shelves.map(s => `<option value="${esc(s.shelf_id)}">${esc(s.name)}</option>`).join("");
+  document.querySelector("#shelf").innerHTML = options;
+  document.querySelector("#discoverShelf").innerHTML = options;
 }
 
 function renderBacklog(items) {
@@ -88,6 +90,26 @@ document.querySelector("#runSkill").addEventListener("click", async () => {
     result.textContent = JSON.stringify(payload, null, 2);
   } catch (error) { result.textContent = error.message; }
 });
+
+document.querySelector("#discoverForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const result = document.querySelector("#discoverResult");
+  result.textContent = "Découverte…";
+  try {
+    const payload = await api("/api/catalog/discover", {
+      method: "POST",
+      body: JSON.stringify({
+        company: document.querySelector("#discoverCompany").value,
+        shelf_id: document.querySelector("#discoverShelf").value,
+        domain: document.querySelector("#discoverDomain").value,
+        source: "web",
+        persist: true
+      })
+    });
+    result.textContent = JSON.stringify(payload, null, 2);
+  } catch (error) { result.textContent = error.message; }
+});
+
 document.querySelector("#harvestForm").addEventListener("submit", async event => {
   event.preventDefault();
   const result = document.querySelector("#harvestResult");

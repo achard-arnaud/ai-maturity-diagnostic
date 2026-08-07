@@ -31,8 +31,8 @@ items:
     priority: P0
     status: completed
     area: catalog
-    task: Add offer shelves and company-catalog staging with an explicit product-icp-intelligence promotion gate.
-    done_when: Harvested candidates remain under data/private/catalog_harvest and cannot automatically mutate product_catalog.
+    task: Add offer shelves plus public discovery and imported company-catalog staging with an explicit product-icp-intelligence promotion gate.
+    done_when: Public or imported harvested candidates remain under data/private/catalog_harvest and cannot automatically mutate product_catalog.
   - id: TODO-V05-006
     priority: P1
     status: completed
