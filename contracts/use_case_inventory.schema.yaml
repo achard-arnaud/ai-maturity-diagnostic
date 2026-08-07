@@ -1,6 +1,7 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "https://example.invalid/contracts/use_case_inventory.schema.json"
 title: Company use-case inventory contract
+schema_version: "0.6"
 type: object
 required: [schema_version, inventory_version, study_id, company, generated_at, use_cases, boundaries]
 properties:
