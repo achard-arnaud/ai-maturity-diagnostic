@@ -26,4 +26,12 @@ Seed candidates with:
 python scripts/map_companies_icb.py
 ```
 
+When company evidence is missing, use the shared acquisition backend only as a discovery step to locate primary company evidence:
+
+```bash
+python scripts/advanced_research.py "<entreprise> revenue business segments annual report" --source web --days 730 --limit 10 --pretty
+```
+
+Do not use social/community results, retrieval relevance, contact titles, or inferred demand to validate ICB. The classification upgrade still requires dated evidence about the primary revenue-generating activity.
+
 Write `data/private/network/company_icb_mappings.jsonl`. Never use an ICB candidate as evidence of enterprise demand.

@@ -116,16 +116,18 @@ Ils peuvent s’enchaîner, mais ne se remplacent pas.
 
 Toute intégration externe est un capteur de preuve optionnel, jamais une source canonique ni une dépendance du cœur.
 
-Pour LinkedIn, appliquer les invariants `LI-POL-001` à `LI-POL-008` :
+Pour LinkedIn, la hiérarchie runtime est : **plugin officiel approuvé si disponible → fallback index public → validation primaire/humaine pour les claims sensibles**. Le fallback public utilise uniquement des résultats web indexés (`/pulse/`, `/posts/`, `/in/`) et ne constitue pas une implémentation du connecteur.
 
-1. `LI-POL-001` — le projet fonctionne entièrement sans plugin LinkedIn;
-2. `LI-POL-002` — aucune implémentation avant les gates documentés dans le PRD;
-3. `LI-POL-003` — accès officiel et authentification approuvée uniquement;
+Appliquer les invariants `LI-POL-001` à `LI-POL-008` :
+
+1. `LI-POL-001` — le projet fonctionne entièrement sans plugin LinkedIn grâce au fallback public et à la validation humaine lorsque nécessaire;
+2. `LI-POL-002` — aucune implémentation de connecteur authentifié avant les gates documentés dans le PRD;
+3. `LI-POL-003` — accès officiel et authentification approuvée uniquement pour le connecteur;
 4. `LI-POL-004` — lecture seule en phase initiale, sans scraping ni automatisation navigateur non autorisée;
 5. `LI-POL-005` — la sortie connecteur est une preuve externe, jamais une identité canonique;
 6. `LI-POL-006` — politique de stockage appliquée avant toute persistance;
 7. `LI-POL-007` — merge gate avant toute nouvelle observation canonique;
-8. `LI-POL-008` — absence, refus ou panne du plugin produit une validation manuelle, sans bloquer la qualification.
+8. `LI-POL-008` — absence, refus, panne ou couverture insuffisante du plugin déclenche le fallback public; si celui-ci ne suffit pas à établir un rôle courant, une identité ou une relation sensible, router ensuite vers une validation primaire/humaine sans bloquer la qualification.
 
 Aucune action LinkedIn d’écriture n’est autorisée. Message, invitation, InMail, commentaire, post ou engagement exigent un PRD et un ADR séparés.
 

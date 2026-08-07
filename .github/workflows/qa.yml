@@ -1,0 +1,36 @@
+name: QA
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'agent/**'
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends graphviz
+
+      - name: Install package and QA dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[docs,dev]'
+
+      - name: Run release gate
+        run: python scripts/check_release.py

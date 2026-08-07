@@ -15,6 +15,20 @@ description: Analyser le newsflow IA récent pour distinguer narration et exécu
 
 Lire [references/newsflow-sourcing-method.md](references/newsflow-sourcing-method.md) pour coder les événements et la posture de sourcing.
 
+## Acquisition avancée
+
+Utiliser le backend selon le type de signal, sans confondre rang de recherche et force de preuve :
+
+```bash
+python scripts/advanced_research.py "<entreprise> artificial intelligence partnership deployment" --source web --days 180 --limit 15 --pretty
+python scripts/advanced_research.py "<entreprise> AI" --source twitter --days 90 --limit 10 --pretty
+python scripts/advanced_research.py "<entreprise> AI" --source youtube --days 180 --limit 8 --enrich --pretty
+python scripts/advanced_research.py "<entreprise> AI" --source github --days 180 --limit 10 --pretty
+python scripts/advanced_research.py "<entreprise> AI" --source hackernews --days 180 --limit 10 --pretty
+```
+
+Ajouter `arxiv` pour une trajectoire R&D et `perplexity` comme discovery lane lorsque pertinent. Toujours revenir à l’annonce corporate, au partenaire nommé, au dépôt, au papier ou à la source primaire avant de qualifier un événement comme preuve d’exécution.
+
 ## Interpréter chaque événement
 
 Traiter quatre angles obligatoires :
