@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app.core import ControlPlaneError
+from app.core import ControlPlaneError, _read_yaml
 from app.demand import DemandCatalog
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
@@ -18,11 +18,13 @@ class WorkflowPlanner:
         kind = str(payload.get("kind") or "").strip()
         if kind == "demand":
             return self._demand(str(payload.get("sector_code") or "").strip())
+        if kind == "offer":
+            return self._offer(str(payload.get("offer_id") or "").strip())
         if kind == "qualification":
             return self._qualification(str(payload.get("study_id") or "").strip())
         if kind == "nudging":
             return self._nudging(str(payload.get("study_id") or "").strip())
-        raise ControlPlaneError("workflow kind must be demand, qualification or nudging")
+        raise ControlPlaneError("workflow kind must be demand, offer, qualification or nudging")
 
     def _demand(self, sector_code: str) -> dict[str, Any]:
         if not sector_code:
@@ -50,6 +52,33 @@ class WorkflowPlanner:
                 "use_cases": sector["use_case_count"],
                 "benchmark_state": sector["benchmark_state"],
             },
+        }
+
+    def _offer(self, offer_id: str) -> dict[str, Any]:
+        if not offer_id:
+            raise ControlPlaneError("offer_id is required for offer workflow")
+        index = _read_yaml(self.root / "product_catalog" / "index.yaml")
+        entry = next((item for item in index.get("offers", []) or [] if isinstance(item, dict) and item.get("offer_id") == offer_id), None)
+        if entry is None:
+            raise ControlPlaneError(f"unknown offer: {offer_id}")
+        profile_path = self.root / "product_catalog" / str(entry.get("file") or "")
+        profile = _read_yaml(profile_path).get("offer", {}) if profile_path.is_file() else {}
+        proof = profile.get("proof") or {}
+        unknowns = profile.get("unknowns") or []
+        owner_review = profile.get("status") not in {"draft", "reconstructed"} and not unknowns
+        evidence_status = "completed" if proof.get("evidence_grade") not in {None, "U1", "N0"} else "review"
+        return {
+            "schema_version": "0.6",
+            "kind": "offer",
+            "target": offer_id,
+            "label": profile.get("name") or entry.get("name") or offer_id,
+            "profile_version": profile.get("profile_version"),
+            "steps": [
+                {"id": "source_evidence", "skill": "product-icp-intelligence", "status": evidence_status, "gate": "Harvest/import sources remain candidates until product review"},
+                {"id": "canonical_profile", "skill": "product-icp-intelligence", "status": "completed" if profile else "ready", "gate": "Versioned problem, ICP, hard gates, proof and unknowns"},
+                {"id": "owner_review", "skill": None, "status": "completed" if owner_review else "review", "gate": "Owner validates packaging, proof, delivery capacity and unresolved unknowns"},
+                {"id": "qualification_ready", "skill": "qualification-tunnel-router", "status": "ready" if profile else "blocked", "gate": "Snapshot only when a qualification workflow explicitly needs this offer"},
+            ],
         }
 
     def _qualification(self, study_id: str) -> dict[str, Any]:
