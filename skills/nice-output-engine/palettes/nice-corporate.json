@@ -1,0 +1,11 @@
+{
+  "name": "nice-corporate",
+  "colors": {
+    "navy": "#102A43", "navy_2": "#173B57", "teal": "#176B78",
+    "cyan": "#31B7C5", "cyan_dark": "#0C7180", "background": "#F3F6F9",
+    "surface": "#FFFFFF", "text": "#1E293B", "muted": "#64748B",
+    "border": "#D7E0E8", "green": "#14966A", "orange": "#D98312",
+    "red": "#C64552", "pale_cyan": "#E6F7F8", "pale_blue": "#EAF0F8",
+    "pale_green": "#E6F5EF", "pale_red": "#FBEAEC", "pale_orange": "#FFF2DF"
+  }
+}

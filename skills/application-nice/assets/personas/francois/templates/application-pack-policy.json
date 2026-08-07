@@ -1,0 +1,8 @@
+{
+  "persona": "francois-pro",
+  "allowed_source_roots": ["assets/personas/francois", "assets/examples/francois"],
+  "design_source": "assets/personas/francois/design-system/Francois_Arnaud_CV_Design_System.json",
+  "default_language": "en",
+  "visual_character": ["executive", "dense", "regulated-finance", "navy-teal-amber", "minimal-radius"],
+  "forbidden_cross_persona_sources": ["assets/personas/sarah", "assets/examples/sarah"]
+}

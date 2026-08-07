@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="{{ document.language | default('fr') }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ document.title }}</title>
+  <style>{{ css | safe }}</style>
+</head>
+<body data-template="{{ template_name }}" data-min-pages="{{ contract.page_range[0] }}" data-max-pages="{{ contract.page_range[1] }}">
+{% for page in pages %}
+<section class="page" data-page="{{ loop.index }}" data-no-overflow>
+  <header class="header">
+    <div class="kicker">{{ page.kicker }}</div>
+    <div class="title">{{ document.title }}</div>
+    <div class="subtitle">{{ page.subtitle }}</div>
+    <div class="gate" data-card data-no-overflow>
+      <div class="gate-label">{{ page.gate.label }}</div>
+      <div class="gate-main">{{ page.gate.main }}</div>
+      <div class="gate-sub">{{ page.gate.sub }}</div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="legend">
+      <span class="legend-item"><span class="dot green"></span>Fait / observation directe</span>
+      <span class="legend-item"><span class="dot orange"></span>Vendor claim / inférence</span>
+      <span class="legend-item"><span class="dot red"></span>Inconnu / non démontré</span>
+    </div>
+
+    {% set top = page.top_cards %}
+    <div class="grid cols-3" data-overlap-check>
+      {% for card in top %}
+      <article class="card" data-layout-box data-card data-no-overflow>
+        <h2>{{ card.title }}</h2>
+        {% if card.metric is defined and card.metric %}
+        <div class="metric">
+          <div class="metric-value">{{ card.metric.value | safe }}</div>
+          <div class="metric-meta">{{ card.metric.meta | safe }}</div>
+        </div>
+        {% endif %}
+        {% if card.pill is defined and card.pill %}<div style="margin-top:2.2mm"><span class="pill {{ card.pill.status }}">{{ card.pill.text }}</span></div>{% endif %}
+        {% if card.body is defined and card.body %}<p class="body">{{ card.body | safe }}</p>{% endif %}
+        {% if card.note is defined and card.note %}<p class="small muted">{{ card.note | safe }}</p>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+
+    <section class="flow-band" data-no-overflow>
+      <div class="flow-head">
+        <div class="flow-title">{{ page.flow.title }}</div>
+        <div class="flow-note">{{ page.flow.note }}</div>
+      </div>
+      <div class="flow {{ page.flow.columns }}" data-overlap-check>
+        {% for step in page.flow.steps %}
+        <div class="flow-step {% if step.warn is defined and step.warn %}warn{% endif %}" data-layout-box>
+          <div class="flow-num">{{ step.num }}</div>
+          <div class="flow-name">{{ step.name }}</div>
+          <div class="flow-sub">{{ step.sub }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if page.layout == 'three_columns' %}
+    <div class="grid cols-3" data-overlap-check>
+      {% for col in page.columns %}
+      <article class="card" data-layout-box data-card data-no-overflow>
+        <h2>{{ col.title }}</h2>
+        {% if col.type == 'fit' %}
+          {% for row in col.rows %}
+          <div class="fit-row">
+            <div class="fit-label {{ row.level }}">{{ row.label }}</div>
+            <div class="fit-text">{{ row.text | safe }}</div>
+          </div>
+          {% endfor %}
+        {% elif col.type == 'bullets' %}
+          <div class="bullets">
+          {% for item in col['items'] %}
+            <div class="bullet"><span class="dot {{ item.status }}"></span><div>{{ item.text | safe }}</div></div>
+          {% endfor %}
+          </div>
+        {% elif col.type == 'benchmark' %}
+          <div class="bullets">
+          {% for item in col['items'] %}
+            <div class="bullet"><span class="dot orange"></span><div><b>{{ item.name }}</b> — {{ item.text }}</div></div>
+          {% endfor %}
+          </div>
+        {% endif %}
+        {% if col.callout is defined and col.callout %}
+        <div class="pilot-card" style="margin-top:3mm">
+          <div class="pilot-title">{{ col.callout.title }}</div>
+          <div class="pilot-body">{{ col.callout.body | safe }}</div>
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="grid cols-60-40" data-overlap-check>
+      <article class="card" data-layout-box data-card data-no-overflow>
+        <h2>{{ page.left.title }}</h2>
+        <div class="bullets">
+        {% for item in page.left['items'] %}
+          <div class="bullet"><span class="dot {{ item.status }}"></span><div>{{ item.text | safe }}</div></div>
+        {% endfor %}
+        </div>
+      </article>
+      <article class="card right-combined" data-layout-box data-card data-no-overflow>
+        <h2>{{ page.right.comparison.title }}</h2>
+        <div class="compare-list">
+          {% for item in page.right.comparison['items'] %}
+          <div class="compare-row {{ item.class }}" data-no-overflow>
+            <div class="compare-title">{{ item.title }}</div>
+            <div class="compare-detail"><b>{{ item.sub }}</b> — {{ item.body | safe }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="pricing-section">
+          <h2>{{ page.right.pricing.title }}</h2>
+          <div class="market-list">
+            {% for row in page.right.pricing.rows %}
+            <div class="market-row" data-no-overflow>
+              <div class="market-actor">{{ row.actor }}</div>
+              <div class="market-detail"><b>{{ row.metric }}</b> — {{ row.signal }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+    </div>
+    {% endif %}
+  </main>
+
+  <footer class="footer-strip" data-no-overflow>
+    <div class="footer-title">{{ page.footer.title }}</div>
+    <div class="footer-body">{{ page.footer.body | safe }}</div>
+  </footer>
+  <div class="page-number">{{ loop.index }}/{{ pages|length }}</div>
+</section>
+{% endfor %}
+</body>
+</html>

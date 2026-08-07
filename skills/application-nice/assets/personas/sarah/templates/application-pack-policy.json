@@ -1,0 +1,9 @@
+{
+  "persona": "sarah-pro",
+  "allowed_source_roots": ["assets/personas/sarah", "assets/examples/sarah"],
+  "design_source": "assets/personas/sarah/cv/Sarah_Achard_CV_MBDA.pdf",
+  "default_language": "fr",
+  "visual_character": ["strategic", "pedagogical", "human-centered", "proof-points", "restrained-creativity"],
+  "design_rule": "Derive opportunity-specific tokens from Sarah sources; never import Francois tokens by default.",
+  "forbidden_cross_persona_sources": ["assets/personas/francois", "assets/examples/francois"]
+}

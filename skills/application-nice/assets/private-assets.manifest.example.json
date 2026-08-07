@@ -1,0 +1,24 @@
+{
+  "public_repository_policy": "metadata-only",
+  "persona_confirmation_required": true,
+  "assets": {
+    "francois": [
+      {"id": "francois.current_cv", "kind": "cv", "required_for": ["candidate_truth", "cv_variant"]},
+      {"id": "francois.design_system", "kind": "design-system", "required_for": ["visual_variant"]},
+      {"id": "francois.ai_use_cases", "kind": "example", "required_for": ["portfolio_evidence"]},
+      {"id": "francois.universal_investment_analysis", "kind": "historical-example", "required_for": ["method_learning"]},
+      {"id": "francois.private_corner_interview", "kind": "private-transcript", "required_for": ["method_learning"]},
+      {"id": "francois.private_corner_deck", "kind": "historical-example", "required_for": ["method_learning"]}
+    ],
+    "sarah": [
+      {"id": "sarah.current_cv", "kind": "cv", "required_for": ["candidate_truth", "cv_variant"]},
+      {"id": "sarah.quantum_academy_portfolio", "kind": "historical-example", "required_for": ["method_learning"]},
+      {"id": "sarah.quantum_learning_note", "kind": "historical-example", "required_for": ["method_learning"]}
+    ]
+  },
+  "rules": [
+    "Resolve only the confirmed persona.",
+    "Never commit resolved paths, binaries, contact details, or transcripts to a public repository.",
+    "Ask for a missing active-persona source instead of substituting another persona or memory."
+  ]
+}

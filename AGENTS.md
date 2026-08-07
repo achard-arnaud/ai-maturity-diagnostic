@@ -145,6 +145,13 @@ Réouvrir une passe si une conclusion décisive dépend d’un signal unique ou 
 
 Pour une note d’organisation tech, suivre `skills/tech-leadership-org-intelligence/SKILL.md`. Valider la configuration, générer le DOCX, le rendre en images et inspecter chaque page. Ne jamais annoncer une validation visuelle sans inspection effective.
 
+### Intelligence exécutive et candidatures
+
+- `$business-intelligence-nice` possède la recherche, la preuve, l’analyse et la recommandation pour les notes de décision Sarah-Pro.
+- `$application-nice` possède les candidatures. Il confirme toujours `François-Pro` ou `Sarah-Pro` avant de lire une source candidat et ne mélange jamais les deux espaces.
+- `$nice-output-engine` possède uniquement composition, rendu et QA visuelle. Il reçoit un contenu fonctionnel gelé et ne modifie jamais un claim, un score, un niveau de preuve ou une recommandation.
+- Les CV, coordonnées, transcriptions et dossiers privés ne sont jamais versionnés dans ce dépôt public. Résoudre uniquement les actifs de la persona confirmée depuis l’environnement privé ou demander leur fourniture.
+
 ## Définition de fini
 
 - La décision reçoit une réponse explicite.

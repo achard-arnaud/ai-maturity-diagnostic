@@ -1,0 +1,13 @@
+{
+  "name": "nice-corporate",
+  "palette_ref": "../palettes/nice-corporate.json",
+  "typography": {
+    "font_family": "Arial, Helvetica, sans-serif", "font_body_pt": 11,
+    "font_preferred_pt": 11, "font_min_pt": 9, "font_caption_pt": 9,
+    "font_h1_pt": 23, "font_h2_pt": 12, "font_h3_pt": 11, "line_height": 1.18
+  },
+  "spacing": {
+    "page_margin_mm": 10, "card_padding_pt": 11, "card_padding_min_pt": 9,
+    "gap_mm": 3.2, "radius_pt": 10
+  }
+}

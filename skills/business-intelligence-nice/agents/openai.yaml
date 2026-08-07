@@ -1,0 +1,14 @@
+interface:
+  display_name: Business Intelligence Nice
+  short_description: Research-to-decision briefs for Sarah-Pro
+  default_prompt: Use $business-intelligence-nice to turn this business question into
+    an evidence-grounded decision brief.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
