@@ -12,7 +12,7 @@ class V06FrontendContractTests(unittest.TestCase):
         self.js = (ROOT / "app/frontend/app.js").read_text(encoding="utf-8")
 
     def test_primary_menus_exist(self) -> None:
-        for label in ("Demande", "Offres", "Qualification", "Nudging"):
+        for label in ("Demande", "Offres", "Qualification", "Nudging", "Suivi"):
             self.assertIn(f">{label}<", self.html)
 
     def test_demand_ctas_are_user_visible(self) -> None:
@@ -26,6 +26,11 @@ class V06FrontendContractTests(unittest.TestCase):
         ):
             self.assertIn(phrase, self.html + self.js)
 
+    def test_offer_lifecycle_exposes_unit_and_full_flow(self) -> None:
+        self.assertIn("offerAuditBtn", self.js)
+        self.assertIn("offerFlowBtn", self.js)
+        self.assertIn('openWorkflow("offer"', self.js)
+
     def test_nudging_modes_are_visible_and_separate(self) -> None:
         for phrase in ("Productivisation", "Upsell par dépendance", "Cross-sell package"):
             self.assertIn(phrase, self.html)
@@ -37,6 +42,11 @@ class V06FrontendContractTests(unittest.TestCase):
         self.assertIn("qualNextBtn", self.js)
         self.assertIn("qualFlowBtn", self.js)
         self.assertIn("/api/workflows/plan", self.js)
+
+    def test_follow_up_is_actionable_not_only_todo_table(self) -> None:
+        self.assertIn('id="followUpGrid"', self.html)
+        self.assertIn("renderFollowUp", self.js)
+        self.assertIn("followActionBtn", self.js)
 
 
 if __name__ == "__main__":
