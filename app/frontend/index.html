@@ -9,9 +9,9 @@
 <body>
   <header>
     <div>
-      <p class="eyebrow">AI Maturity Diagnostic · v0.6</p>
+      <p class="eyebrow">AI Maturity Diagnostic · v0.7</p>
       <h1>Control plane</h1>
-      <p class="lede">Parcourir la demande, gérer les offres, qualifier les opportunités et développer les use cases sans mélanger les sources de vérité.</p>
+      <p class="lede">Naviguer de la demande au use case, de la chaîne de valeur au matching, puis des personnes au reach — avec un CTA de résolution sur chaque blocker.</p>
     </div>
     <div id="health" class="status">Chargement…</div>
   </header>
@@ -21,8 +21,8 @@
     <button data-target="offers">Offres</button>
     <button data-target="qualification">Qualification</button>
     <button data-target="nudging">Nudging</button>
-    <button data-target="skills">Skills</button>
     <button data-target="backlog">Suivi</button>
+    <button data-target="skills">Skills</button>
   </nav>
 
   <main>
@@ -30,8 +30,8 @@
       <div class="section-head">
         <div>
           <p class="eyebrow">Catalogue de demande</p>
-          <h2>ICB → secteurs → entreprises → études → use cases</h2>
-          <p>Le secteur organise la navigation et le benchmarking. Il ne prouve jamais le besoin d’une entreprise.</p>
+          <h2>ICB → entreprises → études → use cases → chaînes de valeur</h2>
+          <p>Le secteur organise la navigation et le benchmarking. Un use case reste une vérité entreprise ; Porter/Ishikawa et le graphe ajoutent des relations et questions, jamais de demande inventée.</p>
         </div>
         <div class="head-actions">
           <input id="sectorFilter" type="search" placeholder="Secteur, ICB, entreprise…">
@@ -52,12 +52,11 @@
       <div class="section-head">
         <div>
           <p class="eyebrow">Catalogue d’offres</p>
-          <h2>Rayonnage et cycle de vie de la vérité produit</h2>
-          <p>Les rayons servent à naviguer. Les profils canoniques restent dans <code>product_catalog/</code>.</p>
+          <h2>Rayonnage, vérité produit et handoff vers qualification</h2>
+          <p>Le profil canonique ne contient aucun fait compte. Le parcours complet montre les preuves, unknowns, owner review et disponibilité pour snapshots.</p>
         </div>
       </div>
       <div id="shelfGrid" class="grid"></div>
-
       <div class="split">
         <div class="subpanel">
           <h3>Découvrir un catalogue fournisseur</h3>
@@ -85,9 +84,9 @@
     <section id="qualification" class="panel">
       <div class="section-head">
         <div>
-          <p class="eyebrow">Qualification & matching</p>
-          <h2>Un cockpit piloté par les artefacts</h2>
-          <p>Demande → snapshots produit → hard gates / fit → personnes → preuve/pilote. Aucun raccourci UI ne contourne le routeur.</p>
+          <p class="eyebrow">Qualification, matching & reach</p>
+          <h2>Un tunnel où chaque blocker explique comment avancer</h2>
+          <p>Demande → snapshots → hard gates / fit → contacts → reach first/second wave → preuve/pilote. Les boutons bloqués deviennent des CTA de résolution, jamais des raccourcis.</p>
         </div>
       </div>
       <div id="qualificationGrid" class="grid"></div>
@@ -97,18 +96,19 @@
       <div class="section-head">
         <div>
           <p class="eyebrow">Nudging use cases</p>
-          <h2>Développer ce qui existe déjà, sans requalifier le compte</h2>
-          <p>Cette vue ne charge ni ICB, ni benchmark sectoriel, ni fit produit : seulement l’inventaire des use cases et les retours enregistrés.</p>
+          <h2>Productiviser, prolonger ou packager ce qui est déjà observé</h2>
+          <p>Cette vue reste isolée du fit produit et de l’ICB. Le graphe utilisé ici est uniquement celui des use cases de la même entreprise.</p>
         </div>
         <div class="head-actions">
           <select id="nudgeInventory"></select>
+          <button id="nudgeGraph">Patrimoine UC</button>
           <button id="fullNudgeFlow">Parcours complet</button>
         </div>
       </div>
       <div class="grid nudge-modes">
         <article class="card accent-card">
           <p class="eyebrow">01</p><h3>Productivisation</h3>
-          <p>Mise en série, enrichissement, variantes, actifs réutilisables et baisse du coût marginal d’un use case déjà connu.</p>
+          <p>Mise en série, enrichissement, variantes, actifs réutilisables et baisse du coût marginal d’un use case connu.</p>
           <button class="primary nudgeBtn" data-mode="productivization">Générer les pistes</button>
         </article>
         <article class="card accent-card">
@@ -118,7 +118,7 @@
         </article>
         <article class="card accent-card">
           <p class="eyebrow">03</p><h3>Cross-sell package</h3>
-          <p>Packager des use cases déjà catalogués pour l’entreprise et raconter la valeur à partir de ses propres retours.</p>
+          <p>Packager des use cases déjà catalogués et raconter la valeur à partir des retours enregistrés de l’entreprise.</p>
           <button class="primary nudgeBtn" data-mode="cross_sell_package">Générer les packages</button>
         </article>
       </div>
@@ -129,19 +129,25 @@
       <div id="nudgeResults" class="grid result-grid"></div>
     </section>
 
-    <section id="skills" class="panel">
-      <div class="section-head">
-        <div><p class="eyebrow">Vue technique</p><h2>Appels unitaires des skills</h2><p>Chaque CTA appelle une seule responsabilité et produit une enveloppe versionnée.</p></div>
-        <input id="skillFilter" type="search" placeholder="Filtrer les skills">
-      </div>
-      <div id="skillGrid" class="grid"></div>
-    </section>
-
     <section id="backlog" class="panel">
-      <div class="section-head"><div><p class="eyebrow">Suivi</p><h2>Prochaines actions, gates et reste à faire</h2><p>Les parcours actionnables remontent avant les TODO techniques.</p></div></div>
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Suivi actionnable</p>
+          <h2>Blockers, pending et prochaines actions</h2>
+          <p>Qualification et reach d’abord, complétude use cases/chaînes de valeur ensuite, benchmark et nudging après, TODO techniques en dernier.</p>
+        </div>
+      </div>
       <div id="followUpGrid" class="grid follow-up-grid"></div>
       <h3 class="table-title">Backlog de gouvernance et de release</h3>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>Priorité</th><th>État</th><th>Zone</th><th>Tâche</th></tr></thead><tbody id="backlogRows"></tbody></table></div>
+    </section>
+
+    <section id="skills" class="panel">
+      <div class="section-head">
+        <div><p class="eyebrow">Vue technique</p><h2>Appels unitaires des skills</h2><p>Chaque CTA appelle une responsabilité unique et produit une enveloppe versionnée.</p></div>
+        <input id="skillFilter" type="search" placeholder="Filtrer les skills">
+      </div>
+      <div id="skillGrid" class="grid"></div>
     </section>
   </main>
 
@@ -165,7 +171,16 @@
     <div id="workflowSteps" class="workflow-steps"></div>
   </aside>
 
-  <footer>Les menus orchestrent les handoffs ; ils ne deviennent jamais une seconde source de vérité métier.</footer>
+  <aside id="dataPanel" class="drawer wide-drawer hidden" aria-live="polite">
+    <div class="section-head">
+      <div><p id="dataEyebrow" class="eyebrow">Analyse</p><h3 id="dataTitle"></h3></div>
+      <button id="closeData" class="ghost">Fermer</button>
+    </div>
+    <p id="dataSummary" class="hint"></p>
+    <div id="dataContent"></div>
+  </aside>
+
+  <footer>Chaque menu orchestre des handoffs explicites. Les faits entreprise, produit, personnes et use cases restent dans leurs artefacts propriétaires.</footer>
   <script src="/app.js"></script>
 </body>
 </html>
