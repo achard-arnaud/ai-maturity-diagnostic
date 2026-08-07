@@ -20,7 +20,7 @@
 | `opportunity-fit-matching` | Croiser les deux profils sans recherche fraîche | `06_product_fit_matrix.yaml` |
 | `engagement-pilot-design` | Transformer un match en preuve falsifiable | `07_engagement_hypothesis.md` |
 
-Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` et seulement les références méthodologiques nécessaires. Les faits produit restent dans `product_catalog/`; les faits compte restent dans `studies/`.
+Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` lorsqu’elles existent et seulement les références méthodologiques nécessaires. Les faits produit restent dans `product_catalog/`; les faits compte restent dans `studies/`.
 
 ## Couche réseau v0.3
 
@@ -34,6 +34,16 @@ Chaque package contient un `SKILL.md`, des métadonnées `agents/openai.yaml` et
 | `sector-intelligence-consolidation` | Synthèse de trois études comparables ou plus | `sector_rollups/ICB-*.yaml` |
 
 `engagement-pilot-design` transforme ensuite les cibles et le fit en hypothèses de reach ou de preuve, sans inventer d’autorité ni de besoin.
+
+## Catalogue de demande et Nudging v0.6
+
+| Skill | Responsabilité exclusive | Sortie |
+|---|---|---|
+| `enterprise-use-case-intelligence` | Recenser et maintenir les use cases d’une entreprise à partir de ses preuves, sans offre | `05b_use_case_inventory.yaml` |
+| `sector-intelligence-consolidation` | Consolider les preuves et use cases de >=3 études d’un même secteur ICB | `data/private/sector_rollups/ICB-*.yaml` |
+| `use-case-nudging` | Productivisation, upsell par dépendance et packaging cross-sell à partir du seul inventaire de use cases de l’entreprise | `09_use_case_nudges.yaml` |
+
+Le catalogue de demande suit la hiérarchie `ICB -> secteur -> entreprises -> études -> use cases`. ICB sert à naviguer et benchmarker ; il ne prouve jamais un besoin. Le Nudging est séparé de la qualification initiale : il ne lit ni ICB, ni rollup sectoriel, ni profil de demande, ni catalogue produit, ni matrice de fit.
 
 ## Intelligence exécutive et candidatures v0.4
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enterprise Use-Case Intelligence"
+  short_description: "Recense les use cases prouvés d’une entreprise"
+  default_prompt: "Use $enterprise-use-case-intelligence to build or refresh one company’s product-blind use-case inventory from its study evidence."

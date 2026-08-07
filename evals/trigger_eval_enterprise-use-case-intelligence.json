@@ -1,0 +1,22 @@
+[
+  {"query":"Recense les use cases IA observés dans cette étude entreprise et conserve les claim IDs.","should_trigger":true},
+  {"query":"Ajoute ce nouveau use flow au catalogue de demande de cette entreprise.","should_trigger":true},
+  {"query":"Mets à jour 05b_use_case_inventory.yaml à partir des preuves récentes.","should_trigger":true},
+  {"query":"Cartographie les dépendances entre les use cases déjà observés chez ce compte.","should_trigger":true},
+  {"query":"Consolide les workflows, maturité, réutilisabilité et feedback des cas d’usage de cette entreprise.","should_trigger":true},
+  {"query":"Harvest les use cases sous-jacents du diagnostic Acme sans regarder les offres.","should_trigger":true},
+  {"query":"Ajoute un use case KYC avec sa preuve, son workflow et ses inconnues.","should_trigger":true},
+  {"query":"Quels use cases sont réellement prouvés dans les sources de ce study ?","should_trigger":true},
+  {"query":"Rafraîchis l’inventaire des use cases en gardant les IDs stables.","should_trigger":true},
+  {"query":"Documente les variantes et actifs réutilisables des use cases de cette entreprise sans proposer de produit.","should_trigger":true},
+  {"query":"Quel produit correspond le mieux à ce compte ?","should_trigger":false},
+  {"query":"Génère un upsell à partir de ce use case.","should_trigger":false},
+  {"query":"Compare trois banques dans un benchmark sectoriel.","should_trigger":false},
+  {"query":"Assigne un code ICB à cette entreprise.","should_trigger":false},
+  {"query":"Importe mes contacts privés.","should_trigger":false},
+  {"query":"Rédige le pilote commercial pour l’offre gagnante.","should_trigger":false},
+  {"query":"Mets à jour l’ICP canonique d’Astraforge.","should_trigger":false},
+  {"query":"Sélectionne les interlocuteurs après le matching.","should_trigger":false},
+  {"query":"Fais un one-pager de l’entreprise.","should_trigger":false},
+  {"query":"Priorise les comptes de mon réseau.","should_trigger":false}
+]

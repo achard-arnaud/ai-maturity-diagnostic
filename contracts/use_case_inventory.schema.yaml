@@ -1,0 +1,57 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://example.invalid/contracts/use_case_inventory.schema.json"
+title: Company use-case inventory contract
+type: object
+required: [schema_version, inventory_version, study_id, company, generated_at, use_cases, boundaries]
+properties:
+  schema_version: {const: "0.6"}
+  inventory_version: {type: string}
+  study_id: {type: string, minLength: 1}
+  company: {type: string, minLength: 1}
+  company_id: {type: [string, "null"]}
+  generated_at: {type: string}
+  use_cases:
+    type: array
+    items:
+      type: object
+      required: [use_case_id, name, line_of_business, workflow, evidence_status, maturity, dependencies, feedback, confidence]
+      properties:
+        use_case_id: {type: string, pattern: "^UC-[A-Za-z0-9._-]+$"}
+        name: {type: string, minLength: 1}
+        line_of_business: {type: string, minLength: 1}
+        workflow: {type: string, minLength: 1}
+        job_to_be_done: {type: [string, "null"]}
+        problem: {type: [string, "null"]}
+        expected_outcome: {type: [string, "null"]}
+        outcome_family: {type: [string, "null"]}
+        evidence_status: {enum: [observed, inferred, validated]}
+        evidence_claim_ids: {type: array, items: {type: string}}
+        maturity: {enum: [idea, experiment, pilot, production, scaled, retired, unknown]}
+        dependencies:
+          type: object
+          required: [depends_on, enables]
+          properties:
+            depends_on: {type: array, items: {type: string}}
+            enables: {type: array, items: {type: string}}
+        repeatability: {enum: [low, medium, high, unknown]}
+        variant_axes: {type: array, items: {type: string}}
+        reusable_assets: {type: array, items: {type: string}}
+        feedback:
+          type: array
+          items:
+            type: object
+            required: [statement, evidence_status]
+            properties:
+              statement: {type: string}
+              outcome: {type: [string, "null"]}
+              evidence_status: {enum: [observed, inferred, validated]}
+              source_claim_ids: {type: array, items: {type: string}}
+        confidence: {enum: [low, medium, high]}
+        unknowns: {type: array, items: {type: string}}
+  boundaries:
+    type: object
+    required: [product_blind, sector_does_not_prove_demand]
+    properties:
+      product_blind: {const: true}
+      sector_does_not_prove_demand: {const: true}
+additionalProperties: true

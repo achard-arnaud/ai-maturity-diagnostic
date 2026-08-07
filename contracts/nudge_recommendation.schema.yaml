@@ -1,0 +1,36 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://example.invalid/contracts/nudge_recommendation.schema.json"
+title: Use-case nudge recommendation contract
+type: object
+required: [schema_version, company, inventory_version, generated_at, input_boundary, nudges]
+properties:
+  schema_version: {const: "0.6"}
+  company: {type: string}
+  inventory_version: {type: string}
+  generated_at: {type: string}
+  input_boundary:
+    type: object
+    required: [use_case_inventory_only, icb_loaded, sector_rollup_loaded, product_fit_loaded]
+    properties:
+      use_case_inventory_only: {const: true}
+      icb_loaded: {const: false}
+      sector_rollup_loaded: {const: false}
+      product_fit_loaded: {const: false}
+  nudges:
+    type: array
+    items:
+      type: object
+      required: [nudge_id, mode, source_use_case_ids, target_use_case_ids, rationale, prerequisites, unknowns, falsifier, confidence, status]
+      properties:
+        nudge_id: {type: string}
+        mode: {enum: [productivization, upsell_dependency, cross_sell_package]}
+        source_use_case_ids: {type: array, minItems: 1, items: {type: string}}
+        target_use_case_ids: {type: array, items: {type: string}}
+        rationale: {type: string}
+        evidence_feedback: {type: array}
+        prerequisites: {type: array, items: {type: string}}
+        unknowns: {type: array, items: {type: string}}
+        falsifier: {type: string}
+        confidence: {enum: [low, medium, high]}
+        status: {const: hypothesis}
+additionalProperties: true
