@@ -1,6 +1,6 @@
 const state = {
   skills: [], offers: [], shelves: [], demand: { sectors: [] }, inventories: [],
-  qualification: [], nudgeInventories: [], selectedSkill: null, selectedSector: null
+  qualification: [], nudgeInventories: [], backlog: [], selectedSkill: null, selectedSector: null
 };
 
 async function api(path, options = {}) {
@@ -42,7 +42,9 @@ async function openWorkflow(kind, target) {
   try {
     const plan = await api("/api/workflows/plan", { method: "POST", body: JSON.stringify(payload) });
     document.querySelector("#workflowTitle").textContent = `${plan.label || plan.target} · ${kind}`;
-    const current = plan.current ? `État : ${plan.current.eligible_studies ?? "—"} études éligibles · ${plan.current.use_cases ?? "—"} use cases · ${plan.current.benchmark_state ?? ""}` : (plan.stage ? `Étape actuelle : ${plan.stage}` : "Parcours guidé avec gates explicites.");
+    const current = plan.current
+      ? `État : ${plan.current.eligible_studies ?? "—"} études éligibles · ${plan.current.use_cases ?? "—"} use cases · ${plan.current.benchmark_state ?? ""}`
+      : (plan.stage ? `Étape actuelle : ${plan.stage}` : "Parcours guidé avec gates explicites.");
     document.querySelector("#workflowSummary").textContent = current;
     document.querySelector("#workflowSteps").innerHTML = (plan.steps || []).map((step, index) => `
       <div class="workflow-step ${statusClass(step.status)}">
@@ -85,7 +87,10 @@ function renderShelves() {
       <p>${esc(shelf.purpose || "")}</p>
       <div>${cards.map(o => `<div class="offer-row">
         <div><strong>${esc(o.name)}</strong><div class="meta"><span class="badge">${esc(o.offer_id)}</span><span class="badge">${esc(o.status)}</span><span>${esc(o.profile_version || "")}</span></div></div>
-        <button class="offerAuditBtn" data-offer="${esc(o.offer_id)}" data-file="${esc(o.file || "")}">Auditer / MAJ</button>
+        <div class="row-actions">
+          <button class="offerAuditBtn" data-offer="${esc(o.offer_id)}" data-file="${esc(o.file || "")}">Auditer / MAJ</button>
+          <button class="offerFlowBtn" data-offer="${esc(o.offer_id)}">Parcours complet</button>
+        </div>
       </div>`).join("") || "<small>Aucune offre canonique.</small>"}</div>
     </article>`;
   }).join("");
@@ -94,6 +99,7 @@ function renderShelves() {
     `Audite ou mets à jour la vérité canonique de ${btn.dataset.offer} sans charger de compte nommé.`,
     btn.dataset.file ? [`product_catalog/${btn.dataset.file}`] : []
   )));
+  document.querySelectorAll(".offerFlowBtn").forEach(btn => btn.addEventListener("click", () => openWorkflow("offer", { offer_id: btn.dataset.offer })));
   const options = state.shelves.map(s => `<option value="${esc(s.shelf_id)}">${esc(s.name)}</option>`).join("");
   document.querySelector("#shelf").innerHTML = options;
   document.querySelector("#discoverShelf").innerHTML = options;
@@ -157,6 +163,10 @@ function runSectorPrimary(code) {
   }
 }
 
+function findQualificationCard(studyId) {
+  return Array.from(document.querySelectorAll("[data-qualification-study]")).find(card => card.dataset.qualificationStudy === studyId) || null;
+}
+
 function openSectorDetail(code) {
   state.selectedSector = code;
   const sector = (state.demand.sectors || []).find(s => s.sector_code === code);
@@ -203,7 +213,7 @@ function openSectorDetail(code) {
   )));
   document.querySelectorAll(".companyQualBtn").forEach(btn => btn.addEventListener("click", () => {
     showPanel("qualification");
-    const card = document.querySelector(`[data-qualification-study="${CSS.escape(btn.dataset.study)}"]`);
+    const card = findQualificationCard(btn.dataset.study);
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   }));
 }
@@ -265,10 +275,79 @@ async function generateNudges(mode) {
       <div class="callout"><strong>Falsifier</strong><br>${esc(nudge.falsifier)}</div>
       ${nudge.evidence_feedback?.length ? `<div class="hint">Feedback : ${esc(nudge.evidence_feedback.map(f => f.statement).join(" · "))}</div>` : ""}
       ${nudge.unknowns?.length ? `<div class="hint">Inconnues : ${esc(nudge.unknowns.join(" · "))}</div>` : ""}
-    </article>`).join("") : `<div class="empty-state">Aucune piste conforme aux règles de ce mode. C’est un résultat valide : le moteur n’invente pas d’adjacence.</div>`;
+    </article>`).join("") : `<div class="empty-state">Aucune piste conforme aux règles de ce mode. C’est un résultat valide : le moteur n’invente pas d’adjacence ou de retour d’expérience.</div>`;
   } catch (error) {
     grid.innerHTML = `<div class="error">${esc(error.message)}</div>`;
   }
+}
+
+function renderFollowUp() {
+  const actions = [];
+  for (const sector of state.demand.sectors || []) {
+    if (sector.primary_action === "add_third_company" || sector.primary_action === "launch_benchmark" || sector.primary_action === "refresh_benchmark") {
+      actions.push({
+        kind: "demand",
+        priority: sector.primary_action === "add_third_company" ? 1 : 2,
+        title: sectorActionLabel(sector),
+        subtitle: `${sector.sector_name} · ICB ${sector.sector_code}`,
+        detail: `${sector.eligible_study_count}/3 études éligibles · ${sector.use_case_count} use cases`,
+        target: sector.sector_code
+      });
+    }
+  }
+  for (const row of state.qualification || []) {
+    if (row.next_skill) {
+      actions.push({
+        kind: "qualification",
+        priority: row.stage === "matching" ? 1 : 2,
+        title: row.next_action,
+        subtitle: row.company,
+        detail: `Qualification · ${row.stage}`,
+        target: row.study_id,
+        skill: row.next_skill,
+        path: row.study_path
+      });
+    }
+  }
+  for (const inventory of state.nudgeInventories || []) {
+    if (inventory.use_case_count > 0) {
+      actions.push({
+        kind: "nudging",
+        priority: 3,
+        title: "Explorer les nudges",
+        subtitle: inventory.company,
+        detail: `${inventory.use_case_count} use cases inventoriés`,
+        target: inventory.study_id
+      });
+    }
+  }
+  const p0 = (state.backlog || []).filter(item => item.status !== "completed" && item.priority === "P0");
+  for (const item of p0) {
+    actions.push({ kind: "gate", priority: 0, title: item.task, subtitle: item.id, detail: `${item.area} · ${item.status}`, target: item.id });
+  }
+  actions.sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title));
+  const grid = document.querySelector("#followUpGrid");
+  grid.innerHTML = actions.length ? actions.slice(0, 12).map(action => `<article class="card follow-card">
+    <div class="sector-top"><p class="eyebrow">${esc(action.kind)}</p><span class="badge">P${action.priority}</span></div>
+    <h3>${esc(action.title)}</h3>
+    <p>${esc(action.subtitle)}</p>
+    <div class="hint">${esc(action.detail)}</div>
+    <div class="card-actions">
+      ${action.kind !== "gate" ? `<button class="primary followActionBtn" data-kind="${esc(action.kind)}" data-target="${esc(action.target)}" data-skill="${esc(action.skill || "")}" data-path="${esc(action.path || "")}">Continuer</button>` : `<button disabled>Gate à fermer</button>`}
+    </div>
+  </article>`).join("") : `<div class="empty-state">Aucune prochaine action calculée.</div>`;
+  document.querySelectorAll(".followActionBtn").forEach(btn => btn.addEventListener("click", () => {
+    if (btn.dataset.kind === "demand") {
+      showPanel("demand");
+      runSectorPrimary(btn.dataset.target);
+    } else if (btn.dataset.kind === "qualification") {
+      openInvoke(btn.dataset.skill, `Poursuis l'étape de qualification ${btn.dataset.target} sans contourner les hard gates.`, btn.dataset.path ? [btn.dataset.path] : []);
+    } else if (btn.dataset.kind === "nudging") {
+      showPanel("nudging");
+      const select = document.querySelector("#nudgeInventory");
+      select.value = btn.dataset.target;
+    }
+  }));
 }
 
 function renderBacklog(items) {
@@ -286,8 +365,8 @@ async function boot() {
     ]);
     document.querySelector("#health").textContent = health.executor_configured ? "Executor connecté" : "Mode local · executor à configurer";
     state.skills = skills; state.offers = offers; state.shelves = shelves; state.demand = demand;
-    state.inventories = inventories; state.qualification = qualification; state.nudgeInventories = nudgeInventories;
-    renderDemand(); renderShelves(); renderQualification(); renderNudgeInventories(); renderSkills(); renderBacklog(backlog);
+    state.inventories = inventories; state.qualification = qualification; state.nudgeInventories = nudgeInventories; state.backlog = backlog;
+    renderDemand(); renderShelves(); renderQualification(); renderNudgeInventories(); renderSkills(); renderBacklog(backlog); renderFollowUp();
   } catch (error) {
     document.querySelector("#health").textContent = "Erreur de chargement";
     console.error(error);
