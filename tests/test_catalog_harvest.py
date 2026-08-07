@@ -53,6 +53,19 @@ class CatalogHarvesterTests(unittest.TestCase):
                     persist=False,
                 )
 
+    def test_raw_claims_must_be_structured_as_list(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self.make_root(tmp)
+            with self.assertRaises(ControlPlaneError):
+                CatalogHarvester(root).stage(
+                    {
+                        "company": "Example Co",
+                        "shelf_id": "learning-adoption",
+                        "items": [{"name": "AI Academy", "raw_claims": "unstructured claim"}],
+                    },
+                    persist=False,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -51,12 +51,18 @@ class CatalogHarvester:
             name = str(raw.get("name") or "").strip()
             if not name:
                 raise ControlPlaneError(f"item {position} requires name")
+            raw_claims = raw.get("raw_claims") or []
+            if not isinstance(raw_claims, list):
+                raise ControlPlaneError(f"item {position} raw_claims must be a list")
+            source_url = raw.get("source_url")
+            if source_url is not None and not isinstance(source_url, str):
+                raise ControlPlaneError(f"item {position} source_url must be a string or null")
             normalized.append(
                 {
                     "candidate_id": f"CAND-{position:03d}",
                     "name": name,
-                    "source_url": raw.get("source_url"),
-                    "raw_claims": raw.get("raw_claims") or [],
+                    "source_url": source_url,
+                    "raw_claims": raw_claims,
                     "epistemic_status": "unreviewed_source_claim",
                     "promotion_status": "candidate",
                 }

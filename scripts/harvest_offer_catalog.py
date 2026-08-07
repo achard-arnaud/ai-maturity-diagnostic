@@ -28,9 +28,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Stage a company/vendor offer catalog without mutating canonical product truth."
     )
-    parser.add_argument("--company", required=True)
-    parser.add_argument("--shelf", required=True)
-    parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--company")
+    parser.add_argument("--shelf")
+    parser.add_argument("--input", type=Path)
     parser.add_argument("--preview", action="store_true")
     parser.add_argument("--list-shelves", action="store_true")
     args = parser.parse_args()
@@ -39,6 +39,10 @@ def main() -> int:
         for shelf in RepoControlPlane(ROOT).list_shelves():
             print(f"{shelf.get('shelf_id')}\t{shelf.get('name')}")
         return 0
+
+    missing = [name for name in ("company", "shelf", "input") if getattr(args, name) is None]
+    if missing:
+        parser.error("required unless --list-shelves: " + ", ".join(f"--{name}" for name in missing))
 
     result = CatalogHarvester(ROOT).stage(
         {
