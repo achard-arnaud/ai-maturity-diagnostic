@@ -1,0 +1,4 @@
+interface:
+  display_name: "Iterative Reach Matchmaking"
+  short_description: "Orchestre promoteurs, prescripteurs, utilisateurs et veto"
+  default_prompt: "Use $iterative-reach-matchmaking to build first-wave and second-wave stakeholder reach hypotheses from a valid fit, ICP, existing contacts, org evidence, newsflow and company use-case context without recomputing fit or inferring authority from titles."

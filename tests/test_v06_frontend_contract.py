@@ -34,19 +34,20 @@ class V06FrontendContractTests(unittest.TestCase):
     def test_nudging_modes_are_visible_and_separate(self) -> None:
         for phrase in ("Productivisation", "Upsell par dépendance", "Cross-sell package"):
             self.assertIn(phrase, self.html)
-        self.assertIn("ne charge ni ICB", self.html)
+        self.assertIn("isolée du fit produit et de l’ICB", self.html)
         self.assertIn("/api/nudging/generate", self.js)
 
-    def test_qualification_exposes_next_and_full_flow(self) -> None:
-        self.assertIn("Qualification & matching", self.html)
-        self.assertIn("qualNextBtn", self.js)
+    def test_qualification_exposes_actionable_next_and_full_flow(self) -> None:
+        self.assertIn("Qualification, matching & reach", self.html)
+        self.assertIn("resolverBtn", self.js)
         self.assertIn("qualFlowBtn", self.js)
         self.assertIn("/api/workflows/plan", self.js)
 
     def test_follow_up_is_actionable_not_only_todo_table(self) -> None:
         self.assertIn('id="followUpGrid"', self.html)
         self.assertIn("renderFollowUp", self.js)
-        self.assertIn("followActionBtn", self.js)
+        self.assertIn("resolverBtn", self.js)
+        self.assertIn("followNavBtn", self.js)
 
 
 if __name__ == "__main__":

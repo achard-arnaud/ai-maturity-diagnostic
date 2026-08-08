@@ -113,6 +113,7 @@ class RepoControlPlane:
             self.root / "artifacts" / "TODO_release_v0_3.yaml",
             self.root / "artifacts" / "TODO_productization_v0_5.yaml",
             self.root / "artifacts" / "TODO_productization_v0_6.yaml",
+            self.root / "artifacts" / "TODO_productization_v0_7.yaml",
         ]
         result: list[dict[str, Any]] = []
         for path in sources:
@@ -138,7 +139,7 @@ class RepoControlPlane:
             raise ControlPlaneError("context_paths must be a list")
         safe_context = [_safe_relative(self.root, str(path)) for path in context_paths]
         return {
-            "schema_version": "0.6",
+            "schema_version": "0.7",
             "request_id": str(uuid.uuid4()),
             "created_at": datetime.now(timezone.utc).isoformat(),
             "mode": "unit",

@@ -1,6 +1,7 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "https://example.invalid/contracts/nudge_recommendation.schema.json"
 title: Use-case nudge recommendation contract
+schema_version: "0.6"
 type: object
 required: [schema_version, company, inventory_version, generated_at, input_boundary, nudges]
 properties:

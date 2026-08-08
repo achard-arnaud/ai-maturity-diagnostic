@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: contracts/reach_strategy.schema.yaml
+title: Iterative stakeholder and reach strategy
+schema_version: "0.7"
+type: object
+required: [schema_version, study_id, company_id, offer_id, fit_decision, stakeholders, blockers]
+properties:
+  schema_version: {const: "0.7"}
+  generated_at: {type: [string, 'null']}
+  study_id: {type: string}
+  company_id: {type: string}
+  offer_id: {type: string}
+  product_profile_version: {type: [string, 'null']}
+  fit_decision: {enum: [pursue, validate]}
+  icb_context: {type: object}
+  newsflow_triggers: {type: array}
+  relevant_use_cases: {type: array}
+  stakeholders:
+    type: array
+    items:
+      type: object
+      required: [person_id, stakeholder_roles, wave, status, evidence_basis, required_validations, cta]
+      properties:
+        person_id: {type: string}
+        target_id: {type: [string, 'null']}
+        stakeholder_roles:
+          type: array
+          items: {enum: [promoter, prescriber, terrain_user, technical_sponsor, veto_control]}
+        wave: {enum: [first, second, validation_only]}
+        status: {enum: [ready, blocked, validate]}
+        why_person: {type: [string, 'null']}
+        why_now: {type: [string, 'null']}
+        evidence_basis: {type: array}
+        required_validations: {type: array}
+        cta: {type: object}
+  blockers:
+    type: array
+    items: {$ref: blocker.schema.yaml}
+additionalProperties: true
