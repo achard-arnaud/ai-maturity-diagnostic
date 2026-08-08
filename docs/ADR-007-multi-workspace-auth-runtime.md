@@ -18,15 +18,21 @@ The goal is not to design a full SaaS architecture. The goal is the smallest rev
 
 Every protected request resolves an immutable `RequestContext` from a verified session and membership. The client may request a workspace switch only among memberships already granted to the authenticated user; an arbitrary tenant header is never trusted as authority.
 
+For object lookups, unauthorized cross-workspace identifiers should normally resolve as **404** rather than disclose that another workspace owns the object. Explicit workspace-switch/administration attempts may return **403** when revealing the workspace itself is already authorized context.
+
 ### 2. Externalize identity
 
 The application will not store passwords or implement an identity provider.
 
 Production-capable mode uses one configurable OIDC provider. Local development may run with auth disabled only while bound to loopback.
 
+OIDC authorization transactions (`state`, nonce/PKCE material and callback correlation) are stored server-side or in narrowly scoped transient state. They are not used as a reason to place long-lived membership or provider-token state in a browser-readable session structure.
+
 ### 3. Use server-side revocable sessions
 
 The browser receives only an opaque session identifier in a secure cookie. OIDC tokens and membership state remain server-side. This keeps logout, revocation and audit simple and avoids exposing provider tokens to frontend JavaScript.
+
+Provider access tokens are not retained after identity establishment unless a later connector use case explicitly requires them. If RP-initiated logout needs an ID token hint, retention is minimized and classified as auth runtime data.
 
 ### 4. Add a small runtime control store
 
@@ -37,6 +43,19 @@ PostgreSQL is deferred until concurrency/topology requirements justify it.
 ### 5. Scope mutable/private file paths through `WorkspacePaths`
 
 All workspace-specific data access goes through one path resolver rooted under `workspaces/<workspace_id>/`. Path escape checks remain mandatory. Shared read-only assets stay outside the workspace tree.
+
+#### Legacy mono-root migration
+
+The migration must be reversible and must not silently orphan existing v0.7 data.
+
+Recommended sequence:
+1. introduce `WorkspacePaths` behind the existing domain constructors while the default local workspace can still resolve the legacy root layout;
+2. add a dry-run migration command that inventories `studies/`, `data/private/` and workspace-owned artifacts;
+3. migrate/copy into `workspaces/<default-workspace>/...` with hashes/counts and an explicit report;
+4. switch runtime reads to workspace paths only after verification;
+5. keep a rollback manifest until the migration is accepted.
+
+Do not move `product_catalog/` during this migration until its global-versus-workspace ownership gate is decided.
 
 ### 6. Replace only the HTTP adapter with ASGI
 
@@ -79,11 +98,13 @@ Rejected: no demonstrated scale or isolation need.
 
 - Workspace is derived from authenticated membership, never trusted from arbitrary user input.
 - Resource lookup validates both resource identity and workspace ownership.
+- Cross-workspace object probes do not disclose ownership/existence unnecessarily.
 - All protected writes are workspace-scoped and audited.
 - Local auth-disabled mode cannot start on a non-loopback interface.
 - Tokens, cookies, secrets, private payloads and raw executor diagnostics are redacted from logs and responses.
 - Cross-workspace access attempts are observable security events.
 - Admin role does not override domain hard gates.
+- OIDC state/nonce material is short-lived and one-time-use.
 
 ## Consequences
 
@@ -104,5 +125,6 @@ Costs:
 
 1. Product owner: global/shared versus workspace-scoped `product_catalog`.
 2. Deployment owner: first OIDC provider and reverse-proxy topology.
-3. Security review: workspace context injection, IDOR and session threat model.
+3. Security review: workspace context injection, IDOR, resource enumeration and session/OIDC transaction threat model.
 4. Value-for-money review: SQLite remains adequate for the actual deployment.
+5. Migration review: legacy mono-root data is inventoried and migration/rollback is tested before workspace-only reads are enabled.
