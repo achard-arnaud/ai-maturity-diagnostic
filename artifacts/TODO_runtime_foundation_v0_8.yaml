@@ -1,0 +1,121 @@
+schema_version: "0.8"
+initiative: runtime-foundation-v0.8
+status: specified_feedback_required
+parent_rfc: "#23"
+related_issues:
+  security_runtime: "#17"
+  gold_set: "#18"
+  real_data_ux: "#19"
+  persistence_decision: "#20"
+  runtime_quality: "#24"
+items:
+  - id: TODO-V08-001
+    priority: P0
+    title: Typed settings, request IDs and safe error/logging boundary
+    status: open
+    owner: runtime
+    exit:
+      - startup configuration is validated and fail-closed in production mode
+      - every protected request and public error carries request_id
+      - typed 401/403/404/409/422/429/500/503/504 mapping exists
+      - logs are structured and redact secrets/private payloads/raw executor diagnostics
+
+  - id: TODO-V08-002
+    priority: P0
+    title: Workspace model and scoped filesystem boundary
+    status: open
+    owner: security-runtime
+    dependencies: [TODO-V08-001]
+    exit:
+      - User Workspace Membership and RequestContext contracts exist
+      - all mutable/private paths resolve through WorkspacePaths
+      - cross-workspace read/write and path-escape tests are green
+      - arbitrary client workspace headers cannot grant access
+
+  - id: TODO-V08-003
+    priority: P0
+    title: Lightweight control store and audit model
+    status: open
+    owner: runtime
+    dependencies: [TODO-V08-002]
+    exit:
+      - SQLite WAL stores only users workspaces memberships sessions and audit/runtime metadata
+      - canonical business artifacts remain outside the control store
+      - audit events are append-only and tested
+      - PostgreSQL migration triggers are documented but not prematurely implemented
+
+  - id: TODO-V08-004
+    priority: P0
+    title: ASGI adapter, OIDC session and deny-by-default RBAC
+    status: open
+    owner: security-runtime
+    dependencies: [TODO-V08-003]
+    feedback_gates:
+      - first OIDC provider and deployment topology
+      - global versus workspace-scoped product catalog
+    exit:
+      - HTTP adapter uses RequestContext dependency/middleware boundary
+      - local auth-disabled mode refuses non-loopback binding
+      - OIDC login creates revocable server-side session
+      - reader reviewer contributor admin permission tests are green
+      - technical admin cannot bypass business hard gates
+
+  - id: TODO-V08-005
+    priority: P0
+    title: Executor and write-path hardening
+    status: open
+    owner: security-runtime
+    dependencies: [TODO-V08-002, TODO-V08-004]
+    exit:
+      - executor environment is allowlisted
+      - stdout stderr are bounded and never returned raw in production
+      - executor context cannot escape current workspace
+      - mutable file writes are atomic and serialized or version-checked where required
+      - concurrency and timeout tests are green
+
+  - id: TODO-V08-006
+    priority: P0
+    title: Network hardening and release security gate
+    status: open
+    owner: security-runtime
+    dependencies: [TODO-V08-004, TODO-V08-005]
+    exit:
+      - TLS reverse-proxy assumptions and trusted proxy/host policy are documented
+      - CSRF Origin secure-cookie security-header and rate-limit tests pass
+      - liveness and sanitized readiness endpoints exist
+      - non-loopback release is blocked until cross-workspace adversarial suite passes
+
+  - id: TODO-V08-007
+    priority: P1
+    title: Reproducible package and minimal deployment artifact
+    status: open
+    owner: runtime
+    exit:
+      - app is explicitly packaged and installable outside repository cwd
+      - service entry point exists
+      - non-root minimal container or equivalent deployment artifact passes smoke tests
+
+  - id: TODO-V08-008
+    priority: P1
+    title: CI lint dependency and action hygiene
+    status: open
+    owner: engineering-quality
+    exit:
+      - Ruff gate added
+      - automated Python and GitHub Actions dependency updates configured
+      - dependency vulnerability check added
+      - current GitHub Actions runtime deprecation warnings removed
+      - GitHub and GitLab continue to share scripts/check_release.py semantics
+
+  - id: TODO-V08-009
+    priority: P1
+    title: Real-user calibration before heavier infrastructure
+    status: open
+    owner: product
+    dependencies: [TODO-V08-004]
+    linked_issue: "#19"
+    exit:
+      - multi-user workflows tested with real representative workspaces
+      - role and workspace switching UX friction recorded
+      - persistence and PostgreSQL decisions use observed concurrency and audit needs
+      - no microservice graph database or enterprise SSO added without measured need

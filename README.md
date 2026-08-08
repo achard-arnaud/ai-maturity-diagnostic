@@ -254,3 +254,24 @@ Les menus principaux restent volontairement compacts : **Demande · Offres · Qu
 - Suivi -> blockers métier et pending avant TODO techniques.
 
 La v0.7 ne change pas la posture de sécurité : elle reste locale/interne. Elle ne constitue ni un CRM outbound, ni une autorisation d’exposition réseau, ni une automatisation décisionnelle sans Gold Set.
+
+## Runtime foundation v0.8 — spécification multi-workspace
+
+La v0.8 est pour l’instant **spécifiée, pas déclarée production-ready**. Elle traite le passage du runtime local mono-root à un socle interne multi-utilisateur en préservant toutes les frontières métier v0.7.
+
+Références : [PRD runtime v0.8](docs/PRD_runtime_foundation_v0_8.md), [ADR-007](docs/ADR-007-multi-workspace-auth-runtime.md), [baseline technique](docs/TECHNICAL_BASELINE_v0_8.md) et [TODO v0.8](artifacts/TODO_runtime_foundation_v0_8.yaml).
+
+Principes retenus :
+
+- `workspace` devient la frontière d’isolation technique, distincte des entreprises/accounts commerciaux ;
+- authentification externe OIDC, sans stockage de mots de passe applicatifs ;
+- sessions navigateur opaques et révocables ;
+- rôles techniques simples `reader / reviewer / contributor / admin`, sans capacité de contourner les hard gates métier ;
+- SQLite/WAL uniquement pour users, workspaces, memberships, sessions et audit runtime dans la première topologie mono-instance ;
+- données privées et mutables résolues sous un `WorkspacePaths`, les artefacts métier restant sources de vérité ;
+- migration recommandée du seul adaptateur HTTP vers FastAPI/Starlette pour disposer de middleware auth, RequestContext, erreurs et logs structurés sans réécrire le coeur métier ;
+- erreurs publiques stables et corrélées par `request_id` ;
+- logs applicatifs structurés séparés d’un audit append-only ;
+- executor, écritures fichiers, packaging et CI durcis avant tout bind non-loopback.
+
+Les choix encore soumis à feedback sont : le premier IdP OIDC, la topologie de déploiement, le caractère global ou workspace-scoped du `product_catalog`, et le maintien de SQLite tant que les usages réels ne démontrent pas un besoin PostgreSQL/multi-instance.
