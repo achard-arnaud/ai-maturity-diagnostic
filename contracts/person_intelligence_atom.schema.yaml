@@ -1,0 +1,45 @@
+schema_version: "0.9"
+title: Canonical external person intelligence atom
+required:
+  - schema_version
+  - atom_id
+  - entity_type
+  - display_name
+  - snapshot_date
+  - current_role
+  - role_currency
+  - company_atom_ref
+  - career_spine
+  - expertise
+  - public_theses
+  - role_in_company
+  - claim_ids
+  - source_ids
+  - confidence
+  - unknowns
+contract:
+  atom_id: string
+  entity_type:
+    const: person
+  display_name: string
+  snapshot_date: date
+  current_role: string
+  role_currency:
+    enum: [confirmed_current, probable_current, unverified]
+  company_atom_ref: string
+  career_spine: list
+  expertise: list
+  public_theses: list
+  role_in_company: string
+  geographic_context: list
+  claim_ids: list
+  source_ids: list
+  contradictions: list
+  confidence:
+    enum: [low, medium, high]
+  unknowns: list
+rules:
+  - This is public executive/person intelligence, not the private contact identity registry.
+  - A title never proves budget, authority, decision rights or reporting lines.
+  - Persona-specific relevance and outreach sequencing are excluded.
+  - Public thought leadership does not prove deployed company capability.
