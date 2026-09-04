@@ -1,0 +1,40 @@
+schema_version: "0.9"
+title: Canonical external company intelligence atom
+required:
+  - schema_version
+  - atom_id
+  - entity_type
+  - canonical_name
+  - snapshot_date
+  - identity
+  - business_model
+  - positioning
+  - trajectory
+  - material_product_refs
+  - claim_ids
+  - source_ids
+  - unknowns
+contract:
+  atom_id: string
+  entity_type:
+    const: company
+  canonical_name: string
+  aliases: list
+  snapshot_date: date
+  identity: mapping
+  business_model: mapping
+  positioning: mapping
+  trajectory: list
+  geographic_footprint: list
+  differentiators: list
+  capabilities: list
+  material_product_refs: list
+  claim_ids: list
+  source_ids: list
+  contradictions: list
+  unknowns: list
+rules:
+  - This is public/external intelligence, not the private network company registry.
+  - A named material product, framework, methodology, platform or service must reference an external-product atom.
+  - Audience-specific relevance must not be persisted in this atom.
+  - Unsupported size, revenue, client, ownership or maturity claims remain unknown.
