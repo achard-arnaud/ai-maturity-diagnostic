@@ -19,6 +19,12 @@ Read [references/sarah-pro-operating-model.md](references/sarah-pro-operating-mo
 4. Choose the output family provisionally; never let a page target distort the research.
 5. Proceed with explicit assumptions when missing information is non-critical. Ask only when the answer would materially change the mission.
 
+## Delegate entity meeting briefs
+
+When the request is primarily a one- or two-page meeting/networking brief that combines a named external **company + person + material products/frameworks/methodologies**, route the entity atomization and final assembly to `$executive-entity-briefing`.
+
+This skill may provide research/evidence methods, but it must not absorb that use case into generic free-form `analysis`. The dedicated briefing skill owns canonical company, external-product and person atoms plus the material-product retention gate.
+
 ## Select intelligence lanes
 
 - **Corporate trajectory** — priorities, economic drivers, funded transformation, capabilities, and the real role of AI.

@@ -141,3 +141,11 @@ A blocker is not a terminal UI state. Return or expose:
 The resolver must advance toward the missing prerequisite, not modify a score/status to make the blocker disappear.
 
 Preserve every contract artifact. Never skip a handoff because equivalent information appears in chat context.
+
+
+## Executive meeting-brief shortcut
+
+If the user asks for a compact meeting/networking brief that combines a named external company, a named person and material named offerings/frameworks/methodologies, route directly to `$executive-entity-briefing`.
+
+This route is informational, not commercial matching: it must not invoke internal `product_catalog`, recompute fit, or infer buying authority. The dedicated skill owns external company/product/person atoms and the two-page assembly.
+

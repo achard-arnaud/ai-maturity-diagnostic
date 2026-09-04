@@ -1,0 +1,36 @@
+schema_version: "0.9"
+title: Derived executive company-product-person briefing contract
+required:
+  - schema_version
+  - brief_id
+  - purpose
+  - audience_persona
+  - cutoff_date
+  - company_atom_ref
+  - product_atom_refs
+  - person_atom_ref
+  - executive_thesis
+  - page_1
+  - page_2
+  - gaps_and_falsifiers
+contract:
+  brief_id: string
+  purpose: string
+  audience_persona:
+    enum: [francois-pro, sarah-pro, neutral]
+  cutoff_date: date
+  company_atom_ref: string
+  product_atom_refs: list
+  person_atom_ref: string
+  executive_thesis: string
+  page_1:
+    required: [executive_snapshot, company_profile, person_profile, strategic_intersection]
+  page_2:
+    required: [product_spotlights, current_dynamics, strengths_and_differentiators, challenge_points, audience_fit, discussion_angles, takeaway, limitations]
+  gaps_and_falsifiers: list
+rules:
+  - The brief is derived and may not mutate canonical atoms.
+  - Every referenced core or material external-product atom MUST appear by atom_id in page_2.product_spotlights.
+  - The rendered default is exactly two pages for the entity-two-pager template.
+  - Audience fit is an inference layer and must remain separate from target facts.
+  - Compression may remove supporting detail but never a material product spotlight, decisive uncertainty or entity boundary.

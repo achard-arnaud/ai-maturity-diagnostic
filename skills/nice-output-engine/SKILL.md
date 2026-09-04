@@ -22,6 +22,7 @@ Read [references/output-contract.md](references/output-contract.md) before mappi
 Registered families:
 
 - `executive-brief`: A4 landscape, one or two pages;
+- `entity-two-pager`: A4 portrait, exactly two pages for company × material product × person meeting briefs;
 - `benchmark-matrix`: A4 landscape, two to four pages;
 - `business-note`: A4 portrait, five to seven pages;
 - `application-pack`: A4 portrait, two to seven pages.

@@ -154,6 +154,19 @@ Pour une note d’organisation tech, suivre `skills/tech-leadership-org-intellig
 - `$nice-output-engine` possède uniquement composition, rendu et QA visuelle. Il reçoit un contenu fonctionnel gelé et ne modifie jamais un claim, un score, un niveau de preuve ou une recommandation.
 - Les CV, coordonnées, transcriptions et dossiers privés ne sont jamais versionnés dans ce dépôt public. Résoudre uniquement les actifs de la persona confirmée depuis l’environnement privé ou demander leur fourniture.
 
+## Briefings exécutifs entreprise × produit × personne
+
+Pour une demande de type « pitch moi l'entreprise et la personne », « two-pager nice », préparation de rendez-vous dirigeant ou networking combinant une entreprise nommée, une personne nommée et des offres/méthodes propriétaires matérielles :
+
+1. utiliser `$executive-entity-briefing`;
+2. produire séparément `company_intelligence_atom`, `external_product_intelligence_atom[*]` et `person_intelligence_atom`;
+3. garder ces atomes neutres vis-à-vis de François-Pro/Sarah-Pro;
+4. dériver seulement ensuite `executive_entity_brief`;
+5. imposer un `product_spotlight` en page 2 pour chaque actif externe `core|material`;
+6. utiliser `entity-two-pager` dans `$nice-output-engine` uniquement après gel du contenu.
+
+Ne jamais écrire un produit/méthode d'une entreprise cible dans `product_catalog/`. Ne jamais utiliser le registre privé `person.schema.yaml` comme substitut à l'intelligence publique sur un dirigeant.
+
 ## Définition de fini
 
 - La décision reçoit une réponse explicite.

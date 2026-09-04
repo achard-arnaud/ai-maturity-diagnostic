@@ -1,0 +1,87 @@
+{
+  "document": {
+    "title": "Executive entity briefing — example",
+    "language": "fr",
+    "template": "entity-two-pager",
+    "theme": "../../themes/nice-corporate.json",
+    "footer": "Derived view — canonical company, product and person atoms remain authoritative."
+  },
+  "pages": [
+    {
+      "kicker": "1 · Qui sont-ils ?",
+      "title": "Entreprise et interlocuteur",
+      "subtitle": "Identité, activité, trajectoire et thèse.",
+      "decision": "Comprendre le système entreprise-personne avant d'interpréter la relation.",
+      "sections": [
+        {
+          "title": "Executive snapshot",
+          "layout": "one",
+          "blocks": [
+            {
+              "title": "Thèse",
+              "status": "inference",
+              "body": "L'entreprise combine une expertise historique avec une offre structurée autour d'un actif propriétaire."
+            }
+          ]
+        },
+        {
+          "title": "Entreprise",
+          "layout": "two",
+          "blocks": [
+            {
+              "title": "Activité",
+              "body": "Business model, clients, footprint et trajectoire."
+            },
+            {
+              "title": "Interlocuteur",
+              "body": "Career spine, expertise, public theses et rôle observable."
+            }
+          ]
+        }
+      ],
+      "footer": "Page 1: who are they?"
+    },
+    {
+      "kicker": "2 · Ce qui compte",
+      "title": "Produit, différenciation et conversation",
+      "subtitle": "Le produit matériel devient un objet de premier rang.",
+      "decision": "Tester la substance de l'actif propriétaire et les preuves de passage à l'échelle.",
+      "sections": [
+        {
+          "title": "Product spotlight",
+          "layout": "one",
+          "blocks": [
+            {
+              "title": "Atlas Method · material",
+              "status": "inference",
+              "body": "What it is, problem, promise, mechanism, components, role in positioning, proof status, differentiation and unknowns."
+            }
+          ]
+        },
+        {
+          "title": "Lecture stratégique",
+          "layout": "two",
+          "blocks": [
+            {
+              "title": "Strengths / gaps",
+              "bullets": [
+                "Differentiation",
+                "Proof gaps",
+                "Falsifiers"
+              ]
+            },
+            {
+              "title": "Discussion",
+              "bullets": [
+                "Audience fit",
+                "Questions",
+                "One-sentence takeaway"
+              ]
+            }
+          ]
+        }
+      ],
+      "footer": "Every core/material product must appear on page 2."
+    }
+  ]
+}

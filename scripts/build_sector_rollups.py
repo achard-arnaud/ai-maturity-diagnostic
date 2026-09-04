@@ -80,7 +80,7 @@ def main() -> int:
 
     studies_root = args.studies_root.resolve()
     if studies_root.is_dir():
-        for manifest_path in studies_root.glob("*/00_manifest.yaml"):
+        for manifest_path in sorted(studies_root.glob("*/00_manifest.yaml"), key=lambda path: path.as_posix()):
             study_dir = manifest_path.parent
             try:
                 manifest = load_yaml(manifest_path)

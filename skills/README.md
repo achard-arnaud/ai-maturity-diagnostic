@@ -73,3 +73,12 @@ La hiérarchie de navigation reste `ICB -> secteur -> entreprises -> études -> 
 Le flux impose une séparation nette entre le fond et la forme : les skills fonctionnelles établissent les vérités, les preuves et la recommandation, puis `nice-output-engine` rend le contenu gelé. `application-nice` partage uniquement un système opératoire ; ses sources, exemples, règles de narration et thèmes restent séparés par persona.
 
 Le dépôt public contient le code, les contrats, les méthodes et les politiques de templates. Les CV, coordonnées, transcriptions et dossiers de candidature privés sont volontairement exclus et doivent être fournis dans l’environnement d’exécution selon `assets/private-assets.manifest.example.json`.
+
+
+## Executive entity briefing v0.9
+
+`executive-entity-briefing` owns compact meeting/networking briefs that combine a named external company, its material products/frameworks/methodologies and a named person.
+
+It writes three audience-neutral canonical atom families — company, external product and person — then a derived `executive_entity_brief`. A `core|material` external product is protected by a retention gate and must appear in page 2 `product_spotlights`.
+
+This external-product intelligence contract is intentionally separate from `product_catalog/`: target-company offerings never become our own canonical offer truth. Persona-specific relevance for François-Pro or Sarah-Pro exists only in the assembly layer.

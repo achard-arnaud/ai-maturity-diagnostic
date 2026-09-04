@@ -1,0 +1,11 @@
+interface:
+  display_name: "Executive Entity Briefing"
+  short_description: "Two-pagers entreprise · produits · personne"
+  default_prompt: "Use $executive-entity-briefing to produce an evidence-grounded company/product/person briefing with canonical atoms and a material-product spotlight."
+policy:
+  products:
+    - chatgpt
+    - codex
+    - api
+    - atlas
+  allow_implicit_invocation: true
