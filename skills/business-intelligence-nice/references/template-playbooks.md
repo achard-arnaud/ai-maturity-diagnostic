@@ -6,6 +6,7 @@
 |---|---:|---|---|
 | Executive one-pager | 1 | One decision, narrow evidence set | answer, three proofs, risk, action |
 | Executive two-pager | 2 | Decision plus due diligence | answer, mechanism, benchmark, gates, action |
+| Entity two-pager | 2 | Meeting prep on company + person + named offerings/IP | company atom, person atom, page-2 material product spotlight, strategic read, discussion angles |
 | Benchmark | 2–4 | Several comparable options | criteria, gates, matrix, sensitivity, implication |
 | Business note | 5–7 | Context and evidence need room | answer, context, evidence, analysis, options, action |
 | Transformation diagnostic | 5–7 | Multi-lane operating question | baseline, work reality, capability, governance, response, roadmap |
