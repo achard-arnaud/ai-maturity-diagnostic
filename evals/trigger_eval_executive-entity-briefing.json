@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Pitch moi l'entreprise et son CEO en two-pager nice avant mon rendez-vous.",
+    "should_trigger": true
+  },
+  {
+    "query": "Prépare une fiche 2 pages sur cette société, son produit phare et la personne qui me contacte.",
+    "should_trigger": true
+  },
+  {
+    "query": "I need a meeting brief on the company, its founder and their proprietary framework.",
+    "should_trigger": true
+  },
+  {
+    "query": "Présente moi la boîte, l'interlocuteur et les offres/méthodes qui structurent son positionnement.",
+    "should_trigger": true
+  },
+  {
+    "query": "Fais un executive two-pager entreprise + personne avec les angles de discussion pour François-Pro.",
+    "should_trigger": true
+  },
+  {
+    "query": "Je rencontre cette CEO demain: activité, produits importants, parcours, thèses et questions à poser.",
+    "should_trigger": true
+  },
+  {
+    "query": "Transforme ces sources publiques en brief dirigeant avec company/product/person séparés.",
+    "should_trigger": true
+  },
+  {
+    "query": "Prépare un one/two-pager de networking sur ce cabinet, sa méthodologie propriétaire et son dirigeant.",
+    "should_trigger": true
+  },
+  {
+    "query": "Give me a concise company and executive diligence brief, including material named offerings.",
+    "should_trigger": true
+  },
+  {
+    "query": "Avant cet échange LinkedIn, qualifie l'entreprise, ses produits et la personne sans faire de scoring commercial.",
+    "should_trigger": true
+  },
+  {
+    "query": "Définis l'ICP canonique d'Astraforge et ses hard gates.",
+    "should_trigger": false
+  },
+  {
+    "query": "Ce compte correspond-il à notre offre et avec quel score de fit ?",
+    "should_trigger": false
+  },
+  {
+    "query": "Sélectionne les contacts à approcher après le product fit.",
+    "should_trigger": false
+  },
+  {
+    "query": "Importe ce fichier de contacts et déduplique les personnes.",
+    "should_trigger": false
+  },
+  {
+    "query": "Rends ce JSON déjà validé en PDF Nice sans modifier le contenu.",
+    "should_trigger": false
+  },
+  {
+    "query": "Fais une étude complète de la stratégie IA de cette entreprise, sans personne cible.",
+    "should_trigger": false
+  },
+  {
+    "query": "Consolide les use cases observés par secteur ICB.",
+    "should_trigger": false
+  },
+  {
+    "query": "Conçois un pilote après validation du match produit.",
+    "should_trigger": false
+  },
+  {
+    "query": "Priorise les comptes de mon réseau à rechercher.",
+    "should_trigger": false
+  },
+  {
+    "query": "Écris un message d'outreach au sponsor déjà qualifié.",
+    "should_trigger": false
+  }
+]
