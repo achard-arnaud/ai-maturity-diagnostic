@@ -2,6 +2,7 @@
 
 | User intent | Owner skill | Must not route to |
 |---|---|---|
+| Prepare a one/two-page brief on a named external company + person + material offerings | `executive-entity-briefing` | Product ICP / opportunity matching |
 | Research a target company | `enterprise-demand-intelligence` | Product matching |
 | Map public decision makers or the buying committee | `enterprise-demand-intelligence` | Pilot design |
 | Infer gaps from strategy, hiring, organization, and news | `enterprise-demand-intelligence` | Product ICP |
