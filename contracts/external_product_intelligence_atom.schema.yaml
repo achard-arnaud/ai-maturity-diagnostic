@@ -1,0 +1,51 @@
+schema_version: "0.9"
+title: Canonical external target product or intellectual-asset intelligence atom
+required:
+  - schema_version
+  - atom_id
+  - entity_type
+  - owner_company_atom_id
+  - canonical_name
+  - product_type
+  - materiality
+  - snapshot_date
+  - problem
+  - promise
+  - mechanism
+  - role_in_positioning
+  - proof_status
+  - claim_ids
+  - source_ids
+  - unknowns
+contract:
+  atom_id: string
+  entity_type:
+    const: external_product
+  owner_company_atom_id: string
+  canonical_name: string
+  aliases: list
+  product_type:
+    enum: [software, platform, service, framework, methodology, diagnostic, program, other]
+  materiality:
+    enum: [core, material, supporting, incidental]
+  snapshot_date: date
+  problem: string
+  promise: string
+  mechanism: string
+  components: list
+  target_users: list
+  commercialization: mapping_or_null
+  role_in_positioning: string
+  differentiation: list
+  proof_status:
+    enum: [proven, evidenced, plausible, claimed, unknown]
+  claim_ids: list
+  source_ids: list
+  contradictions: list
+  unknowns: list
+  falsifiers: list
+rules:
+  - This contract describes offerings or intellectual assets of the researched external target.
+  - It MUST NOT be written to product_catalog/ and MUST NOT use contracts/product_profile.schema.yaml.
+  - Every core or material atom must survive into page 2 product_spotlights of an executive entity brief.
+  - Marketing claims do not become proof without independent evidence.
