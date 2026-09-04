@@ -73,3 +73,10 @@ La hiérarchie de navigation reste `ICB -> secteur -> entreprises -> études -> 
 Le flux impose une séparation nette entre le fond et la forme : les skills fonctionnelles établissent les vérités, les preuves et la recommandation, puis `nice-output-engine` rend le contenu gelé. `application-nice` partage uniquement un système opératoire ; ses sources, exemples, règles de narration et thèmes restent séparés par persona.
 
 Le dépôt public contient le code, les contrats, les méthodes et les politiques de templates. Les CV, coordonnées, transcriptions et dossiers de candidature privés sont volontairement exclus et doivent être fournis dans l’environnement d’exécution selon `assets/private-assets.manifest.example.json`.
+
+
+## Skills en incubation / TODO
+
+| Skill | Statut | Rôle envisagé | Activation |
+|---|---|---|---|
+| `prospection-principes` | **TODO** | ICP comportemental, nids à prospects, scoring, outbound story-led, relances et recyclage contenu | Non routée dans le runtime tant que contrats, privacy gates, evals et handoff avec `iterative-reach-matchmaking` ne sont pas validés |
