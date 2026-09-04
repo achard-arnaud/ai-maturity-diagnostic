@@ -92,3 +92,29 @@ For the trigger case, this makes a Meridian-style method impossible to leave as 
 - fixed two-page Nice template;
 - metaprompt material-product retention language;
 - balanced trigger evaluation for the new skill.
+
+
+## Confrontation au cockpit de qualification runtime
+
+`app/qualification.py` reste volontairement inchangé.
+
+Le cockpit actuel gouverne une progression commerciale stricte :
+
+```text
+enterprise demand
+-> immutable internal product snapshots
+-> product fit
+-> contact targets
+-> reach
+-> engagement
+```
+
+Le nouveau `executive-entity-briefing` est **orthogonal** à cette machine d'état. Il peut consommer des preuves déjà acquises, mais :
+
+- il ne crée aucun `demand_ready`, `matching_ready`, `contacts_ready` ou `reach_ready`;
+- il ne modifie aucune décision `pursue|validate|nurture|disqualify`;
+- son `external_product_intelligence_atom` décrit l'offre de la cible et n'est jamais un immutable internal product snapshot;
+- son `person_intelligence_atom` décrit publiquement un dirigeant/interlocuteur et n'est jamais un `06b_contact_targets`;
+- le brief peut préparer une conversation avant ou hors tunnel commercial sans contourner les gates du tunnel.
+
+Cette séparation évite qu'un document de networking devienne accidentellement une preuve de fit ou d'autorité.
