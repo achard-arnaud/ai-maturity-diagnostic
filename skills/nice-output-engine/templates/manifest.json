@@ -2,31 +2,53 @@
   "templates": {
     "executive-brief": {
       "renderer": "templates/document.html.j2",
-      "page_range": [1, 2],
+      "page_range": [
+        1,
+        2
+      ],
       "orientation": "landscape",
       "input_family": "executive-brief-v1",
       "use": "Decision-first one- and two-page executive briefs"
     },
     "benchmark-matrix": {
       "renderer": "templates/universal-document.html.j2",
-      "page_range": [2, 4],
+      "page_range": [
+        2,
+        4
+      ],
       "orientation": "landscape",
       "input_family": "universal-sections-v1",
       "use": "Comparable options, evidence, scoring and implications"
     },
     "business-note": {
       "renderer": "templates/universal-document.html.j2",
-      "page_range": [5, 7],
+      "page_range": [
+        5,
+        7
+      ],
       "orientation": "portrait",
       "input_family": "universal-sections-v1",
       "use": "Evidence-grounded business notes with an executive spine"
     },
     "application-pack": {
       "renderer": "templates/universal-document.html.j2",
-      "page_range": [2, 7],
+      "page_range": [
+        2,
+        7
+      ],
       "orientation": "portrait",
       "input_family": "universal-sections-v1",
       "use": "Persona-specific opportunity, fit, narrative and interview packs"
+    },
+    "entity-two-pager": {
+      "renderer": "templates/universal-document.html.j2",
+      "page_range": [
+        2,
+        2
+      ],
+      "orientation": "portrait",
+      "input_family": "universal-sections-v1",
+      "use": "Canonical company, material product/framework and person meeting brief"
     }
   }
 }
