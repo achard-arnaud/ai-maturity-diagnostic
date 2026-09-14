@@ -173,6 +173,25 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual(400, status)
         self.assertIn("persist must be a boolean", data["error"])
 
+    def test_get_route_unexpected_exception_returns_clean_500(self) -> None:
+        with patch.object(server_module.DEMAND, "snapshot", side_effect=ValueError("boom")):
+            status, data, content_type = self.request("GET", "/api/demand")
+        self.assertEqual(500, status)
+        self.assertIn("application/json", content_type)
+        self.assertEqual("error", data["status"])
+        self.assertIn("boom", data["error"])
+
+    def test_get_route_control_plane_error_returns_400(self) -> None:
+        with patch.object(
+            server_module.QUALIFICATION,
+            "list_studies",
+            side_effect=server_module.ControlPlaneError("bad qualification data"),
+        ):
+            status, data, _ = self.request("GET", "/api/qualification")
+        self.assertEqual(400, status)
+        self.assertEqual("error", data["status"])
+        self.assertIn("bad qualification data", data["error"])
+
     def test_json_body_must_be_object(self) -> None:
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=3)
         raw = json.dumps([1, 2]).encode("utf-8")
