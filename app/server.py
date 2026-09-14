@@ -82,39 +82,47 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
-        if path == "/api/health":
-            self._json(
-                HTTPStatus.OK,
-                {
-                    "status": "ok",
-                    "version": "0.7",
-                    "executor_configured": bool(os.getenv("AI_DIAGNOSTIC_SKILL_EXECUTOR", "").strip()),
-                },
-            )
-            return
-        routes = {
-            "/api/skills": CONTROL.list_skills,
-            "/api/offers": CONTROL.list_offers,
-            "/api/shelves": CONTROL.list_shelves,
-            "/api/backlog": CONTROL.backlog,
-            "/api/demand": DEMAND.snapshot,
-            "/api/demand/inventories": DEMAND.inventories,
-            "/api/qualification": QUALIFICATION.list_studies,
-            "/api/nudging/inventories": NUDGING.list_inventories,
-            "/api/value-chain": VALUE_CHAIN.list_studies,
-            "/api/reach": REACH.list_ready,
-            "/api/follow-up": FOLLOWUP.items,
-        }
-        if path in routes:
-            self._json(HTTPStatus.OK, routes[path]())
-            return
-        if path == "/":
-            self._static("index.html")
-            return
-        if path in {"/app.js", "/styles.css"}:
-            self._static(path[1:])
-            return
-        self.send_error(HTTPStatus.NOT_FOUND)
+        try:
+            if path == "/api/health":
+                self._json(
+                    HTTPStatus.OK,
+                    {
+                        "status": "ok",
+                        "version": "0.7",
+                        "executor_configured": bool(os.getenv("AI_DIAGNOSTIC_SKILL_EXECUTOR", "").strip()),
+                    },
+                )
+                return
+            routes = {
+                "/api/skills": CONTROL.list_skills,
+                "/api/offers": CONTROL.list_offers,
+                "/api/shelves": CONTROL.list_shelves,
+                "/api/backlog": CONTROL.backlog,
+                "/api/demand": DEMAND.snapshot,
+                "/api/demand/inventories": DEMAND.inventories,
+                "/api/qualification": QUALIFICATION.list_studies,
+                "/api/nudging/inventories": NUDGING.list_inventories,
+                "/api/value-chain": VALUE_CHAIN.list_studies,
+                "/api/reach": REACH.list_ready,
+                "/api/follow-up": FOLLOWUP.items,
+            }
+            if path in routes:
+                self._json(HTTPStatus.OK, routes[path]())
+                return
+            if path == "/":
+                self._static("index.html")
+                return
+            if path in {"/app.js", "/styles.css"}:
+                self._static(path[1:])
+                return
+            self.send_error(HTTPStatus.NOT_FOUND)
+        except ControlPlaneError as exc:
+            self._json(HTTPStatus.BAD_REQUEST, {"status": "error", "error": str(exc)})
+        except subprocess.TimeoutExpired:
+            self._json(HTTPStatus.GATEWAY_TIMEOUT, {"status": "error", "error": "skill executor timed out"})
+        except Exception as exc:  # noqa: BLE001 - convert unexpected errors into a clean response
+            self.log_error("unhandled error in GET %s: %r", path, exc)
+            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"status": "error", "error": str(exc)})
 
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path

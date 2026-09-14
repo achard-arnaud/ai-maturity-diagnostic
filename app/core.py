@@ -22,7 +22,10 @@ class ControlPlaneError(ValueError):
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ControlPlaneError(f"invalid YAML in {path}: {exc}") from exc
     return data if isinstance(data, dict) else {}
 
 
