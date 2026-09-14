@@ -73,6 +73,42 @@ function bindResolverButtons(root = document) {
   }));
 }
 
+function blockerActionButtons(kind, target, step) {
+  if (kind !== "qualification" || !target || !target.study_id || !step || !step.blocker) return "";
+  return `<div class="blocker-actions">
+    <button class="blockerActionBtn" data-step="${esc(step.id)}" data-action="cancel">Annuler l'étape</button>
+    <button class="blockerActionBtn" data-step="${esc(step.id)}" data-action="step_back">Revenir en arrière</button>
+    <button class="blockerActionBtn" data-step="${esc(step.id)}" data-action="force">Forcer (motif requis)</button>
+  </div>`;
+}
+
+async function recordBlockerAction(studyId, stepId, action) {
+  let reason = null;
+  let target_step_id = null;
+  if (action === "force") {
+    reason = window.prompt("Motif obligatoire pour forcer cette étape :", "");
+    if (reason === null || !reason.trim()) return;
+  }
+  if (action === "step_back") {
+    target_step_id = window.prompt("Revenir à quelle étape (demand, snapshots, matching, contacts, reach, pilot) ?", "");
+    if (!target_step_id) return;
+  }
+  const actor = "francois.arnaud.rjc@gmail.com";
+  await api("/api/qualification/actions", { method: "POST", body: JSON.stringify({ study_id: studyId, step_id: stepId, action, actor, reason, target_step_id }) });
+}
+
+function bindBlockerActionButtons(root, kind, studyId) {
+  if (kind !== "qualification" || !studyId) return;
+  root.querySelectorAll(".blockerActionBtn").forEach(btn => btn.addEventListener("click", async () => {
+    try {
+      await recordBlockerAction(studyId, btn.dataset.step, btn.dataset.action);
+      openWorkflow(kind, { study_id: studyId });
+    } catch (error) {
+      openDataPanel("Action bloquante", "Erreur", error.message, "");
+    }
+  }));
+}
+
 async function openWorkflow(kind, target) {
   const panel = document.querySelector("#workflowPanel");
   document.querySelector("#workflowSteps").innerHTML = "Chargement…";
@@ -96,6 +132,7 @@ async function openWorkflow(kind, target) {
         </div>
         <div class="row-actions">
           ${resolver ? resolverButton(resolver) : (step.skill && step.status !== "locked" ? `<button class="workflowSkillBtn" data-skill="${esc(step.skill)}" data-target="${esc(plan.target)}">Préparer</button>` : "")}
+          ${blockerActionButtons(kind, target, step)}
         </div>
       </div>`;
     }).join("");
@@ -104,6 +141,7 @@ async function openWorkflow(kind, target) {
       `Poursuis le parcours ${kind} pour ${btn.dataset.target}. Respecte les gates et produis uniquement l'artefact de cette skill.`
     )));
     bindResolverButtons(document.querySelector("#workflowSteps"));
+    bindBlockerActionButtons(document.querySelector("#workflowSteps"), kind, target && target.study_id);
   } catch (error) {
     document.querySelector("#workflowSteps").innerHTML = `<div class="error">${esc(error.message)}</div>`;
   }
@@ -252,6 +290,50 @@ function renderGraph(heritage) {
     <h4>Relations typées</h4><div class="edge-list">${edges.map(edge => `<div class="edge-row"><span class="badge">${esc(edge.relation)}</span><code>${esc(edge.source)}</code><span>→</span><code>${esc(edge.target)}</code><small>${esc(edge.basis)}</small><span class="badge">${esc(edge.confidence)}</span></div>`).join("") || "<div class='empty-state'>Aucune relation matérialisée.</div>"}</div>`;
 }
 
+function mermaidSafeId(nodeId) {
+  return "N" + String(nodeId ?? "").replace(/[^A-Za-z0-9]/g, "_");
+}
+
+// Pure, direct structural mapping from the backend's derived-on-read use-case graph
+// JSON (/api/uc-graph/company or /sector) into Mermaid flowchart syntax. This does not
+// compute or reinterpret graph semantics (no new scoring/matching/derivation) — it only
+// reshapes node_id/label/source/target/relation fields the backend already produced,
+// per ADR-004 (the web layer stays a thin adapter).
+function buildMermaidGraph(graph) {
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+  const lines = ["graph TD"];
+  nodes.forEach(node => {
+    const shape = node.node_type === "workflow_hypothesis" ? `(("${esc(node.label)}"))` : `["${esc(node.label)}"]`;
+    lines.push(`  ${mermaidSafeId(node.node_id)}${shape}`);
+  });
+  edges.forEach(edge => {
+    lines.push(`  ${mermaidSafeId(edge.source)} -->|${esc(edge.relation)}| ${mermaidSafeId(edge.target)}`);
+  });
+  return lines.join("\n");
+}
+
+async function openUseCaseGraph(kind, target) {
+  try {
+    const path = kind === "sector" ? "/api/uc-graph/sector" : "/api/uc-graph/company";
+    const graph = await api(path, { method: "POST", body: JSON.stringify(target) });
+    const label = graph.scope?.company || graph.scope?.sector_code || target.study_id || target.sector_code || "";
+    const mermaidSource = buildMermaidGraph(graph);
+    openDataPanel(
+      `Graphe des use cases · ${esc(label)}`,
+      "Mermaid · dérivé du graphe backend",
+      `${graph.nodes.length} nœuds · ${graph.edges.length} relations. Rendu 100% client à partir du JSON /api/uc-graph, aucun recalcul métier côté frontend.`,
+      `<div class="mermaid-graph"><pre class="mermaid">${mermaidSource}</pre></div>`
+    );
+    if (window.mermaid) {
+      window.mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+      window.mermaid.run({ querySelector: "#dataContent .mermaid" });
+    }
+  } catch (error) {
+    openDataPanel("Graphe des use cases", "Erreur", error.message, "");
+  }
+}
+
 async function openCompanyHeritage(studyId) {
   try {
     const heritage = await api("/api/heritage/company", { method: "POST", body: JSON.stringify({ study_id: studyId }) });
@@ -398,6 +480,7 @@ document.querySelector("#harvestForm").addEventListener("submit", async event =>
 document.querySelectorAll(".nudgeBtn").forEach(btn => btn.addEventListener("click", () => generateNudges(btn.dataset.mode)));
 document.querySelector("#fullNudgeFlow").addEventListener("click", () => { const study_id = document.querySelector("#nudgeInventory").value; if (study_id) openWorkflow("nudging", { study_id }); });
 document.querySelector("#nudgeGraph").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openCompanyHeritage(studyId); });
+document.querySelector("#ucGraphBtn").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openUseCaseGraph("company", { study_id: studyId }); });
 document.querySelector("#nudgeSkillCall").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openInvoke("use-case-nudging", `Génère et challenge les nudges du study ${studyId} depuis l'inventaire UC uniquement; ne charge ni ICB ni product fit.`); });
 
 boot();

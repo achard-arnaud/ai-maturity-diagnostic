@@ -78,6 +78,8 @@ pre { margin-top: 14px; padding: 13px; background: #111820; color: #eef3f7; bord
 .mini-step.status-locked span { background: #dce2e7; }
 .mini-step small { font-size: .67rem; overflow: hidden; text-overflow: ellipsis; }
 .blocker-card, .inline-blocker { border: 1px solid #ddb9b5; border-left: 3px solid #a84d46; border-radius: 9px; padding: 10px; background: #fffafa; margin: 10px 0; }
+.blocker-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.blocker-actions .blockerActionBtn { font-size: .78rem; padding: 4px 8px; }
 .blocker-card p { margin: 5px 0; color: #596671; font-size: .82rem; }
 .inline-blocker { display: grid; gap: 3px; margin-bottom: 0; }
 .inline-blocker small { color: #64717d; }

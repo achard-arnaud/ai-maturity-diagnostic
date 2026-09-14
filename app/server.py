@@ -8,8 +8,9 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
+from app.blocker_actions import BlockerActionLog
 from app.catalog import CatalogHarvester
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
@@ -34,6 +35,7 @@ REACH = ReachMatchmaker(ROOT)
 FOLLOWUP = FollowUpDashboard(ROOT)
 HERITAGE = UseCaseHeritage(ROOT)
 WORKFLOWS = WorkflowPlanner(ROOT)
+BLOCKER_ACTIONS = BlockerActionLog(ROOT)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -81,8 +83,13 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def do_GET(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         try:
+            if path == "/api/qualification/actions":
+                study_id = (parse_qs(parsed.query).get("study_id") or [""])[0].strip()
+                self._json(HTTPStatus.OK, BLOCKER_ACTIONS.list_actions(study_id))
+                return
             if path == "/api/health":
                 self._json(
                     HTTPStatus.OK,
@@ -112,7 +119,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/":
                 self._static("index.html")
                 return
-            if path in {"/app.js", "/styles.css"}:
+            if path in {"/app.js", "/styles.css", "/vendor/mermaid.min.js"}:
                 self._static(path[1:])
                 return
             self.send_error(HTTPStatus.NOT_FOUND)
@@ -173,6 +180,17 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/api/workflows/plan":
                 self._json(HTTPStatus.OK, WORKFLOWS.plan(payload))
+                return
+            if path == "/api/qualification/actions":
+                entry = BLOCKER_ACTIONS.record(
+                    study_id=str(payload.get("study_id") or "").strip(),
+                    step_id=str(payload.get("step_id") or "").strip(),
+                    action=str(payload.get("action") or "").strip(),
+                    actor=str(payload.get("actor") or "").strip(),
+                    reason=payload.get("reason"),
+                    target_step_id=payload.get("target_step_id"),
+                )
+                self._json(HTTPStatus.CREATED, {"entry": entry, "actions": BLOCKER_ACTIONS.list_actions(entry["study_id"])})
                 return
             self.send_error(HTTPStatus.NOT_FOUND)
         except ControlPlaneError as exc:

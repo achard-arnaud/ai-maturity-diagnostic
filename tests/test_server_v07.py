@@ -67,6 +67,14 @@ class FakeWorkflows:
     def plan(self, payload): return {"kind": payload.get("kind"), "steps": []}
 
 
+class FakeBlockerActions:
+    def record(self, *, study_id, step_id, action, actor, reason=None, target_step_id=None):
+        return {"study_id": study_id, "step_id": step_id, "action": action, "actor": actor, "reason": reason, "target_step_id": target_step_id, "timestamp": "2026-01-01T00:00:00+00:00"}
+
+    def list_actions(self, study_id):
+        return [{"study_id": study_id, "action": "cancel"}]
+
+
 class ServerV07Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.patches = patch.multiple(
@@ -74,7 +82,7 @@ class ServerV07Tests(unittest.TestCase):
             CONTROL=FakeControl(), HARVESTER=FakeHarvester(), DEMAND=FakeDemand(),
             QUALIFICATION=FakeQualification(), NUDGING=FakeNudging(), VALUE_CHAIN=FakeValueChain(),
             UC_GRAPH=FakeGraph(), REACH=FakeReach(), FOLLOWUP=FakeFollowUp(),
-            HERITAGE=FakeHeritage(), WORKFLOWS=FakeWorkflows(),
+            HERITAGE=FakeHeritage(), WORKFLOWS=FakeWorkflows(), BLOCKER_ACTIONS=FakeBlockerActions(),
         )
         self.patches.start()
         self.env = patch.dict(os.environ, {"AI_DIAGNOSTIC_HTTP_LOG": "0"}, clear=False)
@@ -137,6 +145,9 @@ class ServerV07Tests(unittest.TestCase):
         self.assertIn(b"openWorkflow", js)
         status, _, _ = self.request("GET", "/missing")
         self.assertEqual(404, status)
+        status, actions, _ = self.request("GET", "/api/qualification/actions?study_id=s1")
+        self.assertEqual(200, status)
+        self.assertIsInstance(actions, list)
 
     def test_post_domain_routes(self) -> None:
         cases = [
@@ -153,6 +164,7 @@ class ServerV07Tests(unittest.TestCase):
             ("/api/reach/preview", {"study_id": "s1"}, None),
             ("/api/reach/prepare", {"study_id": "s1"}, "prepared"),
             ("/api/workflows/plan", {"kind": "qualification", "study_id": "s1"}, None),
+            ("/api/qualification/actions", {"study_id": "s1", "step_id": "matching", "action": "cancel", "actor": "a@b.com"}, None),
         ]
         for path, payload, expected_status in cases:
             status, data, _ = self.request("POST", path, payload)
