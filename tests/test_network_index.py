@@ -233,5 +233,73 @@ class NetworkIndexTests(unittest.TestCase):
             )
 
 
+class FindPotentialDuplicatesTests(unittest.TestCase):
+    def test_same_name_different_company_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Jean Dupont", "COMP-2"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            groups = network_index.find_potential_duplicates(index_path)
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0]["normalized_name"], "jean dupont")
+            person_ids = {r["person_id"] for r in groups[0]["records"]}
+            self.assertEqual(person_ids, {"PERS-1", "PERS-2"})
+
+    def test_different_names_are_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Marie Curie", "COMP-2"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            self.assertEqual(network_index.find_potential_duplicates(index_path), [])
+
+    def test_single_person_produces_empty_list(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            write_jsonl(data_root / "people.jsonl", [person("PERS-1", "Jean Dupont", "COMP-1")])
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            self.assertEqual(network_index.find_potential_duplicates(index_path), [])
+
+    def test_same_name_same_company_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Jean Dupont", "COMP-1"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            self.assertEqual(network_index.find_potential_duplicates(index_path), [])
+
+    def test_missing_index_returns_empty_list(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(
+                network_index.find_potential_duplicates(Path(tmp) / "missing.sqlite"), []
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

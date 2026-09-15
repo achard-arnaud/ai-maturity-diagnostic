@@ -221,3 +221,43 @@ def create_person(
     people[person_id] = person
     write_jsonl(people_path, people.values(), "person_id")
     return person
+
+
+def reassign_company_workspace(data_root: Path, company_id: str, new_workspace_id: str) -> dict[str, Any]:
+    """Move a company to a different workspace by updating its
+    `workspace_id` field in-place in companies.jsonl.
+
+    `data_root` is the directory containing companies.jsonl (e.g.
+    ROOT / "data" / "private" / "network"). Read-modify-write over the
+    whole file, matching write_jsonl's existing atomic-write convention.
+
+    Raises ControlPlaneError for an unknown company_id or a blank
+    new_workspace_id -- this is a required-precondition failure for a
+    targeted mutation, not a read-side search a caller can shrug off.
+
+    Never touches the derived SQLite index (data/private/network/
+    network_index.sqlite) -- that stays a separate, explicit rebuild
+    step. Callers must remember to trigger a rebuild afterwards, or
+    search results served from the stale index will keep showing the
+    old workspace_id until that happens.
+    """
+    company_id = str(company_id or "").strip()
+    new_workspace_id = str(new_workspace_id or "").strip()
+    if not company_id:
+        raise ControlPlaneError("company_id is required")
+    if not new_workspace_id:
+        raise ControlPlaneError("new_workspace_id is required")
+
+    companies_path = Path(data_root) / "companies.jsonl"
+    records = read_jsonl(companies_path)
+    updated: dict[str, Any] | None = None
+    for record in records:
+        if record.get("company_id") == company_id:
+            record["workspace_id"] = new_workspace_id
+            updated = record
+            break
+    if updated is None:
+        raise ControlPlaneError(f"unknown company_id: {company_id}")
+
+    write_jsonl(companies_path, records, sort_key="company_id")
+    return updated

@@ -295,6 +295,107 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual("s1", data["nudging"]["study_id"])
         self.assertEqual(AUTH_CTX.email, data["event"]["actor"])
 
+    def test_account_360_route_aggregates_and_404s_for_unknown_company(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "companies.jsonl").write_text(
+                json.dumps(
+                    {
+                        "company_id": "COMP-1",
+                        "canonical_name": "EDF",
+                        "normalized_name": "edf",
+                        "status": "active",
+                        "workspace_id": "default",
+                        "last_updated": "2026-08-01",
+                        "stale_after_months": 6,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, data, _ = self.request("GET", "/api/accounts/COMP-1/360")
+                self.assertEqual(200, status)
+                self.assertEqual(data["company"]["company_id"], "COMP-1")
+                self.assertEqual(data["people"], [])
+
+                status, _, _ = self.request("GET", "/api/accounts/UNKNOWN/360")
+                self.assertEqual(404, status)
+
+    def test_network_duplicates_route(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "person_id": "PERS-1",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-1",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-2",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-2",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text("", encoding="utf-8")
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, data, _ = self.request("GET", "/api/network/duplicates")
+                self.assertEqual(200, status)
+                self.assertEqual(len(data), 1)
+                self.assertEqual(data[0]["normalized_name"], "jean dupont")
+
+    def test_reassign_company_route_requires_admin(self) -> None:
+        non_admin = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
+        server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+        status, _, _ = self.request("POST", "/admin/network/companies/C1/reassign", payload={"workspace_id": "ws-new"})
+        self.assertEqual(403, status)
+
+    def test_reassign_company_route_updates_company_for_admin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "companies.jsonl").write_text(
+                json.dumps({"company_id": "C1", "canonical_name": "Acme", "workspace_id": "ws-old"}) + "\n",
+                encoding="utf-8",
+            )
+            index_path = data_root / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, data, _ = self.request(
+                    "POST", "/admin/network/companies/C1/reassign", payload={"workspace_id": "ws-new"}
+                )
+                self.assertEqual(200, status)
+                self.assertEqual(data["company"]["workspace_id"], "ws-new")
+                self.assertTrue(data["index_rebuild_required"])
+
+                status, _, _ = self.request(
+                    "POST", "/admin/network/companies/UNKNOWN/reassign", payload={"workspace_id": "ws-new"}
+                )
+                self.assertEqual(400, status)
+
     def test_network_rebuild_index_route_requires_admin(self) -> None:
         non_admin = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
         server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin

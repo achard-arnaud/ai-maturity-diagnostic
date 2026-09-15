@@ -286,6 +286,84 @@ def search_people(
         connection.close()
 
 
+def get_company(index_path: Path, company_id: str) -> dict[str, Any] | None:
+    """Single-record lookup by exact company_id. Returns None if the index
+    has not been built yet, or no company with that id is indexed (never
+    raises for either case, matching search_people/search_companies)."""
+    if not Path(index_path).is_file():
+        return None
+    connection = sqlite3.connect(str(index_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            "SELECT record_json FROM companies WHERE company_id = ?", (company_id,)
+        ).fetchone()
+        return _row_record(row) if row is not None else None
+    finally:
+        connection.close()
+
+
+def find_potential_duplicates(index_path: Path) -> list[dict[str, Any]]:
+    """Detection-only duplicate-person finder (CRM-audit gap #3).
+
+    contracts/person.schema.yaml recomputes `person_id` per company, so a
+    person changing employer gets a brand-new person_id and their old
+    record is orphaned rather than merged. This groups indexed people by
+    `normalized_name` (already indexed) where more than one row shares
+    the same normalized_name across *different* seed_company_id values,
+    and returns one group per name with both/all records so a human can
+    review and decide. This function never merges, deletes or otherwise
+    mutates anything -- see the module docstring's "no active cleanup
+    pass" note from the workspace sprint; it is read-only detection.
+
+    Two people who happen to have the same normalized_name at the *same*
+    company are not flagged here (that is an identity-key collision, a
+    different and separately-tracked problem, not a company-change
+    duplicate). Returns [] if the index has not been built yet.
+    """
+    if not Path(index_path).is_file():
+        return []
+    connection = sqlite3.connect(str(index_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """
+            SELECT normalized_name, person_id, seed_company_id, status, record_json
+            FROM people
+            WHERE normalized_name IS NOT NULL AND normalized_name != ''
+            ORDER BY normalized_name, person_id
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    by_name: dict[str, list[sqlite3.Row]] = {}
+    for row in rows:
+        by_name.setdefault(row["normalized_name"], []).append(row)
+
+    groups: list[dict[str, Any]] = []
+    for normalized_name, group_rows in by_name.items():
+        companies = {row["seed_company_id"] for row in group_rows}
+        if len(group_rows) < 2 or len(companies) < 2:
+            continue
+        groups.append(
+            {
+                "normalized_name": normalized_name,
+                "records": [
+                    {
+                        "person_id": row["person_id"],
+                        "seed_company_id": row["seed_company_id"],
+                        "status": row["status"],
+                        "record": _row_record(row),
+                    }
+                    for row in group_rows
+                ],
+            }
+        )
+    groups.sort(key=lambda item: item["normalized_name"])
+    return groups
+
+
 def search_companies(
     index_path: Path,
     *,

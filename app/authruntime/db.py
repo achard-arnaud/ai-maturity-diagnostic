@@ -290,7 +290,34 @@ class ControlStore:
             )
             return int(cur.lastrowid)
 
-    def list_overrides(self, workspace_id: str | None = None) -> list[sqlite3.Row]:
+    def list_overrides(
+        self, workspace_id: str | None = None, *, resolved: bool | None = None
+    ) -> list[sqlite3.Row]:
+        """List recorded qualification-blocker overrides for the approval
+        inbox (CRM-audit gap #2), optionally filtered by workspace.
+
+        `workspace_id` is positional for backward compatibility with
+        existing call sites; new callers should use it as a keyword.
+
+        `resolved` finding: the `overrides` table (see SCHEMA above) has
+        no "resolved"/"open" concept of its own -- it is an append-only
+        record of a human decision already made (the override *is* the
+        resolution of the underlying blocker at the moment it was
+        recorded; the blocker itself, in app/qualification.py, may later
+        reappear or be recomputed independently). There is therefore no
+        column to filter on, and this task explicitly does not add one to
+        the `overrides` schema. Passing `resolved` is accepted for the
+        interface the task asked for, but since every row is equally
+        "resolved" (or equally not a queue of separately-trackable open
+        items) under the current schema, `resolved=False` always yields
+        an empty list and `resolved=True` is equivalent to no filter at
+        all. This is a documented finding, not a real filter -- a future
+        sprint that wants a genuine open/closed override queue needs a
+        schema change (e.g. a `resolved_at` column), which is out of
+        scope here.
+        """
+        if resolved is False:
+            return []
         with self.connect() as conn:
             if workspace_id is None:
                 return conn.execute("SELECT * FROM overrides ORDER BY id DESC").fetchall()

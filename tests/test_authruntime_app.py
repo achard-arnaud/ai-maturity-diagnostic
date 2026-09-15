@@ -137,6 +137,40 @@ class AuthRuntimeAppTests(unittest.TestCase):
         self.assertEqual(audit_page.status_code, 200)
         self.assertIn("create_workspace", audit_page.text)
 
+    def test_admin_overrides_page_forbidden_for_non_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "plain-overrides@example.com")
+        response = client.get("/admin/overrides")
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_overrides_page_lists_overrides_for_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin-overrides@example.com")
+        admin_user = self.store.get_or_create_user("admin-overrides@example.com", "AdminOverrides")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.create_workspace("ws-overrides", "Workspace Overrides")
+        self.store.record_override("ws-overrides", "study-1:demand", "po@example.com", "Exec-sponsored timebox")
+
+        response = client.get("/admin/overrides")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("study-1:demand", response.text)
+        self.assertIn("Exec-sponsored timebox", response.text)
+
+    def test_admin_overrides_page_filters_by_workspace(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin-overrides2@example.com")
+        admin_user = self.store.get_or_create_user("admin-overrides2@example.com", "AdminOverrides2")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.create_workspace("ws-ov-a", "Workspace Ov A")
+        self.store.create_workspace("ws-ov-b", "Workspace Ov B")
+        self.store.record_override("ws-ov-a", "study-a:demand", "po-a@example.com", "reason a")
+        self.store.record_override("ws-ov-b", "study-b:demand", "po-b@example.com", "reason b")
+
+        response = client.get("/admin/overrides", params={"workspace_id": "ws-ov-a"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("study-a:demand", response.text)
+        self.assertNotIn("study-b:demand", response.text)
+
     def test_admin_users_page_forbidden_for_non_admin(self) -> None:
         client = self._client()
         self._login_as(client, "plain2@example.com")

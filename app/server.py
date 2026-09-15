@@ -15,6 +15,7 @@ from app.authruntime.config import AuthConfig, assert_safe_bind
 from app.authruntime.db import ControlStore
 from app.authruntime.deps import RequestContext, get_current_user, require_role
 from app.authruntime.oidc import OIDCClient
+from app.account_view import get_account_360
 from app.blocker_actions import BlockerActionLog
 from app import campaigns
 from app.catalog import CatalogHarvester
@@ -25,8 +26,8 @@ from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
 from app import kanban
 from app import network_index
-from app.network_index import search_companies, search_people
-from app.network_writer import create_company, create_person
+from app.network_index import find_potential_duplicates, search_companies, search_people
+from app.network_writer import create_company, create_person, reassign_company_workspace
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
 from app.reach import ReachMatchmaker
@@ -237,6 +238,17 @@ def build_app(
             workspace_id=workspace_id.strip() or None,
         )
 
+    @app.get("/api/accounts/{company_id}/360")
+    async def api_account_360(
+        company_id: str, ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        result = get_account_360(ROOT, company_id.strip(), index_path=NETWORK_INDEX_PATH)
+        if result is None:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=404, detail="unknown company_id")
+        return result
+
     @app.get("/api/network/companies")
     async def api_network_companies(
         text: str = "",
@@ -251,6 +263,10 @@ def build_app(
             workspace_id=workspace_id.strip() or None,
         )
 
+    @app.get("/api/network/duplicates")
+    async def api_network_duplicates(ctx: RequestContext = Depends(get_current_user)) -> Any:
+        return find_potential_duplicates(NETWORK_INDEX_PATH)
+
     # ------------------------------------------------------------------
     # Admin-only network index rebuild trigger (manual/on-demand; the
     # search routes above read a derived SQLite index that otherwise only
@@ -259,6 +275,21 @@ def build_app(
     @app.post("/admin/network/rebuild-index")
     async def admin_network_rebuild_index(ctx: RequestContext = Depends(require_role("admin"))) -> Any:
         return network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
+
+    # Account reassignment (CRM-audit gap #4): moves a company between
+    # workspaces by updating its workspace_id in companies.jsonl. Never
+    # touches the derived SQLite index -- an admin must rebuild it
+    # afterwards (POST /admin/network/rebuild-index) for search results
+    # to reflect the new workspace_id.
+    @app.post("/admin/network/companies/{company_id}/reassign")
+    async def admin_reassign_company(
+        company_id: str,
+        payload: dict[str, Any] = Depends(_json_body),
+        ctx: RequestContext = Depends(require_role("admin")),
+    ) -> Any:
+        new_workspace_id = str(payload.get("workspace_id") or "").strip()
+        updated = reassign_company_workspace(NETWORK_INDEX_PATH.parent, company_id.strip(), new_workspace_id)
+        return {"company": updated, "index_rebuild_required": True}
 
     @app.get("/api/kanban/board")
     async def api_kanban_board(ctx: RequestContext = Depends(get_current_user)) -> Any:

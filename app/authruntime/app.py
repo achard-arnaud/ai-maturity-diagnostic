@@ -157,6 +157,16 @@ def create_app(
     async def admin_audit(request: Request, ctx: RequestContext = Depends(require_role("admin")), store: ControlStore = Depends(get_store)):
         return HTMLResponse(_render_audit_page(store))
 
+    @app.get("/admin/overrides", response_class=HTMLResponse)
+    async def admin_overrides(
+        request: Request,
+        workspace_id: str | None = None,
+        ctx: RequestContext = Depends(require_role("admin")),
+        store: ControlStore = Depends(get_store),
+    ):
+        overrides = store.list_overrides(workspace_id=workspace_id or None)
+        return HTMLResponse(_render_overrides_page(overrides, workspace_id=workspace_id))
+
     # ------------------------------------------------------------------
     # Qualification override (product_owner scoped mutation)
     # ------------------------------------------------------------------
@@ -276,6 +286,37 @@ def _render_users_page(users: list[Any], *, text: str | None, role: str | None, 
 <button type="submit">Search</button>
 </form>
 <table border="1"><tr><th>email</th><th>role</th><th>workspace_id</th><th>is_admin</th></tr>{rows}</table>
+<p><a href="/admin/workspaces">Back</a></p>
+</body></html>"""
+
+
+def _render_overrides_page(overrides: list[Any], *, workspace_id: str | None) -> str:
+    """Centralized approval inbox (CRM-audit gap #2): lists recorded
+    qualification-blocker overrides from app.authruntime.db's `overrides`
+    table. Every row here is a human decision already recorded -- there
+    is no resolved/unresolved state in the schema (see
+    ControlStore.list_overrides's docstring finding); this page therefore
+    reads as a log of overrides, not a queue of pending approvals."""
+
+    def esc(value: Any) -> str:
+        return html.escape(str(value)) if value is not None else ""
+
+    rows = "".join(
+        f"<tr><td>{esc(o['created_at'])}</td><td>{esc(o['workspace_id'])}</td>"
+        f"<td>{esc(o['blocker_id'])}</td><td>{esc(o['actor'])}</td><td>{esc(o['reason'])}</td></tr>"
+        for o in overrides
+    )
+    return f"""<!doctype html>
+<html><head><title>Admin — Overrides</title></head>
+<body>
+<h1>Overrides</h1>
+<p>Every recorded qualification-blocker override, most recent first. This table has no resolved/unresolved
+state today: an override is itself the record of a human decision already made.</p>
+<form method="get" action="/admin/overrides">
+<input name="workspace_id" placeholder="workspace id" value="{esc(workspace_id)}">
+<button type="submit">Filter</button>
+</form>
+<table border="1"><tr><th>created_at</th><th>workspace_id</th><th>blocker_id</th><th>actor</th><th>reason</th></tr>{rows}</table>
 <p><a href="/admin/workspaces">Back</a></p>
 </body></html>"""
 

@@ -146,5 +146,40 @@ class ControlStoreSchemaTests(unittest.TestCase):
         self.assertEqual(self.store.list_overrides("ws-does-not-exist"), [])
 
 
+    def test_list_overrides_across_workspaces_for_admin(self) -> None:
+        self.store.create_workspace("ws-inbox-a", "Workspace Inbox A")
+        self.store.create_workspace("ws-inbox-b", "Workspace Inbox B")
+        self.store.record_override("ws-inbox-a", "study-a:demand", "po-a@example.com", "reason a")
+        self.store.record_override("ws-inbox-b", "study-b:matching", "po-b@example.com", "reason b")
+
+        all_rows = self.store.list_overrides()
+        blocker_ids = {row["blocker_id"] for row in all_rows}
+        self.assertIn("study-a:demand", blocker_ids)
+        self.assertIn("study-b:matching", blocker_ids)
+
+    def test_list_overrides_filters_by_workspace_id(self) -> None:
+        self.store.create_workspace("ws-inbox-c", "Workspace Inbox C")
+        self.store.create_workspace("ws-inbox-d", "Workspace Inbox D")
+        self.store.record_override("ws-inbox-c", "study-c:demand", "po-c@example.com", "reason c")
+        self.store.record_override("ws-inbox-d", "study-d:demand", "po-d@example.com", "reason d")
+
+        rows = self.store.list_overrides(workspace_id="ws-inbox-c")
+        self.assertEqual([row["workspace_id"] for row in rows], ["ws-inbox-c"])
+
+    def test_list_overrides_resolved_filter_has_no_open_closed_concept(self) -> None:
+        """Documented finding: the overrides table has no resolved/open
+        column, so `resolved=False` cannot return a genuine open queue --
+        it returns [] (nothing is trackable as unresolved), and
+        `resolved=True`/None both return every recorded override."""
+        self.store.create_workspace("ws-inbox-e", "Workspace Inbox E")
+        self.store.record_override("ws-inbox-e", "study-e:demand", "po-e@example.com", "reason e")
+
+        self.assertEqual(self.store.list_overrides(workspace_id="ws-inbox-e", resolved=False), [])
+        rows_true = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=True)
+        rows_none = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=None)
+        self.assertEqual(len(rows_true), 1)
+        self.assertEqual(len(rows_none), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
