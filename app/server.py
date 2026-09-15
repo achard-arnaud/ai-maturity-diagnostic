@@ -299,6 +299,13 @@ def build_app(
     async def api_campaigns_list(ctx: RequestContext = Depends(get_current_user)) -> Any:
         return campaigns.list_campaigns(ROOT)
 
+    # Minimal, thin route exposing app.catalog_promotion.list_staged_candidates
+    # (S6/S7 landed the promotion/edit endpoints with no way to list what can
+    # be promoted). Reads only -- never touches product_catalog/*.yaml.
+    @app.get("/api/catalog/candidates")
+    async def api_catalog_candidates(ctx: RequestContext = Depends(get_current_user)) -> Any:
+        return list_staged_candidates(CONTROL.root)
+
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).
     # ------------------------------------------------------------------

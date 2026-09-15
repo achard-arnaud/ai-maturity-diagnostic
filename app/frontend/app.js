@@ -1,7 +1,8 @@
 const state = {
   skills: [], offers: [], shelves: [], demand: { sectors: [] }, inventories: [],
   qualification: [], nudgeInventories: [], backlog: [], followUp: [], valueChain: [],
-  selectedSkill: null, selectedSector: null, resolvers: {}
+  selectedSkill: null, selectedSector: null, resolvers: {},
+  executorConfigured: true, user: null, candidates: [], campaigns: []
 };
 
 async function api(path, options = {}) {
@@ -31,6 +32,13 @@ function openInvoke(skillId, input = "", contextPaths = []) {
   document.querySelector("#invokeInput").value = input;
   document.querySelector("#contextPaths").value = (contextPaths || []).filter(Boolean).join("\n");
   document.querySelector("#invokeResult").textContent = "";
+  document.querySelector("#invokeConfirmation").textContent = "";
+  document.querySelector("#contactStructResult").textContent = "";
+  // ADR-004: nothing actually runs unless AI_DIAGNOSTIC_SKILL_EXECUTOR is
+  // configured server-side — surface that right where the user is about to
+  // trigger a would-be write, not only as a global health-bar notice.
+  document.querySelector("#executorBanner").classList.toggle("hidden", state.executorConfigured);
+  document.querySelector("#structuredContactFields").classList.toggle("hidden", skillId !== "network-contact-intake");
   document.querySelector("#invokePanel").classList.remove("hidden");
   document.querySelector("#invokeInput").focus();
 }
@@ -163,11 +171,12 @@ function renderShelves() {
     const cards = (shelf.offer_ids || []).map(id => offersById[id]).filter(Boolean);
     return `<article class="card shelf-card"><p class="eyebrow">${esc(shelf.shelf_id)}</p><h3>${esc(shelf.name)}</h3><p>${esc(shelf.purpose || "")}</p>
       <div>${cards.map(o => `<div class="offer-row"><div><strong>${esc(o.name)}</strong><div class="meta"><span class="badge">${esc(o.offer_id)}</span><span class="badge">${esc(o.status)}</span><span>${esc(o.profile_version || "")}</span></div></div>
-        <div class="row-actions"><button class="offerAuditBtn" data-offer="${esc(o.offer_id)}" data-file="${esc(o.file || "")}">Auditer / MAJ</button><button class="offerOppBtn" data-offer="${esc(o.offer_id)}">Opportunités</button><button class="offerFlowBtn" data-offer="${esc(o.offer_id)}">Parcours complet</button></div></div>`).join("") || "<small>Aucune offre canonique.</small>"}</div></article>`;
+        <div class="row-actions"><button class="offerAuditBtn" data-offer="${esc(o.offer_id)}" data-file="${esc(o.file || "")}">Auditer / MAJ</button><button class="offerOppBtn" data-offer="${esc(o.offer_id)}">Opportunités</button><button class="offerEditBtn" data-offer="${esc(o.offer_id)}">Modifier ma fiche produit</button><button class="offerFlowBtn" data-offer="${esc(o.offer_id)}">Parcours complet</button></div></div>`).join("") || "<small>Aucune offre canonique.</small>"}</div></article>`;
   }).join("");
   document.querySelectorAll(".offerAuditBtn").forEach(btn => btn.addEventListener("click", () => openInvoke("product-icp-intelligence", `Audite ou mets à jour la vérité canonique de ${btn.dataset.offer} sans charger de compte nommé.`, btn.dataset.file ? [`product_catalog/${btn.dataset.file}`] : [])));
   document.querySelectorAll(".offerFlowBtn").forEach(btn => btn.addEventListener("click", () => openWorkflow("offer", { offer_id: btn.dataset.offer })));
   document.querySelectorAll(".offerOppBtn").forEach(btn => btn.addEventListener("click", () => openOfferOpportunities(btn.dataset.offer)));
+  document.querySelectorAll(".offerEditBtn").forEach(btn => btn.addEventListener("click", () => openOfferEditForm(btn.dataset.offer)));
   const options = state.shelves.map(s => `<option value="${esc(s.shelf_id)}">${esc(s.name)}</option>`).join("");
   document.querySelector("#shelf").innerHTML = options;
   document.querySelector("#discoverShelf").innerHTML = options;
@@ -369,13 +378,14 @@ function renderQualification() {
       <div class="sector-top"><div><p class="eyebrow">${esc(row.study_id)}</p><h3>${esc(row.company)}</h3></div><span class="badge ${statusClass(row.stage)}">${esc(row.stage)}</span></div>
       <div class="stepper">${(row.steps || []).map(step => `<div class="mini-step ${statusClass(step.status)}"><span></span><small>${esc(step.id)}</small></div>`).join("")}</div>
       ${blocker ? `<div class="blocker-card"><p class="eyebrow">Blocker actuel</p><strong>${esc(blocker.message)}</strong><p>Besoin : ${esc(blocker.required_state)}</p><p>Après : ${esc(blocker.postcondition)}</p>${resolverButton(blocker)}</div>` : `<p class="hint">${esc(row.next_action || "Parcours complété")}</p>`}
-      <div class="card-actions"><button class="companyContextBtn" data-study="${esc(row.study_id)}">Entreprise</button><button class="orgBtn" data-study="${esc(row.study_id)}" data-path="${esc(row.study_path)}">Organisation</button>${row.decision === "pursue" || row.decision === "validate" ? `<button class="reachBtn" data-study="${esc(row.study_id)}">Reach</button>` : ""}<button class="qualFlowBtn" data-study="${esc(row.study_id)}">Parcours complet</button></div>
+      <div class="card-actions"><button class="companyContextBtn" data-study="${esc(row.study_id)}">Entreprise</button><button class="orgBtn" data-study="${esc(row.study_id)}" data-path="${esc(row.study_path)}">Organisation</button>${row.decision === "pursue" || row.decision === "validate" ? `<button class="reachBtn" data-study="${esc(row.study_id)}">Reach</button>` : ""}<button class="crossSellBtn" data-study="${esc(row.study_id)}">Préparer cross-sell</button><button class="qualFlowBtn" data-study="${esc(row.study_id)}">Parcours complet</button></div>
     </article>`;
   }).join("");
   bindResolverButtons(grid);
   grid.querySelectorAll(".companyContextBtn").forEach(btn => btn.addEventListener("click", () => openWorkflow("company", { study_id: btn.dataset.study })));
   grid.querySelectorAll(".orgBtn").forEach(btn => btn.addEventListener("click", () => openInvoke("tech-leadership-org-intelligence", `Rafraîchis l'organisation, le système de décision et les zones d'influence du study ${btn.dataset.study}.`, [btn.dataset.path])));
   grid.querySelectorAll(".reachBtn").forEach(btn => btn.addEventListener("click", () => openReach(btn.dataset.study)));
+  grid.querySelectorAll(".crossSellBtn").forEach(btn => btn.addEventListener("click", () => launchCrossSell(btn.dataset.study)));
   grid.querySelectorAll(".qualFlowBtn").forEach(btn => btn.addEventListener("click", () => openWorkflow("qualification", { study_id: btn.dataset.study })));
 }
 
@@ -431,6 +441,214 @@ function renderBacklog() {
   document.querySelector("#backlogRows").innerHTML = state.backlog.filter(item => item.status !== "completed").sort((a,b) => String(a.priority).localeCompare(String(b.priority))).map(item => `<tr><td>${esc(item.id)}</td><td>${esc(item.priority)}</td><td>${esc(item.status)}</td><td>${esc(item.area)}</td><td>${esc(item.task)}</td></tr>`).join("");
 }
 
+// ------------------------------------------------------------------
+// Kanban board (GET /api/kanban/board) — real columns/cards, no drag-drop.
+// Mounted identically into Demande/Qualification/Suivi so it's reachable
+// from wherever the user already is, per the sprint's item 6.
+// ------------------------------------------------------------------
+function renderKanbanInto(containerId, board) {
+  const el = document.querySelector(`#${containerId}`);
+  if (!el) return;
+  const columns = (board && board.columns) || [];
+  el.innerHTML = columns.map(col => `<div class="kanban-column">
+    <h4><span>${esc(col.stage)}</span><span class="badge">${(col.cards || []).length}</span></h4>
+    ${(col.cards || []).map(card => `<div class="kanban-card"><strong>${esc(card.company || card.study_id || card.label || "—")}</strong><span class="hint">${esc(card.study_id || "")}</span></div>`).join("") || "<div class='hint'>Vide</div>"}
+  </div>`).join("") || "<div class='empty-state'>Aucune donnée de pipeline.</div>";
+}
+
+async function loadKanban() {
+  try {
+    const board = await api("/api/kanban/board");
+    state.kanban = board;
+    renderKanbanInto("kanbanDemandBoard", board);
+    renderKanbanInto("kanbanQualificationBoard", board);
+    renderKanbanInto("kanbanFullBoard", board);
+  } catch (error) {
+    ["kanbanDemandBoard", "kanbanQualificationBoard", "kanbanFullBoard"].forEach(id => {
+      const el = document.querySelector(`#${id}`);
+      if (el) el.innerHTML = `<div class="error">${esc(error.message)}</div>`;
+    });
+  }
+}
+
+// ------------------------------------------------------------------
+// Catalog search CTA (GET /api/catalog/search) — Offres tab.
+// ------------------------------------------------------------------
+async function runCatalogSearch() {
+  const query = document.querySelector("#catalogSearchQuery").value.trim();
+  const container = document.querySelector("#catalogSearchResults");
+  container.innerHTML = "<div class='empty-state'>Recherche…</div>";
+  try {
+    const results = await api(`/api/catalog/search?q=${encodeURIComponent(query)}`);
+    container.innerHTML = results.map(r => `<article class="card"><p class="eyebrow">${esc(r.category || "")}</p><h3>${esc(r.name || r.offer_id)}</h3><p>${esc(r.one_liner || r.status || "")}</p><div class="meta"><span class="badge">${esc(r.offer_id)}</span><span class="badge">${esc(r.status || "")}</span></div><button class="viewCatalogResult" data-offer="${esc(r.offer_id)}">Voir / promouvoir</button></article>`).join("") || "<div class='empty-state'>Aucun résultat.</div>";
+    container.querySelectorAll(".viewCatalogResult").forEach(btn => btn.addEventListener("click", () => openOfferOpportunities(btn.dataset.offer)));
+  } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+// ------------------------------------------------------------------
+// Staged candidate promotion (GET /api/catalog/candidates, POST .../promote)
+// and PO offer-sheet edit (PATCH /api/catalog/offers/{id}) — Offres tab.
+// ------------------------------------------------------------------
+async function loadCandidates() {
+  const grid = document.querySelector("#candidatesGrid");
+  try {
+    const candidates = await api("/api/catalog/candidates");
+    state.candidates = candidates;
+    grid.innerHTML = candidates.map(c => `<article class="card"><p class="eyebrow">${esc(c.company)} · ${esc(c.shelf_id)}</p><h3>${esc(c.name || c.candidate_id)}</h3><p>${(c.raw_claims || []).join(" ") || "Aucun claim capturé."}</p><div class="meta"><span class="badge">${esc(c.promotion_status || "unreviewed")}</span></div><button class="promoteCandidateBtn primary" data-id="${esc(c.id)}">Promouvoir</button></article>`).join("") || "<div class='empty-state'>Aucun candidat stagé.</div>";
+    grid.querySelectorAll(".promoteCandidateBtn").forEach(btn => btn.addEventListener("click", () => promoteCandidate(btn.dataset.id)));
+  } catch (error) { grid.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function promoteCandidate(candidateId) {
+  const offerId = window.prompt("Identifiant de la nouvelle offre canonique (offer_id) :", "");
+  if (!offerId) return;
+  try {
+    const offer = await api(`/api/catalog/candidates/${encodeURIComponent(candidateId)}/promote`, { method: "POST", body: JSON.stringify({ offer_id: offerId }) });
+    openDataPanel(`Offre promue · ${offer.offer_id}`, "Publiée au catalogue", "Statut draft, unknowns honnêtes conservés.", `<pre>${esc(JSON.stringify(offer, null, 2))}</pre>`);
+    loadCandidates();
+    boot();
+  } catch (error) { openDataPanel("Promotion", "Erreur", error.message, ""); }
+}
+
+function openOfferEditForm(offerId) {
+  const html = `<form id="offerEditForm" class="form">
+    <label>Positioning (one-liner)<input id="editPositioning"></label>
+    <label>Problem (canonical)<input id="editProblem"></label>
+    <label>Outcomes primaires (séparés par ;)<input id="editOutcomes"></label>
+    <label>ICP must-have (séparés par ;)<input id="editIcp"></label>
+    <button class="primary" type="submit">Enregistrer les modifications</button>
+  </form><div id="offerEditResult" class="hint"></div>`;
+  openDataPanel(`Modifier ma fiche produit · ${offerId}`, "Éditer l'offre", "Seuls positioning/problem/outcomes/icp/name/category sont éditables ici ; hard_gates et proof restent protégés.", html);
+  document.querySelector("#offerEditForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const updates = {
+      positioning: { one_liner: document.querySelector("#editPositioning").value },
+      problem: { canonical: document.querySelector("#editProblem").value },
+      outcomes: { primary: document.querySelector("#editOutcomes").value.split(";").map(s => s.trim()).filter(Boolean) },
+      icp: { maturity: { must_have: document.querySelector("#editIcp").value.split(";").map(s => s.trim()).filter(Boolean) } },
+    };
+    const out = document.querySelector("#offerEditResult");
+    out.textContent = "Enregistrement…";
+    try {
+      const offer = await api(`/api/catalog/offers/${encodeURIComponent(offerId)}`, { method: "PATCH", body: JSON.stringify({ updates }) });
+      out.innerHTML = `<div class="confirmation-banner">Fiche mise à jour.</div>`;
+      Object.assign(state, {});
+      boot();
+    } catch (error) { out.textContent = error.message; }
+  });
+}
+
+// ------------------------------------------------------------------
+// Network people/companies search (GET /api/network/people|companies) —
+// Réseau tab.
+// ------------------------------------------------------------------
+async function runPeopleSearch() {
+  const params = new URLSearchParams({
+    text: document.querySelector("#peopleText").value.trim(),
+    status: document.querySelector("#peopleStatus").value.trim(),
+    role: document.querySelector("#peopleRole").value.trim(),
+    workspace_id: document.querySelector("#peopleWorkspace").value.trim(),
+    stale: document.querySelector("#peopleStale").checked ? "true" : "",
+  });
+  const container = document.querySelector("#peopleResults");
+  container.innerHTML = "<div class='empty-state'>Recherche…</div>";
+  try {
+    const people = await api(`/api/network/people?${params.toString()}`);
+    container.innerHTML = people.map(p => `<article class="card"><p class="eyebrow">${esc(p.seed_company_id || "")}</p><h3>${esc(p.display_name)}</h3><div class="meta"><span class="badge">${esc(p.status || "")}</span>${(p.role_hypotheses || []).map(r => `<span class="badge">${esc(r)}</span>`).join("")}</div></article>`).join("") || "<div class='empty-state'>Aucune personne trouvée.</div>";
+  } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function runCompaniesSearch() {
+  const params = new URLSearchParams({
+    text: document.querySelector("#companiesText").value.trim(),
+    sector: document.querySelector("#companiesSector").value.trim(),
+    workspace_id: document.querySelector("#companiesWorkspace").value.trim(),
+  });
+  const container = document.querySelector("#companiesResults");
+  container.innerHTML = "<div class='empty-state'>Recherche…</div>";
+  try {
+    const companies = await api(`/api/network/companies?${params.toString()}`);
+    container.innerHTML = companies.map(c => `<article class="card"><p class="eyebrow">${esc(c.workspace_id || "")}</p><h3>${esc(c.canonical_name)}</h3><div class="meta"><span class="badge">${esc(c.status || "")}</span></div><button class="open360Btn" data-company="${esc(c.company_id)}">Vue 360</button></article>`).join("") || "<div class='empty-state'>Aucune entreprise trouvée.</div>";
+    container.querySelectorAll(".open360Btn").forEach(btn => btn.addEventListener("click", () => openAccount360(btn.dataset.company)));
+  } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+// ------------------------------------------------------------------
+// Account 360 view (GET /api/accounts/{company_id}/360) + admin reassign.
+// ------------------------------------------------------------------
+async function openAccount360(companyId) {
+  try {
+    const account = await api(`/api/accounts/${encodeURIComponent(companyId)}/360`);
+    const company = account.company || {};
+    const people = account.people || [];
+    const reassignHtml = state.user && state.user.is_admin ? `<div class="action-row"><input id="reassignWorkspace" placeholder="nouveau workspace_id"><button id="reassignBtn">Réassigner</button></div>` : "";
+    const html = `<div class="analysis-card"><p class="eyebrow">Entreprise</p><strong>${esc(company.canonical_name || companyId)}</strong><p>${esc(company.workspace_id || "")}</p>${reassignHtml}</div>
+      <div class="analysis-card"><p class="eyebrow">Personnes (${people.length})</p>${people.map(p => `<div class="data-row"><strong>${esc(p.display_name)}</strong><span class="badge">${esc(p.status || "")}</span></div>`).join("") || "<div class='empty-state'>Aucune personne.</div>"}</div>
+      <div class="analysis-card"><p class="eyebrow">Qualification</p>${account.qualification ? `<span class="badge">${esc(account.qualification.stage)}</span>` : "<div class='empty-state'>Aucune étude.</div>"}</div>
+      <div class="analysis-card"><p class="eyebrow">Reach</p>${account.reach ? `<span class="badge">${esc(account.reach.status)}</span>` : "<div class='empty-state'>Pas de statut reach.</div>"}</div>
+      <div class="analysis-card"><p class="eyebrow">Actions récentes</p>${(account.recent_actions || []).map(a => `<div class="data-row"><span>${esc(a.action)}</span><small>${esc(a.timestamp || "")}</small></div>`).join("") || "<div class='empty-state'>Aucune action récente.</div>"}</div>`;
+    openDataPanel(`Vue 360 · ${company.canonical_name || companyId}`, "Compte", "Agrégation lecture seule : entreprise, personnes, qualification, reach, actions récentes.", html);
+    const reassignBtn = document.querySelector("#reassignBtn");
+    if (reassignBtn) reassignBtn.addEventListener("click", async () => {
+      const workspace_id = document.querySelector("#reassignWorkspace").value.trim();
+      if (!workspace_id) return;
+      try {
+        await api(`/admin/network/companies/${encodeURIComponent(companyId)}/reassign`, { method: "POST", body: JSON.stringify({ workspace_id }) });
+        openAccount360(companyId);
+      } catch (error) { window.alert(error.message); }
+    });
+  } catch (error) {
+    openDataPanel("Vue 360", "Erreur", error.message, "");
+  }
+}
+
+// ------------------------------------------------------------------
+// Duplicate detection (GET /api/network/duplicates) — Réseau tab.
+// ------------------------------------------------------------------
+async function loadDuplicates() {
+  const container = document.querySelector("#duplicatesResults");
+  container.innerHTML = "<div class='empty-state'>Détection…</div>";
+  try {
+    const groups = await api("/api/network/duplicates");
+    container.innerHTML = groups.map(g => `<article class="card"><p class="eyebrow">${esc(g.normalized_name || "")}</p>${(g.records || g.people || []).map(r => `<div class="data-row"><span>${esc(r.display_name || r.person_id)}</span><span class="badge">${esc(r.seed_company_id || "")}</span></div>`).join("")}</article>`).join("") || "<div class='empty-state'>Aucun doublon potentiel détecté.</div>";
+  } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+// ------------------------------------------------------------------
+// Prospecting campaigns (POST /api/campaigns/prospecting, GET /api/campaigns)
+// and cross-sell prep (POST /api/campaigns/cross-sell).
+// ------------------------------------------------------------------
+async function loadCampaigns() {
+  const container = document.querySelector("#campaignsList");
+  try {
+    const campaigns = await api("/api/campaigns");
+    state.campaigns = campaigns;
+    container.innerHTML = campaigns.map(c => `<article class="card"><p class="eyebrow">${esc(c.kind || "")}</p><h3>${esc(c.name || c.campaign_id)}</h3><span class="badge">${esc(c.status || "")}</span></article>`).join("") || "<div class='empty-state'>Aucune campagne.</div>";
+  } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function launchProspectingCampaign() {
+  const name = document.querySelector("#campaignName").value.trim();
+  const entity = document.querySelector("#campaignEntity").value;
+  const text = document.querySelector("#campaignText").value.trim();
+  const workspace_id = document.querySelector("#campaignWorkspace").value.trim();
+  const criteria = { entity };
+  if (text) criteria.text = text;
+  if (workspace_id) criteria.workspace_id = workspace_id;
+  try {
+    await api("/api/campaigns/prospecting", { method: "POST", body: JSON.stringify({ name, criteria }) });
+    loadCampaigns();
+  } catch (error) { window.alert(error.message); }
+}
+
+async function launchCrossSell(studyId) {
+  try {
+    const result = await api("/api/campaigns/cross-sell", { method: "POST", body: JSON.stringify({ study_id: studyId }) });
+    openDataPanel(`Cross-sell prep · ${studyId}`, "Nudging → campagne", "Préparation cross-sell à partir des use cases déjà catalogués.", `<pre>${esc(JSON.stringify(result, null, 2))}</pre>`);
+    loadCampaigns();
+  } catch (error) { openDataPanel("Cross-sell", "Erreur", error.message, ""); }
+}
+
 async function checkAuth() {
   try {
     const response = await fetch("/api/auth/me", { headers: { "Content-Type": "application/json" } });
@@ -450,7 +668,8 @@ function renderUserBar(user) {
   if (!bar) return;
   if (!user) { bar.textContent = ""; return; }
   const role = user.is_admin ? "admin" : (user.role || "sans rôle");
-  bar.innerHTML = `<span class="user-email">${esc(user.email)}</span> <span class="badge">${esc(role)}</span>${user.workspace_id ? ` <span class="user-workspace">${esc(user.workspace_id)}</span>` : ""} <a id="logoutLink" href="/auth/logout">Se déconnecter</a>`;
+  const adminLink = user.is_admin ? ` <a class="admin-link" href="/admin/workspaces">Admin</a>` : "";
+  bar.innerHTML = `<span class="user-email">${esc(user.email)}</span> <span class="badge">${esc(role)}</span>${user.workspace_id ? ` <span class="user-workspace">${esc(user.workspace_id)}</span>` : ""}${adminLink} <a id="logoutLink" href="/auth/logout">Se déconnecter</a>`;
   const logoutLink = document.querySelector("#logoutLink");
   if (logoutLink) {
     logoutLink.addEventListener("click", event => {
@@ -463,14 +682,17 @@ function renderUserBar(user) {
 async function boot() {
   const user = await checkAuth();
   if (!user) return; // checkAuth already redirected to /login.html on 401
+  state.user = user;
   renderUserBar(user);
   try {
     const [health, skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain] = await Promise.all([
       api("/api/health"), api("/api/skills"), api("/api/offers"), api("/api/shelves"), api("/api/demand"), api("/api/demand/inventories"), api("/api/qualification"), api("/api/nudging/inventories"), api("/api/backlog"), api("/api/follow-up"), api("/api/value-chain")
     ]);
     document.querySelector("#health").textContent = health.executor_configured ? `v${health.version} · Executor connecté` : `v${health.version} · Executor à configurer`;
+    state.executorConfigured = !!health.executor_configured;
     Object.assign(state, { skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain });
     renderSkills(); renderShelves(); renderDemand(); renderQualification(); renderNudgeInventory(); renderFollowUp(); renderBacklog();
+    loadKanban(); loadCandidates(); loadCampaigns();
   } catch (error) {
     document.querySelector("#health").textContent = "Erreur de chargement";
     console.error(error);
@@ -486,11 +708,28 @@ document.querySelector("#closeWorkflow").addEventListener("click", () => documen
 document.querySelector("#closeData").addEventListener("click", () => document.querySelector("#dataPanel").classList.add("hidden"));
 document.querySelector("#runSkill").addEventListener("click", async () => {
   const result = document.querySelector("#invokeResult"); result.textContent = "Exécution…";
+  const confirmation = document.querySelector("#invokeConfirmation"); confirmation.textContent = "";
   try {
     const context_paths = document.querySelector("#contextPaths").value.split("\n").map(x => x.trim()).filter(Boolean);
     const payload = await api(`/api/skills/${encodeURIComponent(state.selectedSkill)}/invoke`, { method: "POST", body: JSON.stringify({ input: document.querySelector("#invokeInput").value, context_paths }) });
     result.textContent = JSON.stringify(payload, null, 2);
+    document.querySelector("#executorBanner").classList.toggle("hidden", !!payload.executor_configured);
+    if (payload.executor_configured && payload.status === "completed") {
+      confirmation.textContent = state.selectedSkill === "network-contact-intake" ? "Contact créé (exécuteur exécuté)." : "Invocation exécutée.";
+    }
   } catch (error) { result.textContent = error.message; }
+});
+
+document.querySelector("#createContactDirect").addEventListener("click", async () => {
+  const out = document.querySelector("#contactStructResult");
+  const name = document.querySelector("#contactStructName").value.trim();
+  const company = document.querySelector("#contactStructCompany").value.trim();
+  if (!name || !company) { out.textContent = "Nom et entreprise sont requis."; return; }
+  out.textContent = "Création…";
+  try {
+    const person = await api("/api/network/people", { method: "POST", body: JSON.stringify({ display_name: name, seed_company_id: company, source: "manual_entry" }) });
+    out.innerHTML = `<div class="confirmation-banner">Contact créé — ${esc(person.display_name || name)} (${esc(person.person_id || "")})</div>`;
+  } catch (error) { out.textContent = error.message; }
 });
 
 document.querySelector("#discoverForm").addEventListener("submit", async event => {
@@ -515,5 +754,45 @@ document.querySelector("#fullNudgeFlow").addEventListener("click", () => { const
 document.querySelector("#nudgeGraph").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openCompanyHeritage(studyId); });
 document.querySelector("#ucGraphBtn").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openUseCaseGraph("company", { study_id: studyId }); });
 document.querySelector("#nudgeSkillCall").addEventListener("click", () => { const studyId = document.querySelector("#nudgeInventory").value; if (studyId) openInvoke("use-case-nudging", `Génère et challenge les nudges du study ${studyId} depuis l'inventaire UC uniquement; ne charge ni ICB ni product fit.`); });
+
+document.querySelector("#catalogSearchBtn").addEventListener("click", runCatalogSearch);
+document.querySelector("#catalogSearchQuery").addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); runCatalogSearch(); } });
+
+document.querySelector("#peopleSearchForm").addEventListener("submit", event => { event.preventDefault(); runPeopleSearch(); });
+document.querySelector("#companiesSearchForm").addEventListener("submit", event => { event.preventDefault(); runCompaniesSearch(); });
+document.querySelector("#companiesSearchTab").addEventListener("click", () => document.querySelector("#companiesText").focus());
+
+document.querySelector("#createPersonForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const out = document.querySelector("#createPersonResult");
+  out.textContent = "Création…";
+  try {
+    const person = await api("/api/network/people", { method: "POST", body: JSON.stringify({
+      display_name: document.querySelector("#newPersonName").value.trim(),
+      seed_company_id: document.querySelector("#newPersonCompany").value.trim(),
+      source: "manual_entry",
+    }) });
+    out.innerHTML = `<div class="confirmation-banner">Contact créé — ${esc(person.display_name)} (${esc(person.person_id || "")})</div>`;
+    document.querySelector("#createPersonForm").reset();
+  } catch (error) { out.textContent = error.message; }
+});
+
+document.querySelector("#createCompanyForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const out = document.querySelector("#createCompanyResult");
+  out.textContent = "Création…";
+  try {
+    const company = await api("/api/network/companies", { method: "POST", body: JSON.stringify({
+      canonical_name: document.querySelector("#newCompanyName").value.trim(),
+      sector_code: document.querySelector("#newCompanySector").value.trim() || undefined,
+    }) });
+    out.innerHTML = `<div class="confirmation-banner">Entreprise créée — ${esc(company.canonical_name)} (${esc(company.company_id || "")})</div>`;
+    document.querySelector("#createCompanyForm").reset();
+  } catch (error) { out.textContent = error.message; }
+});
+
+document.querySelector("#loadDuplicatesBtn").addEventListener("click", loadDuplicates);
+
+document.querySelector("#prospectingForm").addEventListener("submit", event => { event.preventDefault(); launchProspectingCampaign(); });
 
 boot();

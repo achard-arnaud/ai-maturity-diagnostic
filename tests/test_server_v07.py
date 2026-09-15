@@ -603,6 +603,39 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(200, status)
                 self.assertEqual(updated["positioning"]["one_liner"], "revised")
 
+    def test_catalog_candidates_route_lists_staged_candidates(self) -> None:
+        import tempfile
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "catalog_sources").mkdir(parents=True)
+            (root / "catalog_sources" / "shelves.yaml").write_text(
+                _yaml.safe_dump({"shelves": [{"shelf_id": "shelf-1"}]}), encoding="utf-8"
+            )
+            (root / "product_catalog").mkdir(parents=True)
+            (root / "product_catalog" / "index.yaml").write_text(
+                _yaml.safe_dump({"schema_version": "0.2", "offers": []}), encoding="utf-8"
+            )
+            with patch.object(server_module, "CONTROL", server_module.RepoControlPlane(root)):
+                status, empty, _ = self.request("GET", "/api/catalog/candidates")
+                self.assertEqual(200, status)
+                self.assertEqual(empty, [])
+
+                from app.catalog import CatalogHarvester
+
+                CatalogHarvester(root).stage(
+                    {
+                        "company": "Widgetron Inc",
+                        "shelf_id": "shelf-1",
+                        "items": [{"name": "Widgetron", "source_url": "https://widgetron.example/"}],
+                    }
+                )
+                status, candidates, _ = self.request("GET", "/api/catalog/candidates")
+                self.assertEqual(200, status)
+                self.assertEqual(len(candidates), 1)
+                self.assertEqual(candidates[0]["name"], "Widgetron")
+
     def test_catalog_update_offer_requires_product_owner_or_admin(self) -> None:
         non_owner = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
         server_module.APP.dependency_overrides[get_current_user] = lambda: non_owner

@@ -25,6 +25,7 @@
     <button data-target="qualification">Qualification</button>
     <button data-target="nudging">Nudging</button>
     <button data-target="backlog">Suivi</button>
+    <button data-target="reseau">Réseau</button>
     <button data-target="skills">Skills</button>
   </nav>
 
@@ -49,6 +50,10 @@
       </div>
       <div id="sectorGrid" class="grid sector-grid"></div>
       <aside id="sectorDetail" class="detail hidden"></aside>
+      <section id="kanbanDemand" class="kanban-region" role="region" aria-label="Kanban pipeline">
+        <h3 class="table-title">Pipeline (kanban)</h3>
+        <div id="kanbanDemandBoard" class="kanban-board"></div>
+      </section>
     </section>
 
     <section id="offers" class="panel">
@@ -58,8 +63,20 @@
           <h2>Rayonnage, vérité produit et handoff vers qualification</h2>
           <p>Le profil canonique ne contient aucun fait compte. Le parcours complet montre les preuves, unknowns, owner review et disponibilité pour snapshots.</p>
         </div>
+        <div class="head-actions">
+          <input id="catalogSearchQuery" type="search" placeholder="Rechercher un catalogue d'offres…">
+          <button id="catalogSearchBtn" class="primary">Rechercher</button>
+        </div>
       </div>
+      <div id="catalogSearchResults" class="grid result-grid"></div>
       <div id="shelfGrid" class="grid"></div>
+
+      <div class="subpanel" style="margin-top:16px;">
+        <h3>Candidats stagés à promouvoir</h3>
+        <p class="hint">Chaque candidat vient d'un harvest non revu (data/private/catalog_harvest). La promotion crée une fiche produit_catalog en statut "draft" avec des unknowns honnêtes.</p>
+        <div id="candidatesGrid" class="grid result-grid"></div>
+      </div>
+
       <div class="split">
         <div class="subpanel">
           <h3>Découvrir un catalogue fournisseur</h3>
@@ -93,6 +110,10 @@
         </div>
       </div>
       <div id="qualificationGrid" class="grid"></div>
+      <section id="kanbanQualification" class="kanban-region" role="region" aria-label="Kanban pipeline">
+        <h3 class="table-title">Pipeline (kanban)</h3>
+        <div id="kanbanQualificationBoard" class="kanban-board"></div>
+      </section>
     </section>
 
     <section id="nudging" class="panel">
@@ -142,8 +163,90 @@
         </div>
       </div>
       <div id="followUpGrid" class="grid follow-up-grid"></div>
+
+      <section id="kanbanBoardRegion" role="region" aria-label="Kanban pipeline">
+        <h3 class="table-title">Kanban partagé — Qualification × Reach × Nudging</h3>
+        <div id="kanbanFullBoard" class="kanban-board"></div>
+      </section>
+
       <h3 class="table-title">Backlog de gouvernance et de release</h3>
       <div class="table-wrap"><table><thead><tr><th>ID</th><th>Priorité</th><th>État</th><th>Zone</th><th>Tâche</th></tr></thead><tbody id="backlogRows"></tbody></table></div>
+    </section>
+
+    <section id="reseau" class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Réseau — personnes &amp; entreprises</p>
+          <h2>Chercher, créer, dédupliquer</h2>
+          <p>Vue sur la couche réseau (data/private/network) : recherche indexée, création directe de fiches, détection de doublons et prospection.</p>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="subpanel">
+          <h3>Rechercher des personnes</h3>
+          <form id="peopleSearchForm" class="form">
+            <label>Texte<input id="peopleText" placeholder="Nom, rôle…"></label>
+            <label>Statut<input id="peopleStatus" placeholder="active, stale…"></label>
+            <label>Rôle<input id="peopleRole" placeholder="economic_sponsor…"></label>
+            <label>Workspace<input id="peopleWorkspace" placeholder="workspace_id"></label>
+            <label><input id="peopleStale" type="checkbox" style="width:auto;display:inline-block;margin-right:6px;">Uniquement obsolètes (stale)</label>
+            <button class="primary" type="submit">Rechercher</button>
+          </form>
+          <div id="peopleResults" class="grid result-grid"></div>
+        </div>
+        <div class="subpanel">
+          <h3>Rechercher des entreprises</h3>
+          <button id="companiesSearchTab" class="secondary" type="button">Entreprises (réseau)</button>
+          <form id="companiesSearchForm" class="form" style="margin-top:10px;">
+            <label>Texte<input id="companiesText" placeholder="Nom d'entreprise…"></label>
+            <label>Secteur<input id="companiesSector" placeholder="Code ICB…"></label>
+            <label>Workspace<input id="companiesWorkspace" placeholder="workspace_id"></label>
+            <button class="primary" type="submit">Rechercher</button>
+          </form>
+          <div id="companiesResults" class="grid result-grid"></div>
+        </div>
+      </div>
+
+      <div class="split" style="margin-top:16px;">
+        <div class="subpanel">
+          <h3>Ajouter un contact (formulaire structuré)</h3>
+          <form id="createPersonForm" class="form">
+            <label for="newPersonName">Nom<input id="newPersonName" required></label>
+            <label for="newPersonEmail">Email<input id="newPersonEmail" type="email"></label>
+            <label for="newPersonCompany">Entreprise<input id="newPersonCompany" placeholder="company_id ou nom" required></label>
+            <button class="primary" type="submit">Créer le contact</button>
+          </form>
+          <div id="createPersonResult" class="hint"></div>
+        </div>
+        <div class="subpanel">
+          <h3>Ajouter une entreprise (formulaire structuré)</h3>
+          <form id="createCompanyForm" class="form">
+            <label for="newCompanyName">Nom de l'entreprise<input id="newCompanyName" required></label>
+            <label for="newCompanySector">Secteur<input id="newCompanySector" placeholder="code ICB (optionnel)"></label>
+            <button class="primary" type="submit">Créer l'entreprise</button>
+          </form>
+          <div id="createCompanyResult" class="hint"></div>
+        </div>
+      </div>
+
+      <div class="subpanel" style="margin-top:16px;">
+        <h3>Doublons potentiels</h3>
+        <button id="loadDuplicatesBtn">Détecter les doublons</button>
+        <div id="duplicatesResults" class="grid result-grid" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="subpanel" style="margin-top:16px;">
+        <h3>Campagnes de prospection</h3>
+        <form id="prospectingForm" class="form">
+          <label>Nom de la campagne<input id="campaignName" required></label>
+          <label>Entité<select id="campaignEntity"><option value="people">Personnes</option><option value="companies">Entreprises</option></select></label>
+          <label>Texte<input id="campaignText" placeholder="critère texte"></label>
+          <label>Workspace<input id="campaignWorkspace" placeholder="workspace_id (optionnel)"></label>
+          <button class="primary" type="submit">Lancer la campagne</button>
+        </form>
+        <div id="campaignsList" class="grid result-grid" style="margin-top:10px;"></div>
+      </div>
     </section>
 
     <section id="skills" class="panel">
@@ -160,9 +263,19 @@
       <div><p class="eyebrow">Invocation unitaire</p><h3 id="invokeTitle"></h3></div>
       <button id="closeInvoke" class="ghost" aria-label="Fermer" title="Fermer">×</button>
     </div>
+    <div id="executorBanner" class="warning-box hidden">Exécuteur non configuré (AI_DIAGNOSTIC_SKILL_EXECUTOR) — l'invocation sera préparée mais restera un no-op tant qu'aucun exécuteur n'est branché.</div>
+    <div id="structuredContactFields" class="form">
+      <p class="hint">Champs structurés (network-contact-intake) — remplissent l'instruction ci-dessous.</p>
+      <label for="contactStructName">Nom<input id="contactStructName"></label>
+      <label for="contactStructEmail">Email<input id="contactStructEmail" type="email"></label>
+      <label for="contactStructCompany">Entreprise<input id="contactStructCompany"></label>
+      <button id="createContactDirect" type="button">Créer directement (POST /api/network/people)</button>
+      <div id="contactStructResult" class="hint"></div>
+    </div>
     <label>Instruction / input<textarea id="invokeInput" rows="7" placeholder="Décris l'action attendue pour cette skill…"></textarea></label>
     <label>Context paths optionnels, un par ligne<textarea id="contextPaths" rows="4" placeholder="studies/acme/05_enterprise_demand_profile.yaml"></textarea></label>
     <button id="runSkill" class="primary">Préparer / exécuter cette skill</button>
+    <div id="invokeConfirmation" class="hint"></div>
     <pre id="invokeResult"></pre>
   </aside>
 
