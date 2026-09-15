@@ -146,6 +146,45 @@ class ControlStore:
                 """
             ).fetchall()
 
+    def search_users(
+        self,
+        *,
+        text: str | None = None,
+        role: str | None = None,
+        workspace_id: str | None = None,
+    ) -> list[sqlite3.Row]:
+        """List users with their membership, optionally filtered.
+
+        `text` matches a case-insensitive substring of the email. `role`
+        is either 'admin' (users.is_admin) or a memberships.role value
+        ('product_owner' / 'standard_user'). `workspace_id` filters by
+        the user's membership workspace. All filters combine with AND.
+        """
+        clauses: list[str] = []
+        params: list[str] = []
+        if text:
+            clauses.append("users.email LIKE ?")
+            params.append(f"%{text}%")
+        if role == "admin":
+            clauses.append("users.is_admin = 1")
+        elif role is not None:
+            clauses.append("memberships.role = ?")
+            params.append(role)
+        if workspace_id is not None:
+            clauses.append("memberships.workspace_id = ?")
+            params.append(workspace_id)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self.connect() as conn:
+            return conn.execute(
+                f"""
+                SELECT users.*, memberships.workspace_id AS workspace_id, memberships.role AS role
+                FROM users LEFT JOIN memberships ON memberships.user_id = users.id
+                {where}
+                ORDER BY users.created_at
+                """,
+                params,
+            ).fetchall()
+
     def set_admin(self, user_id: str, is_admin: bool) -> None:
         with self.connect() as conn:
             conn.execute("UPDATE users SET is_admin = ? WHERE id = ?", (1 if is_admin else 0, user_id))

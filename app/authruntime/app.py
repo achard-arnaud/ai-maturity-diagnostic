@@ -134,6 +134,18 @@ def create_app(
         )
         return RedirectResponse(url="/admin/workspaces", status_code=status.HTTP_303_SEE_OTHER)
 
+    @app.get("/admin/users", response_class=HTMLResponse)
+    async def admin_users(
+        request: Request,
+        text: str | None = None,
+        role: str | None = None,
+        workspace_id: str | None = None,
+        ctx: RequestContext = Depends(require_role("admin")),
+        store: ControlStore = Depends(get_store),
+    ):
+        users = store.search_users(text=text or None, role=role or None, workspace_id=workspace_id or None)
+        return HTMLResponse(_render_users_page(users, text=text, role=role, workspace_id=workspace_id))
+
     @app.get("/admin/audit", response_class=HTMLResponse)
     async def admin_audit(request: Request, ctx: RequestContext = Depends(require_role("admin")), store: ControlStore = Depends(get_store)):
         return HTMLResponse(_render_audit_page(store))
@@ -207,6 +219,32 @@ def _render_admin_page(store: ControlStore) -> str:
 <button type="submit">Save</button>
 </form>
 <p><a href="/admin/audit">Audit log</a></p>
+</body></html>"""
+
+
+def _render_users_page(users: list[Any], *, text: str | None, role: str | None, workspace_id: str | None) -> str:
+    def esc(value: Any) -> str:
+        return html.escape(str(value)) if value is not None else ""
+
+    rows = "".join(
+        f"<tr><td>{esc(u['email'])}</td>"
+        f"<td>{'admin' if u['is_admin'] else esc(u['role'] or '(none)')}</td>"
+        f"<td>{esc(u['workspace_id'] or '')}</td>"
+        f"<td>{'yes' if u['is_admin'] else 'no'}</td></tr>"
+        for u in users
+    )
+    return f"""<!doctype html>
+<html><head><title>Admin — Users</title></head>
+<body>
+<h1>Users</h1>
+<form method="get" action="/admin/users">
+<input name="text" placeholder="email contains" value="{esc(text)}">
+<input name="role" placeholder="role (admin/product_owner/standard_user)" value="{esc(role)}">
+<input name="workspace_id" placeholder="workspace id" value="{esc(workspace_id)}">
+<button type="submit">Search</button>
+</form>
+<table border="1"><tr><th>email</th><th>role</th><th>workspace_id</th><th>is_admin</th></tr>{rows}</table>
+<p><a href="/admin/workspaces">Back</a></p>
 </body></html>"""
 
 

@@ -71,6 +71,71 @@ class ControlStoreSchemaTests(unittest.TestCase):
         self.assertEqual(len(events), 2)
         self.assertEqual(events[0]["action"], "set_membership")  # most recent first
 
+    def test_search_users_no_filters_returns_everyone(self) -> None:
+        self.store.get_or_create_user("alice@example.com", "Alice")
+        self.store.get_or_create_user("bob@example.com", "Bob")
+        results = self.store.search_users()
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"alice@example.com", "bob@example.com"})
+
+    def test_search_users_text_filter_matches_email_substring(self) -> None:
+        self.store.get_or_create_user("alice@example.com", "Alice")
+        self.store.get_or_create_user("bob@example.com", "Bob")
+        results = self.store.search_users(text="ali")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"alice@example.com"})
+
+    def test_search_users_role_filter_admin(self) -> None:
+        admin = self.store.get_or_create_user("admin@example.com", "Admin")
+        self.store.set_admin(admin["id"], True)
+        self.store.get_or_create_user("plain@example.com", "Plain")
+        results = self.store.search_users(role="admin")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"admin@example.com"})
+
+    def test_search_users_role_filter_product_owner(self) -> None:
+        ws = self.store.create_workspace("ws-po", "Workspace PO")
+        po = self.store.get_or_create_user("po@example.com", "PO")
+        self.store.set_membership(po["id"], ws["id"], "product_owner")
+        self.store.get_or_create_user("standard@example.com", "Standard")
+        results = self.store.search_users(role="product_owner")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"po@example.com"})
+
+    def test_search_users_role_filter_standard_user(self) -> None:
+        ws = self.store.create_workspace("ws-std", "Workspace Std")
+        std = self.store.get_or_create_user("std@example.com", "Std")
+        self.store.set_membership(std["id"], ws["id"], "standard_user")
+        self.store.get_or_create_user("other@example.com", "Other")
+        results = self.store.search_users(role="standard_user")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"std@example.com"})
+
+    def test_search_users_workspace_id_filter(self) -> None:
+        ws_a = self.store.create_workspace("ws-search-a", "Workspace Search A")
+        ws_b = self.store.create_workspace("ws-search-b", "Workspace Search B")
+        user_a = self.store.get_or_create_user("a@example.com", "A")
+        user_b = self.store.get_or_create_user("b@example.com", "B")
+        self.store.set_membership(user_a["id"], ws_a["id"], "standard_user")
+        self.store.set_membership(user_b["id"], ws_b["id"], "standard_user")
+        results = self.store.search_users(workspace_id="ws-search-a")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"a@example.com"})
+
+    def test_search_users_combined_filters(self) -> None:
+        ws = self.store.create_workspace("ws-combo", "Workspace Combo")
+        match = self.store.get_or_create_user("match@example.com", "Match")
+        self.store.set_membership(match["id"], ws["id"], "product_owner")
+        no_role_match = self.store.get_or_create_user("matchtoo@example.com", "MatchToo")
+        self.store.set_membership(no_role_match["id"], ws["id"], "standard_user")
+        other_ws = self.store.create_workspace("ws-combo-other", "Other Combo")
+        wrong_ws = self.store.get_or_create_user("matchwrongws@example.com", "WrongWs")
+        self.store.set_membership(wrong_ws["id"], other_ws["id"], "product_owner")
+
+        results = self.store.search_users(text="match", role="product_owner", workspace_id="ws-combo")
+        emails = {u["email"] for u in results}
+        self.assertEqual(emails, {"match@example.com"})
+
     def test_override_recorded_and_listed_by_workspace(self) -> None:
         self.store.create_workspace("ws-c", "Workspace C")
         override_id = self.store.record_override("ws-c", "study-1:demand", "po@example.com", "Deal is time-boxed by exec sponsor")

@@ -137,6 +137,37 @@ class AuthRuntimeAppTests(unittest.TestCase):
         self.assertEqual(audit_page.status_code, 200)
         self.assertIn("create_workspace", audit_page.text)
 
+    def test_admin_users_page_forbidden_for_non_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "plain2@example.com")
+        response = client.get("/admin/users")
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_users_page_lists_users_for_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin5@example.com")
+        admin_user = self.store.get_or_create_user("admin5@example.com", "Admin5")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.get_or_create_user("searchable@example.com", "Searchable")
+
+        response = client.get("/admin/users")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("searchable@example.com", response.text)
+        self.assertIn("admin5@example.com", response.text)
+
+    def test_admin_users_page_text_filter_narrows_results(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin6@example.com")
+        admin_user = self.store.get_or_create_user("admin6@example.com", "Admin6")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.get_or_create_user("keepme@example.com", "KeepMe")
+        self.store.get_or_create_user("excludeme@example.com", "ExcludeMe")
+
+        response = client.get("/admin/users", params={"text": "keepme"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("keepme@example.com", response.text)
+        self.assertNotIn("excludeme@example.com", response.text)
+
     # -- workspace scoping / IDOR -----------------------------------------
     def test_product_owner_cannot_override_another_workspace_blocker(self) -> None:
         client = self._client()
