@@ -451,12 +451,12 @@ def build_app(
     # "structured form, not skill-invoke facade" gap). Any authenticated
     # user may create -- unlike scripts/import_contacts.py this is a
     # single-record, human-typed entry, not a bulk data import, so there is
-    # no elevated-role reason to restrict it further. This deliberately
-    # does NOT rebuild data/private/network/network_index.sqlite -- see
-    # app/network_writer.py's module docstring for the resulting UX gap
-    # (a newly-created contact/company will not appear in
-    # /api/network/people or /api/network/companies until an admin calls
-    # POST /admin/network/rebuild-index).
+    # no elevated-role reason to restrict it further. M1 fix: immediately
+    # rebuilds data/private/network/network_index.sqlite (the same
+    # synchronous call POST /admin/network/rebuild-index makes) right after
+    # the write succeeds, so the new record is searchable without a
+    # separate admin call -- see docs/red-team-side-story/
+    # trigger-journey-audit.md's M1 section.
     # ------------------------------------------------------------------
     @app.post("/api/network/people")
     async def api_network_create_person(
@@ -469,6 +469,7 @@ def build_app(
             role_hypotheses=payload.get("role_hypotheses"),
             source=str(payload.get("source") or "manual_entry"),
         )
+        network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
         return JSONResponse(status_code=201, content=person)
 
     @app.post("/api/network/companies")
@@ -481,6 +482,7 @@ def build_app(
             sector_code=payload.get("sector_code"),
             workspace_id=payload.get("workspace_id"),
         )
+        network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
         return JSONResponse(status_code=201, content=company)
 
     # ------------------------------------------------------------------

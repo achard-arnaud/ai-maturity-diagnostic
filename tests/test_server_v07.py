@@ -537,7 +537,10 @@ class ServerV07Tests(unittest.TestCase):
     def test_network_create_person_and_company_routes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             data_root = Path(tmp)
-            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root):
+            index_path = data_root / "network" / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
                 status, company, _ = self.request(
                     "POST", "/api/network/companies", {"canonical_name": "Acme Corp"}
                 )
@@ -552,6 +555,51 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(201, status)
                 self.assertEqual(person["display_name"], "Jane Doe")
                 self.assertEqual(person["seed_company_id"], company["company_id"])
+
+    def test_network_create_person_is_immediately_searchable(self) -> None:
+        # M1 regression: creating a person via the API must not require a
+        # separate POST /admin/network/rebuild-index call before the record
+        # shows up in GET /api/network/people search results.
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            index_path = data_root / "network" / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
+                status, company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Beta Industries"}
+                )
+                self.assertEqual(201, status)
+
+                status, person, _ = self.request(
+                    "POST",
+                    "/api/network/people",
+                    {"display_name": "Zoe Lambert", "seed_company_id": company["company_id"]},
+                )
+                self.assertEqual(201, status)
+
+                # No admin rebuild call in between -- search must already see it.
+                status, people, _ = self.request("GET", "/api/network/people?text=Zoe")
+                self.assertEqual(200, status)
+                self.assertEqual([p["person_id"] for p in people], [person["person_id"]])
+
+    def test_network_create_company_is_immediately_searchable(self) -> None:
+        # M1 regression: same as above, for companies.
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            index_path = data_root / "network" / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
+                status, company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Gamma Robotics"}
+                )
+                self.assertEqual(201, status)
+
+                # No admin rebuild call in between -- search must already see it.
+                status, companies, _ = self.request("GET", "/api/network/companies?text=Gamma")
+                self.assertEqual(200, status)
+                self.assertEqual([c["company_id"] for c in companies], [company["company_id"]])
 
     def test_network_create_person_unknown_company_is_400(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

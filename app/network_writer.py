@@ -21,14 +21,15 @@ request or creating a second record. This keeps the two write paths
 (offline TSV import, authenticated API) consistent: the identity key
 (normalized name [+ company]) is the source of truth, not call order.
 
-Known gap (flagged for the frontend sprint, per ADR-007 §7 scope): this
-module never rebuilds data/private/network/network_index.sqlite. A
-person/company created here will not appear in /api/network/people or
-/api/network/companies search results until an admin calls
-POST /admin/network/rebuild-index (or scripts/rebuild_network_index.py
-runs). That manual-trigger design is intentional (see app/network_index.py's
-module docstring) but is a real UX gap for anyone using the new create
-routes expecting the record to show up immediately.
+Note: this module itself never rebuilds
+data/private/network/network_index.sqlite -- rebuilding is the caller's
+responsibility. app/server.py's POST /api/network/people and
+POST /api/network/companies routes call app/network_index.py's rebuild()
+synchronously right after create_person/create_company succeed (the same
+call POST /admin/network/rebuild-index makes), so a record created through
+those routes is immediately searchable. A caller that invokes
+create_person/create_company directly without rebuilding afterward will
+still see the same staleness this module previously left unresolved.
 """
 
 from __future__ import annotations
@@ -146,10 +147,6 @@ def create_company(
     return company
 
 
-# TODO(red-team-spec): create_person/create_company never rebuild
-# network_index.sqlite (see module docstring above); revisit once a live
-# customer onboarding session has actually hit this "I just added someone
-# and can't find them" gap, rather than fixing it speculatively now.
 def create_person(
     data_root: Path,
     *,
