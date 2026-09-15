@@ -51,7 +51,7 @@
       <div id="sectorGrid" class="grid sector-grid"></div>
       <aside id="sectorDetail" class="detail hidden"></aside>
       <section id="kanbanDemand" class="kanban-region" role="region" aria-label="Kanban pipeline">
-        <h3 class="table-title">Pipeline (kanban)</h3>
+        <h3 class="kanban-title">Pipeline (kanban)</h3>
         <div id="kanbanDemandBoard" class="kanban-board"></div>
       </section>
     </section>
@@ -111,7 +111,7 @@
       </div>
       <div id="qualificationGrid" class="grid"></div>
       <section id="kanbanQualification" class="kanban-region" role="region" aria-label="Kanban pipeline">
-        <h3 class="table-title">Pipeline (kanban)</h3>
+        <h3 class="kanban-title">Pipeline (kanban)</h3>
         <div id="kanbanQualificationBoard" class="kanban-board"></div>
       </section>
     </section>
@@ -165,7 +165,7 @@
       <div id="followUpGrid" class="grid follow-up-grid"></div>
 
       <section id="kanbanBoardRegion" role="region" aria-label="Kanban pipeline">
-        <h3 class="table-title">Kanban partagé — Qualification × Reach × Nudging</h3>
+        <h3 class="kanban-title">Kanban partagé — Qualification × Reach × Nudging</h3>
         <div id="kanbanFullBoard" class="kanban-board"></div>
       </section>
 
@@ -212,9 +212,9 @@
         <div class="subpanel">
           <h3>Ajouter un contact (formulaire structuré)</h3>
           <form id="createPersonForm" class="form">
-            <label for="newPersonName">Nom<input id="newPersonName" required></label>
-            <label for="newPersonEmail">Email<input id="newPersonEmail" type="email"></label>
-            <label for="newPersonCompany">Entreprise<input id="newPersonCompany" placeholder="company_id ou nom" required></label>
+            <label for="newPersonName">Nom complet<input id="newPersonName" required></label>
+            <label for="newPersonEmail">Adresse email<input id="newPersonEmail" type="email"></label>
+            <label for="newPersonCompany">Entreprise associée<input id="newPersonCompany" placeholder="company_id ou nom" required></label>
             <button class="primary" type="submit">Créer le contact</button>
           </form>
           <div id="createPersonResult" class="hint"></div>
