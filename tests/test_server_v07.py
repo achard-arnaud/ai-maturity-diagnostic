@@ -32,7 +32,7 @@ class FakeDemand:
 
 
 class FakeQualification:
-    def list_studies(self): return [{"study_id": "s1"}]
+    def list_studies(self): return [{"study_id": "s1", "company_id": "c1"}]
 
 
 class FakeNudging:
@@ -79,8 +79,11 @@ class FakeBlockerActions:
     def record(self, *, study_id, step_id, action, actor, reason=None, target_step_id=None):
         return {"study_id": study_id, "step_id": step_id, "action": action, "actor": actor, "reason": reason, "target_step_id": target_step_id, "timestamp": "2026-01-01T00:00:00+00:00"}
 
-    def list_actions(self, study_id):
-        return [{"study_id": study_id, "action": "cancel"}]
+    def list_actions(self, study_id="", *, action=None, step_id=None, since=None, until=None):
+        return [{
+            "study_id": study_id, "action": action or "cancel", "step_id": step_id,
+            "since": since, "until": until,
+        }]
 
 
 class FakeKanban:
@@ -509,6 +512,36 @@ class ServerV07Tests(unittest.TestCase):
         server_module.APP.dependency_overrides.pop(get_current_user, None)
         status, _, _ = self.request("GET", "/api/skills")
         self.assertEqual(401, status)
+
+    def test_blocker_actions_route_returns_list_and_requires_auth(self) -> None:
+        status, data, _ = self.request("GET", "/api/blocker-actions")
+        self.assertEqual(200, status)
+        self.assertIsInstance(data, list)
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, _, _ = self.request("GET", "/api/blocker-actions")
+        self.assertEqual(401, status)
+
+    def test_blocker_actions_route_passes_filters_through(self) -> None:
+        status, data, _ = self.request(
+            "GET",
+            "/api/blocker-actions?study_id=s1&action=force&step_id=reach&since=2026-01-01&until=2026-12-31",
+        )
+        self.assertEqual(200, status)
+        self.assertEqual("s1", data[0]["study_id"])
+        self.assertEqual("force", data[0]["action"])
+        self.assertEqual("reach", data[0]["step_id"])
+        self.assertEqual("2026-01-01", data[0]["since"])
+        self.assertEqual("2026-12-31", data[0]["until"])
+
+    def test_blocker_actions_route_resolves_company_id_to_study_id(self) -> None:
+        status, data, _ = self.request("GET", "/api/blocker-actions?company_id=c1")
+        self.assertEqual(200, status)
+        self.assertEqual("s1", data[0]["study_id"])
+
+    def test_blocker_actions_route_returns_empty_for_unknown_company_id(self) -> None:
+        status, data, _ = self.request("GET", "/api/blocker-actions?company_id=unknown")
+        self.assertEqual(200, status)
+        self.assertEqual([], data)
 
     def test_health_route_is_open_without_authentication(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)

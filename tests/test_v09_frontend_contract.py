@@ -100,6 +100,20 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn("loadDuplicates", self.js)
         self.assertIn("/reassign", self.js)
 
+    def test_blocker_actions_journal_view_is_wired(self) -> None:
+        self.assertIn('data-target="journal"', self.html)
+        self.assertIn('id="journal" class="panel"', self.html)
+        self.assertIn('id="blockerActionsFilterForm"', self.html)
+        self.assertIn('id="blockerActionsStudyId"', self.html)
+        self.assertIn('id="blockerActionsCompanyId"', self.html)
+        self.assertIn('id="blockerActionsStepId"', self.html)
+        self.assertIn('id="blockerActionsAction"', self.html)
+        self.assertIn('id="blockerActionsSince"', self.html)
+        self.assertIn('id="blockerActionsUntil"', self.html)
+        self.assertIn('id="blockerActionsRows"', self.html)
+        self.assertIn("/api/blocker-actions", self.js)
+        self.assertIn("loadBlockerActions", self.js)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -734,7 +734,7 @@ async function boot() {
     state.executorConfigured = !!health.executor_configured;
     Object.assign(state, { skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain });
     renderSkills(); renderShelves(); renderDemand(); renderQualification(); renderNudgeInventory(); renderFollowUp(); renderBacklog();
-    loadKanban(); loadCandidates(); loadCampaigns();
+    loadKanban(); loadCandidates(); loadCampaigns(); loadBlockerActions();
   } catch (error) {
     document.querySelector("#health").textContent = "Erreur de chargement";
     console.error(error);
@@ -836,6 +836,32 @@ document.querySelector("#createCompanyForm").addEventListener("submit", async ev
 });
 
 document.querySelector("#loadDuplicatesBtn").addEventListener("click", loadDuplicates);
+
+async function loadBlockerActions() {
+  const params = new URLSearchParams();
+  const studyId = document.querySelector("#blockerActionsStudyId").value.trim();
+  const companyId = document.querySelector("#blockerActionsCompanyId").value.trim();
+  const stepId = document.querySelector("#blockerActionsStepId").value;
+  const action = document.querySelector("#blockerActionsAction").value;
+  const since = document.querySelector("#blockerActionsSince").value;
+  const until = document.querySelector("#blockerActionsUntil").value;
+  if (studyId) params.set("study_id", studyId);
+  if (companyId) params.set("company_id", companyId);
+  if (stepId) params.set("step_id", stepId);
+  if (action) params.set("action", action);
+  if (since) params.set("since", since);
+  if (until) params.set("until", until);
+  const tbody = document.querySelector("#blockerActionsRows");
+  tbody.innerHTML = `<tr><td colspan="6">Chargement…</td></tr>`;
+  try {
+    const rows = await api(`/api/blocker-actions?${params.toString()}`);
+    tbody.innerHTML = rows.map(r => `<tr><td>${esc(r.timestamp || "")}</td><td>${esc(r.study_id || "")}</td><td>${esc(r.step_id || "")}</td><td><span class="badge">${esc(r.action || "")}</span></td><td>${esc(r.actor || "")}</td><td>${esc(r.reason || "")}</td></tr>`).join("") || `<tr><td colspan="6">Aucune action trouvée.</td></tr>`;
+  } catch (error) {
+    tbody.innerHTML = `<tr><td colspan="6" class="error">${esc(error.message)}</td></tr>`;
+  }
+}
+
+document.querySelector("#blockerActionsFilterForm").addEventListener("submit", event => { event.preventDefault(); loadBlockerActions(); });
 
 document.querySelector("#prospectingForm").addEventListener("submit", event => { event.preventDefault(); launchProspectingCampaign(); });
 

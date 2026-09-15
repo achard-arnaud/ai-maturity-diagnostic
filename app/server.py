@@ -173,6 +173,33 @@ def build_app(
     async def list_blocker_actions(study_id: str = "", ctx: RequestContext = Depends(get_current_user)) -> Any:
         return BLOCKER_ACTIONS.list_actions(study_id.strip())
 
+    @app.get("/api/blocker-actions")
+    async def list_blocker_actions_filtered(
+        study_id: str = "",
+        company_id: str = "",
+        action: str = "",
+        step_id: str = "",
+        since: str = "",
+        until: str = "",
+        ctx: RequestContext = Depends(get_current_user),
+    ) -> Any:
+        resolved_study_id = study_id.strip()
+        company_id = company_id.strip()
+        if company_id and not resolved_study_id:
+            for study_row in QUALIFICATION.list_studies():
+                if study_row.get("company_id") == company_id:
+                    resolved_study_id = str(study_row.get("study_id") or "")
+                    break
+            else:
+                return []
+        return BLOCKER_ACTIONS.list_actions(
+            resolved_study_id,
+            action=action.strip() or None,
+            step_id=step_id.strip() or None,
+            since=since.strip() or None,
+            until=until.strip() or None,
+        )
+
     @app.get("/api/skills")
     async def api_skills(ctx: RequestContext = Depends(get_current_user)) -> Any:
         return CONTROL.list_skills()

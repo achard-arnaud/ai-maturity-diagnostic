@@ -26,6 +26,7 @@
     <button data-target="nudging">Nudging</button>
     <button data-target="backlog">Suivi</button>
     <button data-target="reseau">Réseau</button>
+    <button data-target="journal">Journal</button>
     <button data-target="skills">Skills</button>
   </nav>
 
@@ -254,6 +255,39 @@
         </form>
         <div id="campaignsList" class="grid result-grid" style="margin-top:10px;"></div>
       </div>
+    </section>
+
+    <section id="journal" class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Journal des actions blocker</p>
+          <h2>Historique filtrable — cancel, step_back, force, resolve</h2>
+          <p>Vue de premier niveau sur `BlockerActionLog` : toutes les actions humaines tracées sur les blockers de qualification, filtrables par étude, entreprise, étape, action et période.</p>
+        </div>
+      </div>
+      <form id="blockerActionsFilterForm" class="form">
+        <label>Study ID<input id="blockerActionsStudyId" placeholder="study_id"></label>
+        <label>Company ID<input id="blockerActionsCompanyId" placeholder="company_id"></label>
+        <label>Étape<select id="blockerActionsStepId">
+          <option value="">Toutes</option>
+          <option value="demand">demand</option>
+          <option value="snapshots">snapshots</option>
+          <option value="matching">matching</option>
+          <option value="contacts">contacts</option>
+          <option value="reach">reach</option>
+          <option value="pilot">pilot</option>
+        </select></label>
+        <label>Action<select id="blockerActionsAction">
+          <option value="">Toutes</option>
+          <option value="cancel">cancel</option>
+          <option value="step_back">step_back</option>
+          <option value="force">force</option>
+        </select></label>
+        <label>Depuis<input id="blockerActionsSince" type="date"></label>
+        <label>Jusqu'à<input id="blockerActionsUntil" type="date"></label>
+        <button class="primary" type="submit">Filtrer</button>
+      </form>
+      <div class="table-wrap"><table><thead><tr><th>Horodatage</th><th>Study ID</th><th>Étape</th><th>Action</th><th>Acteur</th><th>Raison</th></tr></thead><tbody id="blockerActionsRows"></tbody></table></div>
     </section>
 
     <section id="skills" class="panel">

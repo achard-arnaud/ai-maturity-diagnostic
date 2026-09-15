@@ -85,8 +85,7 @@ class BlockerActionLog:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
         return entry
 
-    def list_actions(self, study_id: str) -> list[dict[str, Any]]:
-        path = self._path(study_id)
+    def _read_path(self, path: Path) -> list[dict[str, Any]]:
         if not path.is_file():
             return []
         rows: list[dict[str, Any]] = []
@@ -99,4 +98,48 @@ class BlockerActionLog:
                 continue
             if isinstance(item, dict):
                 rows.append(item)
+        return rows
+
+    def list_actions(
+        self,
+        study_id: str = "",
+        *,
+        action: str | None = None,
+        step_id: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """List recorded blocker actions, optionally filtered.
+
+        With no arguments beyond `study_id`, behaves exactly as before
+        (backward compatible with the existing `/api/qualification/actions`
+        caller and Account 360's `recent_actions`). Passing an empty
+        `study_id` lists across every study directory found under
+        `root/studies/*/06d_blocker_actions.jsonl` (a cheap glob over the
+        same JSONL files `record()` already writes -- no new index needed).
+
+        `action`/`step_id` are exact-match filters against the recorded
+        fields. `since`/`until` are ISO-8601 timestamp strings compared
+        lexicographically against the entry's `timestamp` (safe because
+        `record()` always writes `datetime.now(timezone.utc).isoformat()`,
+        which sorts lexicographically in timestamp order).
+        """
+        study_id = str(study_id or "").strip()
+        if study_id:
+            rows = self._read_path(self._path(study_id))
+        else:
+            rows = []
+            studies_root = self.root / "studies"
+            if studies_root.is_dir():
+                for log_path in sorted(studies_root.glob("*/06d_blocker_actions.jsonl")):
+                    rows.extend(self._read_path(log_path))
+
+        if action:
+            rows = [row for row in rows if row.get("action") == action]
+        if step_id:
+            rows = [row for row in rows if row.get("step_id") == step_id]
+        if since:
+            rows = [row for row in rows if str(row.get("timestamp") or "") >= since]
+        if until:
+            rows = [row for row in rows if str(row.get("timestamp") or "") <= until]
         return rows

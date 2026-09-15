@@ -80,6 +80,53 @@ class BlockerActionLogTests(unittest.TestCase):
     def test_step_order_is_the_qualification_pipeline(self) -> None:
         self.assertEqual(["demand", "snapshots", "matching", "contacts", "reach", "pilot"], STEP_ORDER)
 
+    def test_list_actions_with_no_study_id_lists_across_all_studies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log = BlockerActionLog(root)
+            log.record(study_id="acme-1", step_id="matching", action="cancel", actor="a@b.com")
+            log.record(study_id="other-1", step_id="reach", action="force", actor="a@b.com", reason="deadline")
+            rows = log.list_actions()
+            self.assertEqual(2, len(rows))
+            self.assertEqual({"acme-1", "other-1"}, {row["study_id"] for row in rows})
+
+    def test_list_actions_filters_by_action(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log = BlockerActionLog(root)
+            log.record(study_id="acme-1", step_id="matching", action="cancel", actor="a@b.com")
+            log.record(study_id="acme-1", step_id="reach", action="force", actor="a@b.com", reason="deadline")
+            rows = log.list_actions("acme-1", action="force")
+            self.assertEqual(1, len(rows))
+            self.assertEqual("force", rows[0]["action"])
+
+    def test_list_actions_filters_by_step_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log = BlockerActionLog(root)
+            log.record(study_id="acme-1", step_id="matching", action="cancel", actor="a@b.com")
+            log.record(study_id="acme-1", step_id="reach", action="cancel", actor="a@b.com")
+            rows = log.list_actions("acme-1", step_id="reach")
+            self.assertEqual(1, len(rows))
+            self.assertEqual("reach", rows[0]["step_id"])
+
+    def test_list_actions_filters_by_since_and_until(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            log = BlockerActionLog(root)
+            entry = log.record(study_id="acme-1", step_id="matching", action="cancel", actor="a@b.com")
+            timestamp = entry["timestamp"]
+            self.assertEqual(1, len(log.list_actions("acme-1", since=timestamp)))
+            self.assertEqual(1, len(log.list_actions("acme-1", until=timestamp)))
+            self.assertEqual(0, len(log.list_actions("acme-1", since="9999-01-01T00:00:00+00:00")))
+            self.assertEqual(0, len(log.list_actions("acme-1", until="0001-01-01T00:00:00+00:00")))
+
+    def test_list_actions_with_no_recorded_actions_and_no_filters_returns_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            log = BlockerActionLog(Path(tmp))
+            self.assertEqual([], log.list_actions())
+            self.assertEqual([], log.list_actions("unknown-study"))
+
 
 if __name__ == "__main__":
     unittest.main()
