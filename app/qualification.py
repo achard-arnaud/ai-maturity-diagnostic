@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app.blockers import attach_resolution, blocker, human_review_blocker
+from app.blockers import attach_resolution, blocker, human_review_blocker, issue
 from app.core import _read_yaml
 
 
@@ -62,6 +62,34 @@ class QualificationCockpit:
                 return f"Blocking gate {gate.get('id') or 'unknown'} is OPEN; PURSUE is forbidden."
         return None
 
+    @classmethod
+    def _fit_issues(cls, fit: dict[str, Any], study_rel: str) -> list[dict[str, Any]]:
+        """Non-blocking tensions on the selected match: today these are computed
+        (a warning-severity gate that is OPEN/FAIL) and then silently dropped —
+        they never stop progression like a hard gate, but nothing structured
+        currently tells a human or the dashboard they exist either."""
+        selected = cls._selected_match(fit)
+        if selected is None:
+            return []
+        rows: list[dict[str, Any]] = []
+        for gate in selected.get("hard_gates", []) or []:
+            if not isinstance(gate, dict) or gate.get("severity") != "warning":
+                continue
+            status = str(gate.get("status") or "").upper()
+            if status not in {"OPEN", "FAIL"}:
+                continue
+            rows.append(
+                issue(
+                    kind="anti_fit",
+                    statement=f"Warning gate {gate.get('id') or 'unknown'} is {status} on the selected match but does not block progression.",
+                    epistemic_status="hypothesis",
+                    can_change_decision=False,
+                    key=f"{selected.get('offer_id')}:{gate.get('id')}:{status}",
+                    context_paths=[study_rel],
+                )
+            )
+        return rows
+
     @staticmethod
     def _reach_progression(reach: dict[str, Any]) -> tuple[bool, str | None]:
         if not reach:
@@ -107,6 +135,7 @@ class QualificationCockpit:
             snapshots_ready = bool(snapshots)
             matching_ready = bool(fit.get("matches") and fit.get("decision"))
             fit_violation = self._fit_violation(fit) if matching_ready else None
+            fit_issues = self._fit_issues(fit, study_rel) if matching_ready else []
             fit_progression_allowed = matching_ready and fit_violation is None and fit.get("decision") in {"pursue", "validate"}
 
             contact_path = study_dir / "06b_contact_targets.yaml"
@@ -216,7 +245,7 @@ class QualificationCockpit:
                 "company": manifest.get("company") or profile.get("company") or study_dir.name,
                 "company_id": manifest.get("company_id"), "study_path": study_rel,
                 "offer_id": fit.get("recommended_offer_id"),
-                "stage": stage, "decision": decision, "fit_violation": fit_violation,
+                "stage": stage, "decision": decision, "fit_violation": fit_violation, "issues": fit_issues,
                 "next_skill": next_skill, "next_action": next_action, "blocked_reason": blocked_reason, "current_blocker": current_blocker,
                 "artifacts": {"demand_ready": demand_ready, "snapshots_ready": snapshots_ready, "matching_ready": matching_ready, "fit_progression_allowed": fit_progression_allowed, "contacts_artifact": contacts_artifact, "contacts_consistent": contacts_consistent, "contacts_ready": contacts_ready, "reach_artifact": reach_artifact, "reach_ready": reach_ready, "engagement_ready": engagement_ready},
                 "steps": steps,
