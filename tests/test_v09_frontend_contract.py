@@ -33,6 +33,13 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn('"/api/network/companies"', self.js)
         self.assertIn("confirmation-banner", self.js)
 
+    def test_demand_intake_form_is_wired(self) -> None:
+        self.assertIn('id="demandIntakeForm"', self.html)
+        self.assertIn('id="demandIntakeCompany"', self.html)
+        self.assertIn('id="demandIntakeProblem"', self.html)
+        self.assertIn('"/api/demand/intake"', self.js)
+        self.assertIn("confirmation-banner", self.js)
+
     def test_invoke_panel_shows_executor_not_configured_banner(self) -> None:
         self.assertIn('id="executorBanner"', self.html)
         self.assertIn("executorConfigured", self.js)

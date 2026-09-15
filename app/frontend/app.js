@@ -838,6 +838,25 @@ document.querySelector("#createCompanyForm").addEventListener("submit", async ev
   } catch (error) { out.textContent = error.message; }
 });
 
+document.querySelector("#demandIntakeForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const out = document.querySelector("#demandIntakeResult");
+  out.textContent = "Création…";
+  try {
+    const result = await api("/api/demand/intake", { method: "POST", body: JSON.stringify({
+      company: document.querySelector("#demandIntakeCompany").value.trim(),
+      problem_statement: document.querySelector("#demandIntakeProblem").value.trim(),
+      sector_code: document.querySelector("#demandIntakeSector").value.trim() || undefined,
+      company_id: document.querySelector("#demandIntakeCompanyId").value.trim() || undefined,
+      study_id: document.querySelector("#demandIntakeStudyId").value.trim() || undefined,
+      confidence: document.querySelector("#demandIntakeConfidence").value,
+    }) });
+    out.innerHTML = `<div class="confirmation-banner">Profil de demande créé — ${esc(result.study_id)} (${esc(result.profile_path)})</div>`;
+    document.querySelector("#demandIntakeForm").reset();
+    renderDemand();
+  } catch (error) { out.textContent = error.message; }
+});
+
 document.querySelector("#loadDuplicatesBtn").addEventListener("click", loadDuplicates);
 
 async function loadBlockerActions() {

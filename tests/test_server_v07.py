@@ -29,6 +29,7 @@ class FakeHarvester:
 class FakeDemand:
     def snapshot(self): return {"sectors": []}
     def inventories(self): return []
+    def create_demand_profile(self, **kwargs): return {"study_id": "s-new", "profile_path": "studies/s-new/05_enterprise_demand_profile.yaml", "profile": {**kwargs}, "created_study": True}
 
 
 class FakeQualification:
@@ -511,6 +512,25 @@ class ServerV07Tests(unittest.TestCase):
     def test_unauthenticated_request_to_business_route_is_401(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)
         status, _, _ = self.request("GET", "/api/skills")
+        self.assertEqual(401, status)
+
+    def test_demand_intake_route_creates_profile(self) -> None:
+        status, data, _ = self.request(
+            "POST",
+            "/api/demand/intake",
+            {"company": "Acme Corp", "problem_statement": "We cannot see AI adoption ROI."},
+        )
+        self.assertEqual(201, status)
+        self.assertEqual("s-new", data["study_id"])
+        self.assertTrue(data["created_study"])
+
+    def test_demand_intake_route_requires_auth(self) -> None:
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, _, _ = self.request(
+            "POST",
+            "/api/demand/intake",
+            {"company": "Acme Corp", "problem_statement": "x"},
+        )
         self.assertEqual(401, status)
 
     def test_blocker_actions_route_returns_list_and_requires_auth(self) -> None:

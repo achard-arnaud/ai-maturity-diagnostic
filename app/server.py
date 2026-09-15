@@ -224,6 +224,25 @@ def build_app(
     async def api_demand_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:
         return DEMAND.inventories()
 
+    # Demand-profile intake (M2): writes a schema-conformant
+    # 05_enterprise_demand_profile.yaml from the minimum a human can type,
+    # closing the gap where DemandCatalog had no write path at all. See
+    # app/demand.py's create_demand_profile docstring for the
+    # study-directory collision rules.
+    @app.post("/api/demand/intake")
+    async def api_demand_intake(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        result = DEMAND.create_demand_profile(
+            company=str(payload.get("company") or ""),
+            problem_statement=str(payload.get("problem_statement") or ""),
+            company_id=payload.get("company_id"),
+            sector_code=payload.get("sector_code"),
+            confidence=str(payload.get("confidence") or "low"),
+            study_id=payload.get("study_id"),
+        )
+        return JSONResponse(status_code=201, content=result)
+
     @app.get("/api/qualification")
     async def api_qualification(ctx: RequestContext = Depends(get_current_user)) -> Any:
         return QUALIFICATION.list_studies()

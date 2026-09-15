@@ -55,6 +55,25 @@
         <h3 class="kanban-title">Pipeline (kanban)</h3>
         <div id="kanbanDemandBoard" class="kanban-board"></div>
       </section>
+
+      <div class="subpanel" style="margin-top:16px;">
+        <h3>Créer un profil de demande (nouvelle étude)</h3>
+        <p class="hint">Formulaire structuré uniquement : chaque champ non renseigné reste un "unknown" honnête dans 05_enterprise_demand_profile.yaml, jamais une valeur inventée.</p>
+        <form id="demandIntakeForm" class="form">
+          <label for="demandIntakeCompany">Entreprise<input id="demandIntakeCompany" required></label>
+          <label for="demandIntakeProblem">Problème (texte libre)<textarea id="demandIntakeProblem" rows="4" required></textarea></label>
+          <label for="demandIntakeSector">Secteur ICB (optionnel)<input id="demandIntakeSector" placeholder="code ICB"></label>
+          <label for="demandIntakeCompanyId">company_id (optionnel)<input id="demandIntakeCompanyId" placeholder="company_id existant"></label>
+          <label for="demandIntakeStudyId">study_id (optionnel — cible une étude existante)<input id="demandIntakeStudyId" placeholder="laisser vide pour créer une nouvelle étude"></label>
+          <label for="demandIntakeConfidence">Confiance<select id="demandIntakeConfidence">
+            <option value="low" selected>low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+          </select></label>
+          <button class="primary" type="submit">Créer le profil de demande</button>
+        </form>
+        <div id="demandIntakeResult" class="hint"></div>
+      </div>
     </section>
 
     <section id="offers" class="panel">
