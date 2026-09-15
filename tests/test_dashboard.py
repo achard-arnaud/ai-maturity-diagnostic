@@ -65,6 +65,19 @@ class DashboardTests(unittest.TestCase):
             self.assertGreaterEqual(heritage["similarity_hypotheses"], 1)
             self.assertIn("never populates", heritage["warning"])
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(FollowUpDashboard.for_workspace("default", repo_root=root).root, root.resolve())
+            self.assertEqual(UseCaseHeritage.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            expected = (root / "workspaces" / "acme").resolve()
+            self.assertEqual(FollowUpDashboard.for_workspace("acme", repo_root=root).root, expected)
+            self.assertEqual(UseCaseHeritage.for_workspace("acme", repo_root=root).root, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

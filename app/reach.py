@@ -18,6 +18,13 @@ _VETO_PERSONAS = {"CISO", "Data_or_Security_Governance"}
 class ReachMatchmaker:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "ReachMatchmaker":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def _study_dir(self, study_id: str) -> Path:
         studies = self.root / "studies"
         if not studies.is_dir():

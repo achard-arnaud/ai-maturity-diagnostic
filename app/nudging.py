@@ -24,6 +24,13 @@ _FORBIDDEN_REQUEST_FIELDS = {
 class UseCaseNudger:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "UseCaseNudger":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def _inventory_path(self, study_id: str) -> Path:
         candidates = list((self.root / "studies").glob(f"*/05b_use_case_inventory.yaml")) if (self.root / "studies").is_dir() else []
         for path in candidates:

@@ -60,6 +60,17 @@ class ValueChainCatalogTests(unittest.TestCase):
             with self.assertRaises(ControlPlaneError):
                 ValueChainCatalog(root).prepare_request({"study_id": "acme-1", "use_case_id": "UC-X"})
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(ValueChainCatalog.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = ValueChainCatalog.for_workspace("acme", repo_root=root)
+            self.assertEqual(catalog.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

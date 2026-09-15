@@ -40,6 +40,13 @@ class DemandCatalog:
     root: Path
     stale_after_days: int = 180
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "DemandCatalog":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def _taxonomy_sectors(self) -> dict[str, dict[str, Any]]:
         path = self.root / "data" / "taxonomies" / "icb_v5_2026.yaml"
         if not path.is_file():

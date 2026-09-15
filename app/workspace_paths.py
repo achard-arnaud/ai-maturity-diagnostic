@@ -57,3 +57,19 @@ class WorkspacePaths:
         except ValueError as exc:
             raise WorkspacePathError(f"path escapes workspace root: {parts!r}") from exc
         return target
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def resolve_workspace_root(workspace_id: str = DEFAULT_WORKSPACE_ID, repo_root: Path | None = None) -> Path:
+    """Resolve the ``root: Path`` a business-module constructor should use.
+
+    Shared helper for each domain module's ``for_workspace`` classmethod
+    (ADR-007 §5 migration step 1). Defaults ``repo_root`` to the same
+    repository root the plain ``Class(ROOT)`` call sites already use, so
+    ``resolve_workspace_root()`` with no arguments is byte-identical to
+    today's hardcoded ``Path(__file__).resolve().parents[1]``.
+    """
+    base = repo_root if repo_root is not None else _REPO_ROOT
+    return WorkspacePaths(base, workspace_id).root()

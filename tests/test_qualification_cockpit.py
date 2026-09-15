@@ -85,6 +85,17 @@ class QualificationCockpitTests(unittest.TestCase):
             refreshed = QualificationCockpit(root).list_studies()[0]
             self.assertEqual("pilot", refreshed["stage"])
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(QualificationCockpit.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cockpit = QualificationCockpit.for_workspace("acme", repo_root=root)
+            self.assertEqual(cockpit.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

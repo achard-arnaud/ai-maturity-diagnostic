@@ -16,6 +16,13 @@ from app.value_chain import ValueChainCatalog
 class FollowUpDashboard:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "FollowUpDashboard":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def items(self) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         for row in QualificationCockpit(self.root).list_studies():
@@ -133,6 +140,13 @@ class FollowUpDashboard:
 @dataclass(frozen=True)
 class UseCaseHeritage:
     root: Path
+
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "UseCaseHeritage":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
 
     def company(self, study_id: str) -> dict[str, Any]:
         graph = UseCaseGraph(self.root).company(study_id)

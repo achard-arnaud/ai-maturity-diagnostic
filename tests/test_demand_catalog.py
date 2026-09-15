@@ -76,6 +76,18 @@ class DemandCatalogTests(unittest.TestCase):
             self.assertEqual(1, sector["use_case_count"])
             self.assertEqual(1, sector["eligible_study_count"])
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = DemandCatalog.for_workspace("default", repo_root=root)
+            self.assertEqual(catalog.root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = DemandCatalog.for_workspace("acme", repo_root=root)
+            self.assertEqual(catalog.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,13 @@ from app.core import ControlPlaneError, _read_yaml
 class ValueChainCatalog:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "ValueChainCatalog":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def _study_dir(self, study_id: str) -> Path:
         studies_root = self.root / "studies"
         if not studies_root.is_dir():

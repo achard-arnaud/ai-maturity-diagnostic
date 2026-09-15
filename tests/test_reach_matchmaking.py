@@ -100,6 +100,17 @@ class ReachMatchmakerTests(unittest.TestCase):
             with self.assertRaises(ControlPlaneError):
                 ReachMatchmaker(root).preview("acme-1")
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(ReachMatchmaker.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            matchmaker = ReachMatchmaker.for_workspace("acme", repo_root=root)
+            self.assertEqual(matchmaker.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

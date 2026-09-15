@@ -95,6 +95,18 @@ class CatalogHarvesterTests(unittest.TestCase):
                 result["harvest"]["promotion_contract"]["automatic_promotion_to_product_catalog"]
             )
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            harvester = CatalogHarvester.for_workspace("default", repo_root=root)
+            self.assertEqual(harvester.root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            harvester = CatalogHarvester.for_workspace("acme", repo_root=root)
+            self.assertEqual(harvester.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

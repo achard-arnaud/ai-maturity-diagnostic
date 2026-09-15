@@ -12,6 +12,13 @@ from app.core import _read_yaml
 class QualificationCockpit:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "QualificationCockpit":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     @staticmethod
     def _demand_ready(profile: dict[str, Any]) -> bool:
         return bool(profile.get("evidence_claims") and profile.get("capability_gaps")) and profile.get("confidence") in {"medium", "high"}

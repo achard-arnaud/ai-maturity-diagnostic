@@ -99,6 +99,17 @@ class NudgingTests(unittest.TestCase):
             with self.assertRaises(ControlPlaneError):
                 UseCaseNudger(root).generate_request({"study_id": "acme-1", "offer_id": "OFFER-X"})
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(UseCaseNudger.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nudger = UseCaseNudger.for_workspace("acme", repo_root=root)
+            self.assertEqual(nudger.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()
