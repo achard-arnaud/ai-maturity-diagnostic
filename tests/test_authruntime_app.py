@@ -155,6 +155,27 @@ class AuthRuntimeAppTests(unittest.TestCase):
         self.assertIn("searchable@example.com", response.text)
         self.assertIn("admin5@example.com", response.text)
 
+    def test_admin_memberships_listing_forbidden_for_non_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "plain7@example.com")
+        response = client.get("/admin/memberships")
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_memberships_listing_shows_memberships_for_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin7@example.com")
+        admin_user = self.store.get_or_create_user("admin7@example.com", "Admin7")
+        self.store.set_admin(admin_user["id"], True)
+        member_user = self.store.get_or_create_user("member7@example.com", "Member7")
+        self.store.create_workspace("ws-7", "Workspace Seven")
+        self.store.set_membership(member_user["id"], "ws-7", "product_owner")
+
+        response = client.get("/admin/memberships")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("member7@example.com", response.text)
+        self.assertIn("ws-7", response.text)
+        self.assertIn("product_owner", response.text)
+
     def test_admin_users_page_text_filter_narrows_results(self) -> None:
         client = self._client()
         self._login_as(client, "admin6@example.com")

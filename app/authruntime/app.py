@@ -134,6 +134,13 @@ def create_app(
         )
         return RedirectResponse(url="/admin/workspaces", status_code=status.HTTP_303_SEE_OTHER)
 
+    @app.get("/admin/memberships", response_class=HTMLResponse)
+    async def admin_memberships(
+        request: Request, ctx: RequestContext = Depends(require_role("admin")), store: ControlStore = Depends(get_store)
+    ):
+        users = store.list_users()
+        return HTMLResponse(_render_memberships_page(users))
+
     @app.get("/admin/users", response_class=HTMLResponse)
     async def admin_users(
         request: Request,
@@ -219,6 +226,31 @@ def _render_admin_page(store: ControlStore) -> str:
 <button type="submit">Save</button>
 </form>
 <p><a href="/admin/audit">Audit log</a></p>
+</body></html>"""
+
+
+def _render_memberships_page(users: list[Any]) -> str:
+    def esc(value: Any) -> str:
+        return html.escape(str(value)) if value is not None else ""
+
+    members = [u for u in users if u["workspace_id"] is not None]
+    rows = "".join(
+        f"<tr><td>{esc(u['email'])}</td><td>{esc(u['workspace_id'])}</td><td>{esc(u['role'])}</td></tr>"
+        for u in members
+    )
+    return f"""<!doctype html>
+<html><head><title>Admin — Memberships</title></head>
+<body>
+<h1>Memberships</h1>
+<table border="1"><tr><th>email</th><th>workspace_id</th><th>role</th></tr>{rows}</table>
+<h2>Set membership</h2>
+<form method="post" action="/admin/memberships">
+<input name="user_id" placeholder="user id" required>
+<input name="workspace_id" placeholder="workspace id" required>
+<select name="role"><option value="product_owner">product_owner</option><option value="standard_user">standard_user</option></select>
+<button type="submit">Save</button>
+</form>
+<p><a href="/admin/workspaces">Back</a></p>
 </body></html>"""
 
 

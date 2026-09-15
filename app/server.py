@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import mimetypes
 import os
 import subprocess
@@ -12,7 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from app.authruntime.app import create_app
 from app.authruntime.config import AuthConfig, assert_safe_bind
 from app.authruntime.db import ControlStore
-from app.authruntime.deps import RequestContext, get_current_user
+from app.authruntime.deps import RequestContext, get_current_user, require_role
 from app.authruntime.oidc import OIDCClient
 from app.blocker_actions import BlockerActionLog
 from app.catalog import CatalogHarvester
@@ -20,6 +21,7 @@ from app.catalog_search import CatalogSearch
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
+from app import network_index
 from app.network_index import search_companies, search_people
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
@@ -129,7 +131,8 @@ def build_app(
 
     @app.exception_handler(Exception)
     async def _unexpected(request: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=500, content={"status": "error", "error": str(exc)})
+        logging.getLogger(__name__).exception("unhandled exception while serving %s", request.url.path)
+        return JSONResponse(status_code=500, content={"status": "error", "error": "internal server error"})
 
     # ------------------------------------------------------------------
     # Auth introspection for the frontend (drives the /login.html redirect).
@@ -234,6 +237,15 @@ def build_app(
         ctx: RequestContext = Depends(get_current_user),
     ) -> Any:
         return search_companies(NETWORK_INDEX_PATH, text=text.strip() or None, sector=sector.strip() or None)
+
+    # ------------------------------------------------------------------
+    # Admin-only network index rebuild trigger (manual/on-demand; the
+    # search routes above read a derived SQLite index that otherwise only
+    # scripts/rebuild_network_index.py can (re)build from a shell).
+    # ------------------------------------------------------------------
+    @app.post("/admin/network/rebuild-index")
+    async def admin_network_rebuild_index(ctx: RequestContext = Depends(require_role("admin"))) -> Any:
+        return network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
 
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).

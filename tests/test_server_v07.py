@@ -238,6 +238,56 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(200, status)
                 self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
 
+    def test_network_rebuild_index_route_requires_admin(self) -> None:
+        non_admin = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
+        server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+        status, _, _ = self.request("POST", "/admin/network/rebuild-index")
+        self.assertEqual(403, status)
+
+    def test_network_rebuild_index_route_builds_index_for_admin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                json.dumps(
+                    {
+                        "person_id": "PERS-1",
+                        "display_name": "Alice Martin",
+                        "normalized_name": "alice martin",
+                        "seed_company_id": "COMP-1",
+                        "identity_confidence": "high",
+                        "role_hypotheses": ["economic_sponsor"],
+                        "status": "active",
+                        "last_updated": "2026-08-01",
+                        "stale_after_months": 6,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text(
+                json.dumps(
+                    {
+                        "company_id": "COMP-1",
+                        "canonical_name": "EDF",
+                        "normalized_name": "edf",
+                        "status": "active",
+                        "icb_mapping": {"sector": {"code": "651010"}},
+                        "last_updated": "2026-08-01",
+                        "stale_after_months": 6,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            index_path = data_root / "index.sqlite"
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, data, _ = self.request("POST", "/admin/network/rebuild-index")
+            self.assertEqual(200, status)
+            self.assertEqual(data["people"], 1)
+            self.assertEqual(data["companies"], 1)
+            self.assertEqual(data["relationships"], 0)
+
     def test_post_domain_routes(self) -> None:
         cases = [
             ("/api/skills/demo/invoke", {"input": "x"}, "prepared"),
@@ -305,12 +355,15 @@ class ServerV07Tests(unittest.TestCase):
         self.assertIn("persist must be a boolean", data["error"])
 
     def test_get_route_unexpected_exception_returns_clean_500(self) -> None:
-        with patch.object(server_module.DEMAND, "snapshot", side_effect=ValueError("boom")):
-            status, data, content_type = self.request("GET", "/api/demand")
+        with patch.object(server_module, "logging") as mock_logging:
+            with patch.object(server_module.DEMAND, "snapshot", side_effect=ValueError("boom")):
+                status, data, content_type = self.request("GET", "/api/demand")
         self.assertEqual(500, status)
         self.assertIn("application/json", content_type)
         self.assertEqual("error", data["status"])
-        self.assertIn("boom", data["error"])
+        self.assertNotIn("boom", data["error"])
+        self.assertEqual("internal server error", data["error"])
+        mock_logging.getLogger.return_value.exception.assert_called()
 
     def test_get_route_control_plane_error_returns_400(self) -> None:
         with patch.object(
