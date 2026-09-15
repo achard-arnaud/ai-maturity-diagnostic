@@ -424,6 +424,15 @@ function renderNudgeInventory() {
   select.innerHTML = state.nudgeInventories.length ? state.nudgeInventories.map(item => `<option value="${esc(item.study_id)}">${esc(item.company)} · ${item.use_case_count} UC</option>`).join("") : `<option value="">Aucun inventaire</option>`;
 }
 
+function nudgeDecisionButtons(studyId, nudge) {
+  if (nudge.status === "accepted") return `<span class="badge badge-accepted">Acceptée · ${esc(nudge.decided_by || "")}</span>`;
+  if (nudge.status === "rejected") return `<span class="badge badge-rejected">Rejetée · ${esc(nudge.decided_by || "")}</span>`;
+  return `<div class="nudge-actions">
+    <button class="nudgeDecisionBtn" data-study-id="${esc(studyId)}" data-nudge-id="${esc(nudge.nudge_id)}" data-decision="accept">Accepter</button>
+    <button class="nudgeDecisionBtn" data-study-id="${esc(studyId)}" data-nudge-id="${esc(nudge.nudge_id)}" data-decision="reject">Rejeter</button>
+  </div>`;
+}
+
 async function generateNudges(mode) {
   const studyId = document.querySelector("#nudgeInventory").value;
   if (!studyId) return;
@@ -431,8 +440,23 @@ async function generateNudges(mode) {
   results.innerHTML = `<div class="empty-state">Calcul…</div>`;
   try {
     const payload = await api("/api/nudging/generate", { method: "POST", body: JSON.stringify({ study_id: studyId, mode }) });
-    results.innerHTML = (payload.nudges || []).map(n => `<article class="card"><p class="eyebrow">${esc(n.mode)}</p><h3>${esc((n.target_use_case_ids || []).join(" + "))}</h3><p>${esc(n.rationale)}</p><div class="meta"><span class="badge">${esc(n.status)}</span><span class="badge">${esc(n.confidence)}</span></div><small>Falsifier: ${esc(n.falsifier)}</small></article>`).join("") || `<div class="empty-state">Aucune piste admissible avec les preuves actuelles.</div>`;
+    results.innerHTML = (payload.nudges || []).map(n => `<article class="card"><p class="eyebrow">${esc(n.mode)}</p><h3>${esc((n.target_use_case_ids || []).join(" + "))}</h3><p>${esc(n.rationale)}</p><div class="meta"><span class="badge">${esc(n.status)}</span><span class="badge">${esc(n.confidence)}</span></div><small>Falsifier: ${esc(n.falsifier)}</small>${nudgeDecisionButtons(studyId, n)}</article>`).join("") || `<div class="empty-state">Aucune piste admissible avec les preuves actuelles.</div>`;
+    results.querySelectorAll(".nudgeDecisionBtn").forEach(btn => {
+      btn.addEventListener("click", () => decideNudge(btn.dataset.studyId, btn.dataset.nudgeId, btn.dataset.decision, mode));
+    });
   } catch (error) { results.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function decideNudge(studyId, nudgeId, decision, mode) {
+  try {
+    const body = { study_id: studyId };
+    if (decision === "reject") {
+      const reason = window.prompt("Motif du rejet (optionnel)") || undefined;
+      if (reason) body.reason = reason;
+    }
+    await api(`/api/nudges/${encodeURIComponent(nudgeId)}/${decision}`, { method: "POST", body: JSON.stringify(body) });
+    generateNudges(mode);
+  } catch (error) { window.alert(error.message); }
 }
 
 function renderFollowUp() {

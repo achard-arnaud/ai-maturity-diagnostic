@@ -39,6 +39,10 @@ class FakeQualification:
 class FakeNudging:
     def list_inventories(self): return [{"study_id": "s1"}]
     def generate_request(self, payload): return {"nudges": [], "payload": payload}
+    def accept_nudge(self, study_id, nudge_id, *, actor):
+        return {"study_id": study_id, "nudge_id": nudge_id, "status": "accepted", "decided_by": actor}
+    def reject_nudge(self, study_id, nudge_id, *, actor, reason=None):
+        return {"study_id": study_id, "nudge_id": nudge_id, "status": "rejected", "decided_by": actor, "decision_reason": reason}
 
 
 class FakeValueChain:
@@ -312,6 +316,26 @@ class ServerV07Tests(unittest.TestCase):
     def test_campaigns_mark_sent_route_requires_auth(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)
         status, _, _ = self.request("POST", "/api/campaigns/CAMP-2/mark-sent")
+        self.assertEqual(401, status)
+
+    def test_nudges_accept_route(self) -> None:
+        status, data, _ = self.request("POST", "/api/nudges/NUD-1/accept", {"study_id": "s1"})
+        self.assertEqual(200, status)
+        self.assertEqual("NUD-1", data["nudge_id"])
+        self.assertEqual("accepted", data["status"])
+        self.assertEqual(AUTH_CTX.email, data["decided_by"])
+
+    def test_nudges_reject_route(self) -> None:
+        status, data, _ = self.request("POST", "/api/nudges/NUD-1/reject", {"study_id": "s1", "reason": "stale"})
+        self.assertEqual(200, status)
+        self.assertEqual("NUD-1", data["nudge_id"])
+        self.assertEqual("rejected", data["status"])
+        self.assertEqual(AUTH_CTX.email, data["decided_by"])
+        self.assertEqual("stale", data["decision_reason"])
+
+    def test_nudges_accept_route_requires_auth(self) -> None:
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, _, _ = self.request("POST", "/api/nudges/NUD-1/accept", {"study_id": "s1"})
         self.assertEqual(401, status)
 
     def test_account_360_route_aggregates_and_404s_for_unknown_company(self) -> None:

@@ -33,5 +33,8 @@ properties:
         unknowns: {type: array, items: {type: string}}
         falsifier: {type: string}
         confidence: {enum: [low, medium, high]}
-        status: {const: hypothesis}
+        # "hypothesis" is what generation always produces; "accepted"/"rejected"
+        # only appear once a human decision has been persisted for this nudge_id
+        # via POST /api/nudges/{nudge_id}/accept|reject (S4).
+        status: {enum: [hypothesis, accepted, rejected]}
 additionalProperties: true

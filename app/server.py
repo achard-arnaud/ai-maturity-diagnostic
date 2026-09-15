@@ -410,6 +410,27 @@ def build_app(
     ) -> Any:
         return NUDGING.generate_request(payload)
 
+    @app.post("/api/nudges/{nudge_id}/accept")
+    async def api_nudges_accept(
+        nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = NUDGING.accept_nudge(
+            str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
+        )
+        return JSONResponse(status_code=200, content=record)
+
+    @app.post("/api/nudges/{nudge_id}/reject")
+    async def api_nudges_reject(
+        nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = NUDGING.reject_nudge(
+            str(payload.get("study_id") or "").strip(),
+            nudge_id.strip(),
+            actor=ctx.email,
+            reason=payload.get("reason"),
+        )
+        return JSONResponse(status_code=200, content=record)
+
     @app.post("/api/value-chain/study")
     async def api_value_chain_study(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
