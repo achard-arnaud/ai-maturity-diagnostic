@@ -401,6 +401,9 @@ async function openReach(studyId) {
     document.querySelector("#prepareReach").addEventListener("click", async () => {
       const prepared = await api("/api/reach/prepare", { method: "POST", body: JSON.stringify({ study_id: studyId }) });
       openInvoke(prepared.skill, prepared.input, prepared.context_paths || []);
+      if (prepared.written) {
+        document.querySelector("#invokeConfirmation").textContent = `Brouillon écrit : ${prepared.artifact_path}`;
+      }
     });
     document.querySelector("#reachFlow").addEventListener("click", () => openWorkflow("reach", { study_id: studyId }));
   } catch (error) {
