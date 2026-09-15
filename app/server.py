@@ -18,11 +18,13 @@ from app.authruntime.oidc import OIDCClient
 from app.blocker_actions import BlockerActionLog
 from app.catalog import CatalogHarvester
 from app.catalog_search import CatalogSearch
+from app.catalog_promotion import list_staged_candidates, promote_candidate, update_offer_sheet
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
 from app import network_index
 from app.network_index import search_companies, search_people
+from app.network_writer import create_company, create_person
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
 from app.reach import ReachMatchmaker
@@ -49,6 +51,7 @@ BLOCKER_ACTIONS = BlockerActionLog(ROOT)
 # (see app/network_index.py). Never a write target; rebuilt out-of-band via
 # scripts/rebuild_network_index.py, not on every request.
 NETWORK_INDEX_PATH = ROOT / "data" / "private" / "network" / "network_index.sqlite"
+NETWORK_DATA_ROOT = ROOT / "data" / "private"
 
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
@@ -371,6 +374,83 @@ def build_app(
             status_code=201,
             content={"entry": entry, "actions": BLOCKER_ACTIONS.list_actions(entry["study_id"])},
         )
+
+    # ------------------------------------------------------------------
+    # Direct network contact/company creation (closes the journey B/C
+    # "structured form, not skill-invoke facade" gap). Any authenticated
+    # user may create -- unlike scripts/import_contacts.py this is a
+    # single-record, human-typed entry, not a bulk data import, so there is
+    # no elevated-role reason to restrict it further. This deliberately
+    # does NOT rebuild data/private/network/network_index.sqlite -- see
+    # app/network_writer.py's module docstring for the resulting UX gap
+    # (a newly-created contact/company will not appear in
+    # /api/network/people or /api/network/companies until an admin calls
+    # POST /admin/network/rebuild-index).
+    # ------------------------------------------------------------------
+    @app.post("/api/network/people")
+    async def api_network_create_person(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        person = create_person(
+            NETWORK_DATA_ROOT,
+            display_name=str(payload.get("display_name") or ""),
+            seed_company_id=str(payload.get("seed_company_id") or ""),
+            role_hypotheses=payload.get("role_hypotheses"),
+            source=str(payload.get("source") or "manual_entry"),
+        )
+        return JSONResponse(status_code=201, content=person)
+
+    @app.post("/api/network/companies")
+    async def api_network_create_company(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        company = create_company(
+            NETWORK_DATA_ROOT,
+            canonical_name=str(payload.get("canonical_name") or ""),
+            sector_code=payload.get("sector_code"),
+            workspace_id=payload.get("workspace_id"),
+        )
+        return JSONResponse(status_code=201, content=company)
+
+    # ------------------------------------------------------------------
+    # Catalog candidate promotion + product_owner offer-sheet edit
+    # (closes journey A's promotion/edit gaps). Promotion stays open to any
+    # authenticated user (it never bypasses the human-review contract --
+    # promoted offers land as status "draft" with honest unknowns, per
+    # ADR-004; there is no stronger claim being made that would need
+    # role-gating). Editing an existing offer sheet is product_owner/admin
+    # scoped per the sprint's Part 3 RBAC plan.
+    # ------------------------------------------------------------------
+    @app.post("/api/catalog/candidates/{candidate_id:path}/promote")
+    async def api_catalog_promote_candidate(
+        candidate_id: str,
+        payload: dict[str, Any] = Depends(_json_body),
+        ctx: RequestContext = Depends(get_current_user),
+    ) -> Any:
+        offer = promote_candidate(
+            CONTROL.root,
+            candidate_id,
+            offer_id=str(payload.get("offer_id") or ""),
+            workspace_id=payload.get("workspace_id"),
+        )
+        return JSONResponse(status_code=201, content=offer)
+
+    @app.patch("/api/catalog/offers/{offer_id}")
+    async def api_catalog_update_offer(
+        offer_id: str,
+        payload: dict[str, Any] = Depends(_json_body),
+        ctx: RequestContext = Depends(require_role("product_owner", "admin")),
+    ) -> Any:
+        updates = payload.get("updates")
+        if not isinstance(updates, dict):
+            raise ControlPlaneError("updates must be an object")
+        offer = update_offer_sheet(
+            CONTROL.root,
+            offer_id,
+            updates,
+            workspace_id=payload.get("workspace_id") or ctx.workspace_id,
+        )
+        return JSONResponse(status_code=200, content=offer)
 
     # ------------------------------------------------------------------
     # Static frontend (open, unauthenticated: the SPA shell + login page).

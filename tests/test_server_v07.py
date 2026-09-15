@@ -389,6 +389,83 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual("error", data["status"])
         self.assertIn("bad qualification data", data["error"])
 
+    def test_network_create_person_and_company_routes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root):
+                status, company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Acme Corp"}
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(company["canonical_name"], "Acme Corp")
+
+                status, person, _ = self.request(
+                    "POST",
+                    "/api/network/people",
+                    {"display_name": "Jane Doe", "seed_company_id": company["company_id"]},
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(person["display_name"], "Jane Doe")
+                self.assertEqual(person["seed_company_id"], company["company_id"])
+
+    def test_network_create_person_unknown_company_is_400(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(server_module, "NETWORK_DATA_ROOT", Path(tmp)):
+                status, data, _ = self.request(
+                    "POST", "/api/network/people", {"display_name": "Jane Doe", "seed_company_id": "COMP-NOPE"}
+                )
+                self.assertEqual(400, status)
+                self.assertEqual("error", data["status"])
+
+    def test_catalog_promote_and_update_offer_routes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "catalog_sources").mkdir(parents=True)
+            import yaml as _yaml
+
+            (root / "catalog_sources" / "shelves.yaml").write_text(
+                _yaml.safe_dump({"shelves": [{"shelf_id": "shelf-1"}]}), encoding="utf-8"
+            )
+            (root / "product_catalog").mkdir(parents=True)
+            (root / "product_catalog" / "index.yaml").write_text(
+                _yaml.safe_dump({"schema_version": "0.2", "offers": []}), encoding="utf-8"
+            )
+            with patch.object(server_module, "CONTROL", server_module.RepoControlPlane(root)):
+                from app.catalog import CatalogHarvester
+
+                harvest = CatalogHarvester(root).stage(
+                    {
+                        "company": "Widgetron Inc",
+                        "shelf_id": "shelf-1",
+                        "items": [{"name": "Widgetron", "source_url": "https://widgetron.example/"}],
+                    }
+                )
+                candidate_id = f"{harvest['harvest']['harvest_id']}:CAND-001"
+
+                status, offer, _ = self.request(
+                    "POST",
+                    f"/api/catalog/candidates/{candidate_id}/promote",
+                    {"offer_id": "OFFER-WD-01"},
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(offer["offer_id"], "OFFER-WD-01")
+
+                status, updated, _ = self.request(
+                    "PATCH",
+                    "/api/catalog/offers/OFFER-WD-01",
+                    {"updates": {"positioning": {"one_liner": "revised"}}},
+                )
+                self.assertEqual(200, status)
+                self.assertEqual(updated["positioning"]["one_liner"], "revised")
+
+    def test_catalog_update_offer_requires_product_owner_or_admin(self) -> None:
+        non_owner = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
+        server_module.APP.dependency_overrides[get_current_user] = lambda: non_owner
+        status, _, _ = self.request(
+            "PATCH", "/api/catalog/offers/OFFER-WD-01", {"updates": {"positioning": {}}}
+        )
+        self.assertEqual(403, status)
+
     def test_json_body_must_be_object(self) -> None:
         raw = json.dumps([1, 2]).encode("utf-8")
         response = self.client.post("/api/nudging/generate", content=raw, headers={"Content-Type": "application/json"})
