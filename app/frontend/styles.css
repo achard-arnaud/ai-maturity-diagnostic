@@ -1,8 +1,36 @@
 :root {
+  /* Design tokens harvested from organisation-personnelle/datamarketplace
+     (assets/tokens.css, assets/ui-kit.css). Reference uses OKLCH; this repo
+     has zero existing color-function usage (plain hex throughout), so tokens
+     are translated to their hex equivalents rather than introducing oklch() —
+     keeps the static, build-step-free frontend consistent with its own
+     convention. --accent-primary is the acid-green primary
+     (oklch(0.72 0.18 127) ≈ #97BE0D, per the reference file's own comment). */
+  --accent-primary: #97be0d;
+  --accent-primary-ink: #16202a; /* text color on top of the acid-green accent */
+  --bg-main: #f4f6f8;
+  --card-bg: #ffffff;
+  --text: #16202a;
+  --border: #d9e0e6;
+  --radius-lg: 10px;
+
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.45;
-  background: #f4f6f8;
-  color: #16202a;
+  background: var(--bg-main);
+  color: var(--text);
+}
+
+/* Dark theme override, mirroring the reference's `.dark` token block
+   (assets/tokens.css / assets/themes.css). Toggle mechanism: set
+   data-theme="dark" on <html> or <body>. No theme-switcher UI is wired up
+   yet — this only makes the variables/override ready for one. */
+[data-theme="dark"] {
+  --bg-main: #202020;
+  --card-bg: #2b2b2b;
+  --text: #f0f0f0;
+  --border: #454545;
+  --accent-primary: #a9d326;
+  --accent-primary-ink: #14180a;
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -17,13 +45,68 @@ h4 { margin: 14px 0 8px; }
 .lede { max-width: 790px; color: #536170; }
 .status { border: 1px solid #ccd5de; padding: 8px 12px; border-radius: 999px; background: white; white-space: nowrap; font-size: .86rem; }
 nav { display: flex; gap: 7px; padding: 0 24px 18px; overflow-x: auto; }
-button { border: 1px solid #c9d2db; border-radius: 9px; padding: 9px 12px; background: white; cursor: pointer; font: inherit; font-size: .88rem; }
-button:hover:not(:disabled) { border-color: #7f8c98; }
-button:disabled { cursor: not-allowed; opacity: .45; }
-button.active, button.primary { background: #16202a; color: white; border-color: #16202a; }
-button.ghost { background: transparent; }
+/* Button variant scale harvested from components/Button.tsx (primary/secondary/
+   outline/ghost, rounded, bold uppercase tracking-wide text, hover scale) and
+   ui-kit.css (.btn-primary/.btn-secondary). `button.active` keeps its previous
+   dark-fill look for nav-tab state; `.primary` now reads as the accent CTA. */
+button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 9px 14px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+}
+button:hover:not(:disabled) { border-color: #7f8c98; transform: scale(1.02); }
+button:active:not(:disabled) { transform: scale(.98); }
+button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+button.active { background: #16202a; color: white; border-color: #16202a; }
+/* .primary/.secondary/.outline/.ghost also apply to non-<button> elements
+   (e.g. the login page's <a class="primary">) styled like a button. */
+.primary {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-weight: 700; text-transform: uppercase; letter-spacing: .03em; font-size: .82rem;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+button.primary, a.primary {
+  background: var(--accent-primary);
+  color: var(--accent-primary-ink);
+  border-color: var(--accent-primary);
+  box-shadow: 0 2px 6px rgba(151, 190, 13, .28);
+}
+.primary:hover:not(:disabled) { border-color: var(--accent-primary); box-shadow: 0 4px 10px rgba(151, 190, 13, .35); transform: scale(1.02); }
+.secondary {
+  background: #f1f4f6;
+  color: var(--text);
+  border-color: var(--border);
+}
+.outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.outline:hover:not(:disabled) { background: rgba(151, 190, 13, .08); border-color: var(--accent-primary); }
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+button.ghost:hover:not(:disabled) { background: #f1f4f6; transform: none; border-color: var(--border); }
+/* Nav-only buttons and small inline actions read better in normal case. */
+nav button, .blockerActionBtn, .followNavBtn { text-transform: none; letter-spacing: normal; font-weight: 600; }
 main { padding: 0 24px 44px; }
-.panel { display: none; background: white; border: 1px solid #d9e0e6; border-radius: 17px; padding: 24px; min-height: 470px; box-shadow: 0 2px 8px rgba(25,35,45,.025); }
+.panel { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 17px; padding: 24px; min-height: 470px; box-shadow: 0 2px 8px rgba(25,35,45,.025); }
 .panel.active { display: block; }
 .section-head { display: flex; justify-content: space-between; gap: 22px; align-items: start; margin-bottom: 18px; }
 .section-head p { color: #66717d; max-width: 780px; }
@@ -33,7 +116,17 @@ input, select, textarea { width: 100%; border: 1px solid #c9d2db; border-radius:
 #skillFilter { width: min(340px, 100%); }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 13px; }
 .sector-grid { grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); margin-top: 16px; }
-.card { border: 1px solid #dbe1e7; border-radius: 13px; padding: 15px; background: #fbfcfd; }
+/* Card visual pattern harvested from ui-kit.css .card (rounded, border,
+   subtle shadow, hover lift) and Dashboard.tsx's product cards. */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 15px;
+  background: var(--card-bg);
+  box-shadow: 0 1px 3px rgba(16, 24, 32, .06);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(16, 24, 32, .1); }
 .card h3 { margin-bottom: 7px; }
 .card > p:not(.eyebrow) { color: #66717d; font-size: .9rem; }
 .accent-card { border-top: 3px solid #65717c; }
@@ -61,7 +154,7 @@ input, select, textarea { width: 100%; border: 1px solid #c9d2db; border-radius:
 .offer-row, .data-row, .stakeholder-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-top: 1px solid #e5e9ed; padding: 10px 0; }
 .offer-row:first-child, .data-row:first-child, .stakeholder-row:first-child { border-top: 0; }
 .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
-.subpanel, .analysis-card { border: 1px solid #dbe1e7; border-radius: 13px; padding: 16px; background: #fbfcfd; }
+.subpanel, .analysis-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; background: var(--card-bg); box-shadow: 0 1px 3px rgba(16, 24, 32, .06); }
 .analysis-card ul { margin-top: 5px; padding-left: 20px; }
 .analysis-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
 .analysis-grid.three-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -89,7 +182,40 @@ pre { margin-top: 14px; padding: 13px; background: #111820; color: #eef3f7; bord
 .empty-state, .error { padding: 18px; border: 1px dashed #c9d2db; border-radius: 11px; color: #67737e; background: #fafbfc; }
 .error { color: #8a332f; border-color: #dab3af; }
 .warning-box { padding: 11px; border: 1px solid #dac894; border-radius: 9px; color: #765b15; background: #fffdf5; margin-bottom: 12px; }
-.drawer { position: fixed; top: 16px; right: 16px; bottom: 16px; width: min(520px, calc(100vw - 32px)); padding: 20px; background: white; border: 1px solid #cbd4dd; border-radius: 16px; box-shadow: 0 18px 50px rgba(20,30,40,.18); z-index: 20; overflow: auto; }
+/* Drawer-as-modal treatment, following components/Modal.tsx's structure
+   (header with title + close, scrollable content, right-aligned footer
+   actions) adapted to this repo's existing side-drawer markup rather than
+   introducing a new centered overlay. The oversized box-shadow simulates the
+   reference's backdrop dim/blur without adding a new backdrop element. */
+.drawer {
+  position: fixed; top: 16px; right: 16px; bottom: 16px;
+  width: min(520px, calc(100vw - 32px));
+  padding: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 0 0 100vmax rgba(15, 22, 28, .45), 0 18px 50px rgba(20,30,40,.18);
+  z-index: 20;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.drawer > .section-head {
+  position: sticky; top: 0; z-index: 1;
+  margin: 0; padding: 20px 20px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+.drawer > .section-head h3 { font-weight: 700; }
+.drawer > .section-head button.ghost, .drawer > .section-head button#closeInvoke,
+.drawer > .section-head button#closeWorkflow, .drawer > .section-head button#closeData {
+  width: 32px; height: 32px; padding: 0;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1rem; line-height: 1;
+}
+.drawer > *:not(.section-head) { padding-left: 20px; padding-right: 20px; }
+.drawer > *:last-child { padding-bottom: 20px; }
 .wide-drawer { width: min(920px, calc(100vw - 32px)); }
 .hidden { display: none !important; }
 .workflow-steps { display: grid; gap: 8px; }
@@ -144,6 +270,16 @@ footer { padding: 0 24px 36px; color: #697581; font-size: .8rem; }
 .user-bar { font-size: .82rem; color: #536b84; display: flex; align-items: center; gap: 8px; }
 .user-bar .user-email { font-weight: 600; color: #2b3542; }
 .user-bar a#logoutLink { color: #8a4b3a; text-decoration: underline; }
-.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-.login-card { max-width: 380px; text-align: center; background: #fff; border: 1px solid #e1e6ec; border-radius: 16px; padding: 32px; }
-.login-card a.primary { display: inline-block; margin-top: 16px; padding: 10px 20px; }
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg-main); }
+.login-card {
+  max-width: 380px; text-align: center;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(16, 24, 32, .08);
+}
+.login-card a.primary {
+  display: inline-block; margin-top: 16px; padding: 10px 20px;
+  text-decoration: none;
+}
