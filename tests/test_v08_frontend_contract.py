@@ -49,6 +49,22 @@ class V08FrontendContractTests(unittest.TestCase):
         self.assertIn("/api/qualification/actions", self.js)
         self.assertIn(".blocker-actions", self.css)
 
+    def test_login_screen_exists_and_links_google_login(self) -> None:
+        login_html = (ROOT / "app/frontend/login.html").read_text(encoding="utf-8")
+        self.assertIn('href="/auth/login"', login_html)
+
+    def test_dashboard_checks_auth_and_redirects_unauthenticated_users(self) -> None:
+        self.assertIn("/api/auth/me", self.js)
+        self.assertIn("/login.html", self.js)
+
+    def test_dashboard_shows_logged_in_user_and_logout_link(self) -> None:
+        self.assertIn("userBar", self.js + self.html)
+        self.assertIn("/auth/logout", self.js)
+
+    def test_qualification_actions_no_longer_send_client_supplied_actor(self) -> None:
+        # actor now comes from the authenticated session server-side (ADR-007 §7).
+        self.assertNotIn('"actor"', self.js.split("recordBlockerAction")[1].split("}")[0])
+
     def test_add_new_person_action_is_explicitly_deferred(self) -> None:
         # Not implemented in this sprint: needs product clarification on where a
         # person gets added and what data it requires. Guard against silently

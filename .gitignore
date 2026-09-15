@@ -16,6 +16,10 @@ dist/
 # Private network data generated from contact files.
 data/private/
 
+# Runtime auth/workspace control-plane SQLite store (ADR-007); created on
+# first run, never checked in.
+data/control/
+
 # Private person-level study outputs and recoverable local backups.
 studies/**/06b_contact_targets.yaml
 studies/**/07b_reach_hypotheses.yaml

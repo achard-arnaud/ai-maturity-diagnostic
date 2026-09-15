@@ -138,3 +138,12 @@ footer { padding: 0 24px 36px; color: #697581; font-size: .8rem; }
   .workflow-step .row-actions { grid-column: 2; justify-self: start; }
   .panel { padding: 17px; border-radius: 13px; }
 }
+
+/* Auth: header user bar + minimal login screen (S8b). */
+.header-right { display: flex; align-items: center; gap: 16px; }
+.user-bar { font-size: .82rem; color: #536b84; display: flex; align-items: center; gap: 8px; }
+.user-bar .user-email { font-weight: 600; color: #2b3542; }
+.user-bar a#logoutLink { color: #8a4b3a; text-decoration: underline; }
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { max-width: 380px; text-align: center; background: #fff; border: 1px solid #e1e6ec; border-radius: 16px; padding: 32px; }
+.login-card a.primary { display: inline-block; margin-top: 16px; padding: 10px 20px; }

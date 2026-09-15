@@ -93,8 +93,9 @@ async function recordBlockerAction(studyId, stepId, action) {
     target_step_id = window.prompt("Revenir à quelle étape (demand, snapshots, matching, contacts, reach, pilot) ?", "");
     if (!target_step_id) return;
   }
-  const actor = "francois.arnaud.rjc@gmail.com";
-  await api("/api/qualification/actions", { method: "POST", body: JSON.stringify({ study_id: studyId, step_id: stepId, action, actor, reason, target_step_id }) });
+  // actor is no longer client-supplied: the server derives it from the
+  // authenticated session (ADR-007 §7).
+  await api("/api/qualification/actions", { method: "POST", body: JSON.stringify({ study_id: studyId, step_id: stepId, action, reason, target_step_id }) });
 }
 
 function bindBlockerActionButtons(root, kind, studyId) {
@@ -430,7 +431,39 @@ function renderBacklog() {
   document.querySelector("#backlogRows").innerHTML = state.backlog.filter(item => item.status !== "completed").sort((a,b) => String(a.priority).localeCompare(String(b.priority))).map(item => `<tr><td>${esc(item.id)}</td><td>${esc(item.priority)}</td><td>${esc(item.status)}</td><td>${esc(item.area)}</td><td>${esc(item.task)}</td></tr>`).join("");
 }
 
+async function checkAuth() {
+  try {
+    const response = await fetch("/api/auth/me", { headers: { "Content-Type": "application/json" } });
+    if (response.status === 401) {
+      window.location.href = "/login.html";
+      return null;
+    }
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+function renderUserBar(user) {
+  const bar = document.querySelector("#userBar");
+  if (!bar) return;
+  if (!user) { bar.textContent = ""; return; }
+  const role = user.is_admin ? "admin" : (user.role || "sans rôle");
+  bar.innerHTML = `<span class="user-email">${esc(user.email)}</span> <span class="badge">${esc(role)}</span>${user.workspace_id ? ` <span class="user-workspace">${esc(user.workspace_id)}</span>` : ""} <a id="logoutLink" href="/auth/logout">Se déconnecter</a>`;
+  const logoutLink = document.querySelector("#logoutLink");
+  if (logoutLink) {
+    logoutLink.addEventListener("click", event => {
+      event.preventDefault();
+      fetch("/auth/logout", { method: "POST" }).finally(() => { window.location.href = "/login.html"; });
+    });
+  }
+}
+
 async function boot() {
+  const user = await checkAuth();
+  if (!user) return; // checkAuth already redirected to /login.html on 401
+  renderUserBar(user);
   try {
     const [health, skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain] = await Promise.all([
       api("/api/health"), api("/api/skills"), api("/api/offers"), api("/api/shelves"), api("/api/demand"), api("/api/demand/inventories"), api("/api/qualification"), api("/api/nudging/inventories"), api("/api/backlog"), api("/api/follow-up"), api("/api/value-chain")

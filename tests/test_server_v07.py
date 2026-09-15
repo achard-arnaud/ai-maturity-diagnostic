@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import http.client
 import json
 import os
-import threading
 import unittest
 from unittest.mock import patch
 
+from starlette.testclient import TestClient
+
 from app import server as server_module
+from app.authruntime.deps import RequestContext, get_current_user
 
 
 class FakeControl:
@@ -75,7 +76,21 @@ class FakeBlockerActions:
         return [{"study_id": study_id, "action": "cancel"}]
 
 
+AUTH_CTX = RequestContext(
+    user_id="u1", email="a@b.com", is_admin=True, role=None, workspace_id=None
+)
+
+
 class ServerV07Tests(unittest.TestCase):
+    """Exercises app.server's FastAPI app in-process (ADR-007 §6 transport migration).
+
+    The route/status/JSON-shape assertions below are unchanged from the
+    stdlib-http.server era; only the client mechanism (Starlette's
+    TestClient instead of raw http.client) and the authentication setup
+    (every route but /api/health now requires a session, so we override
+    the get_current_user dependency with a fixed admin identity) changed.
+    """
+
     def setUp(self) -> None:
         self.patches = patch.multiple(
             server_module,
@@ -87,32 +102,25 @@ class ServerV07Tests(unittest.TestCase):
         self.patches.start()
         self.env = patch.dict(os.environ, {"AI_DIAGNOSTIC_HTTP_LOG": "0"}, clear=False)
         self.env.start()
-        self.httpd = server_module.ThreadingHTTPServer(("127.0.0.1", 0), server_module.Handler)
-        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
-        self.thread.start()
-        self.port = self.httpd.server_address[1]
+        server_module.APP.dependency_overrides[get_current_user] = lambda: AUTH_CTX
+        self.client = TestClient(server_module.APP, raise_server_exceptions=False)
 
     def tearDown(self) -> None:
-        self.httpd.shutdown()
-        self.httpd.server_close()
-        self.thread.join(timeout=2)
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
         self.env.stop()
         self.patches.stop()
 
     def request(self, method: str, path: str, payload=None, raw: bytes | None = None, headers=None):
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=3)
-        body = raw
-        request_headers = dict(headers or {})
-        if payload is not None:
-            body = json.dumps(payload).encode("utf-8")
-            request_headers.setdefault("Content-Type", "application/json")
-        conn.request(method, path, body=body, headers=request_headers)
-        response = conn.getresponse()
-        data = response.read()
-        content_type = response.getheader("Content-Type") or ""
-        conn.close()
-        parsed = json.loads(data.decode("utf-8")) if "application/json" in content_type and data else data
-        return response.status, parsed, content_type
+        kwargs: dict = {"headers": dict(headers or {})}
+        if raw is not None:
+            kwargs["content"] = raw
+        elif payload is not None:
+            kwargs["content"] = json.dumps(payload).encode("utf-8")
+            kwargs["headers"].setdefault("Content-Type", "application/json")
+        response = self.client.request(method, path, **kwargs)
+        content_type = response.headers.get("Content-Type") or ""
+        data = response.json() if "application/json" in content_type and response.content else response.content
+        return response.status_code, data, content_type
 
     def test_get_api_routes_and_static_assets(self) -> None:
         expected = {
@@ -164,7 +172,7 @@ class ServerV07Tests(unittest.TestCase):
             ("/api/reach/preview", {"study_id": "s1"}, None),
             ("/api/reach/prepare", {"study_id": "s1"}, "prepared"),
             ("/api/workflows/plan", {"kind": "qualification", "study_id": "s1"}, None),
-            ("/api/qualification/actions", {"study_id": "s1", "step_id": "matching", "action": "cancel", "actor": "a@b.com"}, None),
+            ("/api/qualification/actions", {"study_id": "s1", "step_id": "matching", "action": "cancel"}, None),
         ]
         for path, payload, expected_status in cases:
             status, data, _ = self.request("POST", path, payload)
@@ -173,6 +181,36 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(expected_status, data["status"], path)
         status, _, _ = self.request("POST", "/missing", {})
         self.assertEqual(404, status)
+
+    def test_qualification_action_actor_comes_from_session_not_payload(self) -> None:
+        status, data, _ = self.request(
+            "POST",
+            "/api/qualification/actions",
+            {"study_id": "s1", "step_id": "matching", "action": "cancel", "actor": "spoofed@evil.com"},
+        )
+        self.assertEqual(201, status)
+        self.assertEqual(AUTH_CTX.email, data["entry"]["actor"])
+
+    def test_force_action_requires_product_owner_or_admin(self) -> None:
+        non_owner = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
+        server_module.APP.dependency_overrides[get_current_user] = lambda: non_owner
+        status, data, _ = self.request(
+            "POST",
+            "/api/qualification/actions",
+            {"study_id": "s1", "step_id": "matching", "action": "force", "reason": "x"},
+        )
+        self.assertEqual(403, status)
+
+    def test_unauthenticated_request_to_business_route_is_401(self) -> None:
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, _, _ = self.request("GET", "/api/skills")
+        self.assertEqual(401, status)
+
+    def test_health_route_is_open_without_authentication(self) -> None:
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, health, _ = self.request("GET", "/api/health")
+        self.assertEqual(200, status)
+        self.assertEqual("0.7", health["version"])
 
     def test_invalid_json_and_persist_type_return_bad_request(self) -> None:
         status, data, _ = self.request("POST", "/api/nudging/generate", raw=b"not-json", headers={"Content-Type": "application/json"})
@@ -205,13 +243,10 @@ class ServerV07Tests(unittest.TestCase):
         self.assertIn("bad qualification data", data["error"])
 
     def test_json_body_must_be_object(self) -> None:
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=3)
         raw = json.dumps([1, 2]).encode("utf-8")
-        conn.request("POST", "/api/nudging/generate", body=raw, headers={"Content-Type": "application/json"})
-        response = conn.getresponse()
-        data = json.loads(response.read().decode("utf-8"))
-        conn.close()
-        self.assertEqual(400, response.status)
+        response = self.client.post("/api/nudging/generate", content=raw, headers={"Content-Type": "application/json"})
+        data = response.json()
+        self.assertEqual(400, response.status_code)
         self.assertIn("must be an object", data["error"])
 
 
