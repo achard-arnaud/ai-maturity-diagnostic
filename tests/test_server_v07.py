@@ -83,6 +83,22 @@ class FakeBlockerActions:
         return [{"study_id": study_id, "action": "cancel"}]
 
 
+class FakeKanban:
+    def build_board(self, root):
+        return {"columns": [{"stage": "matching", "cards": [{"study_id": "s1"}]}]}
+
+
+class FakeCampaigns:
+    def list_campaigns(self, root):
+        return [{"campaign_id": "CAMP-1", "kind": "prospecting"}]
+
+    def launch_prospecting_campaign(self, root, *, name, criteria, actor):
+        return {"campaign_id": "CAMP-2", "name": name, "criteria": criteria, "actor": actor, "target_count": 3, "status": "draft"}
+
+    def prepare_cross_sell(self, root, *, study_id, actor):
+        return {"nudging": {"study_id": study_id, "nudges": []}, "event": {"campaign_id": "XSELL-1", "study_id": study_id, "actor": actor}}
+
+
 AUTH_CTX = RequestContext(
     user_id="u1", email="a@b.com", is_admin=True, role=None, workspace_id=None
 )
@@ -106,6 +122,7 @@ class ServerV07Tests(unittest.TestCase):
             UC_GRAPH=FakeGraph(), REACH=FakeReach(), FOLLOWUP=FakeFollowUp(),
             HERITAGE=FakeHeritage(), WORKFLOWS=FakeWorkflows(), BLOCKER_ACTIONS=FakeBlockerActions(),
             CATALOG_SEARCH=FakeCatalogSearch(),
+            kanban=FakeKanban(), campaigns=FakeCampaigns(),
         )
         self.patches.start()
         self.env = patch.dict(os.environ, {"AI_DIAGNOSTIC_HTTP_LOG": "0"}, clear=False)
@@ -143,6 +160,8 @@ class ServerV07Tests(unittest.TestCase):
             "/api/value-chain": list,
             "/api/reach": list,
             "/api/follow-up": list,
+            "/api/kanban/board": dict,
+            "/api/campaigns": list,
         }
         for path, kind in expected.items():
             status, data, _ = self.request("GET", path)
@@ -250,6 +269,31 @@ class ServerV07Tests(unittest.TestCase):
                 status, companies, _ = self.request("GET", "/api/network/companies?workspace_id=acme-ws")
                 self.assertEqual(200, status)
                 self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
+
+    def test_kanban_board_route(self) -> None:
+        status, data, _ = self.request("GET", "/api/kanban/board")
+        self.assertEqual(200, status)
+        self.assertEqual([{"stage": "matching", "cards": [{"study_id": "s1"}]}], data["columns"])
+
+    def test_campaigns_list_route(self) -> None:
+        status, data, _ = self.request("GET", "/api/campaigns")
+        self.assertEqual(200, status)
+        self.assertEqual([{"campaign_id": "CAMP-1", "kind": "prospecting"}], data)
+
+    def test_campaigns_prospecting_route(self) -> None:
+        status, data, _ = self.request(
+            "POST", "/api/campaigns/prospecting", {"name": "AI Leaders", "criteria": {"entity": "people", "text": "a"}}
+        )
+        self.assertEqual(201, status)
+        self.assertEqual("AI Leaders", data["name"])
+        self.assertEqual(AUTH_CTX.email, data["actor"])
+        self.assertEqual(3, data["target_count"])
+
+    def test_campaigns_cross_sell_route(self) -> None:
+        status, data, _ = self.request("POST", "/api/campaigns/cross-sell", {"study_id": "s1"})
+        self.assertEqual(201, status)
+        self.assertEqual("s1", data["nudging"]["study_id"])
+        self.assertEqual(AUTH_CTX.email, data["event"]["actor"])
 
     def test_network_rebuild_index_route_requires_admin(self) -> None:
         non_admin = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")

@@ -16,12 +16,14 @@ from app.authruntime.db import ControlStore
 from app.authruntime.deps import RequestContext, get_current_user, require_role
 from app.authruntime.oidc import OIDCClient
 from app.blocker_actions import BlockerActionLog
+from app import campaigns
 from app.catalog import CatalogHarvester
 from app.catalog_search import CatalogSearch
 from app.catalog_promotion import list_staged_candidates, promote_candidate, update_offer_sheet
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
+from app import kanban
 from app import network_index
 from app.network_index import search_companies, search_people
 from app.network_writer import create_company, create_person
@@ -258,6 +260,14 @@ def build_app(
     async def admin_network_rebuild_index(ctx: RequestContext = Depends(require_role("admin"))) -> Any:
         return network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
 
+    @app.get("/api/kanban/board")
+    async def api_kanban_board(ctx: RequestContext = Depends(get_current_user)) -> Any:
+        return kanban.build_board(ROOT)
+
+    @app.get("/api/campaigns")
+    async def api_campaigns_list(ctx: RequestContext = Depends(get_current_user)) -> Any:
+        return campaigns.list_campaigns(ROOT)
+
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).
     # ------------------------------------------------------------------
@@ -451,6 +461,27 @@ def build_app(
             workspace_id=payload.get("workspace_id") or ctx.workspace_id,
         )
         return JSONResponse(status_code=200, content=offer)
+
+    @app.post("/api/campaigns/prospecting")
+    async def api_campaigns_prospecting(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = campaigns.launch_prospecting_campaign(
+            ROOT,
+            name=str(payload.get("name") or "").strip(),
+            criteria=payload.get("criteria") or {},
+            actor=ctx.email,
+        )
+        return JSONResponse(status_code=201, content=record)
+
+    @app.post("/api/campaigns/cross-sell")
+    async def api_campaigns_cross_sell(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        result = campaigns.prepare_cross_sell(
+            ROOT, study_id=str(payload.get("study_id") or "").strip(), actor=ctx.email
+        )
+        return JSONResponse(status_code=201, content=result)
 
     # ------------------------------------------------------------------
     # Static frontend (open, unauthenticated: the SPA shell + login page).
