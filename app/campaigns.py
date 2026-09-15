@@ -129,15 +129,49 @@ def launch_prospecting_campaign(root: Path, *, name: str, criteria: dict[str, An
         "target_count": len(results),
         "created_at": created_at,
         "actor": actor,
-        # TODO(red-team-spec): status never advances past "draft" anywhere in
-        # this codebase, despite this module's own docstring saying a campaign
-        # "can also change over time". Revisit once the first real campaign is
-        # actually sent, so the next status value reflects a real workflow
-        # rather than a guessed one.
+        # See mark_campaign_sent() below for the one supported transition
+        # (draft -> sent), added per red-team-side-story S1.
         "status": "draft",
     }
     _save_campaign(root, record)
     return record
+
+
+def mark_campaign_sent(root: Path, campaign_id: str, *, actor: str) -> dict[str, Any]:
+    """Transition a prospecting campaign's status from "draft" to "sent".
+
+    This is intentionally the one status transition named in S1 (see
+    docs/red-team-side-story/moscow-next-sprints.md) -- not a general
+    lifecycle/state machine (that is explicitly a Won't, W6). Calling this
+    on a campaign that is already "sent" is a no-op that returns the
+    existing record unchanged (first call wins, matching
+    BlockerActionLog-adjacent resolver conventions elsewhere in this
+    codebase); it still records who/when only on the transition that
+    actually happens.
+    """
+    campaign_id = str(campaign_id or "").strip()
+    actor = str(actor or "").strip()
+    if not campaign_id:
+        raise ControlPlaneError("campaign_id is required")
+    if not actor:
+        raise ControlPlaneError("actor is required to mark a campaign sent")
+    records = _load_campaigns(root)
+    record = next((item for item in records if item.get("campaign_id") == campaign_id), None)
+    if record is None:
+        raise ControlPlaneError(f"unknown campaign_id: {campaign_id}")
+    if record.get("status") == "sent":
+        return record
+    if record.get("status") != "draft":
+        raise ControlPlaneError(
+            f"campaign {campaign_id} cannot be marked sent from status {record.get('status')!r} "
+            "(only draft -> sent is supported)"
+        )
+    updated = dict(record)
+    updated["status"] = "sent"
+    updated["sent_by"] = actor
+    updated["sent_at"] = utc_now()
+    _save_campaign(root, updated)
+    return updated
 
 
 def prepare_cross_sell(root: Path, *, study_id: str, actor: str) -> dict[str, Any]:

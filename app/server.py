@@ -537,6 +537,13 @@ def build_app(
         )
         return JSONResponse(status_code=201, content=record)
 
+    @app.post("/api/campaigns/{campaign_id}/mark-sent")
+    async def api_campaigns_mark_sent(
+        campaign_id: str, ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = campaigns.mark_campaign_sent(ROOT, campaign_id.strip(), actor=ctx.email)
+        return JSONResponse(status_code=200, content=record)
+
     @app.post("/api/campaigns/cross-sell")
     async def api_campaigns_cross_sell(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)

@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from app import network_index
-from app.campaigns import launch_prospecting_campaign, list_campaigns, prepare_cross_sell
+from app.campaigns import launch_prospecting_campaign, list_campaigns, mark_campaign_sent, prepare_cross_sell
 from app.core import ControlPlaneError
 
 
@@ -130,6 +130,64 @@ class LaunchProspectingCampaignTests(unittest.TestCase):
             _seed_network_index(root)
             with self.assertRaises(ControlPlaneError):
                 launch_prospecting_campaign(root, name="X", criteria={"entity": "people"}, actor="")
+
+
+class MarkCampaignSentTests(unittest.TestCase):
+    def test_transitions_draft_to_sent_and_records_actor(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_network_index(root)
+            record = launch_prospecting_campaign(
+                root, name="AI Leaders", criteria={"entity": "people", "text": "alice"}, actor="rep@acme.com"
+            )
+            updated = mark_campaign_sent(root, record["campaign_id"], actor="ops@acme.com")
+            self.assertEqual("sent", updated["status"])
+            self.assertEqual("ops@acme.com", updated["sent_by"])
+            self.assertTrue(updated["sent_at"])
+            stored = list_campaigns(root)
+            self.assertEqual(1, len(stored))
+            self.assertEqual("sent", stored[0]["status"])
+
+    def test_calling_twice_is_idempotent_first_call_wins(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_network_index(root)
+            record = launch_prospecting_campaign(
+                root, name="AI Leaders", criteria={"entity": "people", "text": "alice"}, actor="rep@acme.com"
+            )
+            first = mark_campaign_sent(root, record["campaign_id"], actor="ops@acme.com")
+            second = mark_campaign_sent(root, record["campaign_id"], actor="someone-else@acme.com")
+            self.assertEqual(first, second)
+            self.assertEqual("ops@acme.com", second["sent_by"])
+
+    def test_unknown_campaign_id_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(ControlPlaneError):
+                mark_campaign_sent(root, "CAMP-does-not-exist", actor="ops@acme.com")
+
+    def test_missing_actor_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_network_index(root)
+            record = launch_prospecting_campaign(
+                root, name="AI Leaders", criteria={"entity": "people", "text": "alice"}, actor="rep@acme.com"
+            )
+            with self.assertRaises(ControlPlaneError):
+                mark_campaign_sent(root, record["campaign_id"], actor="")
+
+    def test_non_draft_non_sent_status_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._seed_cross_sell_event(root)
+            with self.assertRaises(ControlPlaneError):
+                mark_campaign_sent(root, "XSELL-1", actor="ops@acme.com")
+
+    def _seed_cross_sell_event(self, root: Path) -> None:
+        write_jsonl(
+            root / "data/private/network/campaigns.jsonl",
+            [{"campaign_id": "XSELL-1", "kind": "cross_sell_prep", "status": "recorded"}],
+        )
 
 
 class PrepareCrossSellTests(unittest.TestCase):

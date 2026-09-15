@@ -80,6 +80,12 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn("/api/campaigns", self.js)
         self.assertIn("crossSellBtn", self.js)
 
+    def test_campaign_mark_sent_cta_exists(self) -> None:
+        self.assertIn("markCampaignSentBtn", self.js)
+        self.assertIn("markCampaignSent", self.js)
+        self.assertIn("/mark-sent", self.js)
+        self.assertIn("Marquer envoy", self.js)
+
     def test_account_360_view_is_wired(self) -> None:
         self.assertIn("/api/accounts/", self.js)
         self.assertIn("openAccount360", self.js)

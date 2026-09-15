@@ -650,8 +650,23 @@ async function loadCampaigns() {
   try {
     const campaigns = await api("/api/campaigns");
     state.campaigns = campaigns;
-    container.innerHTML = campaigns.map(c => `<article class="card"><p class="eyebrow">${esc(c.kind || "")}</p><h3>${esc(c.name || c.campaign_id)}</h3><span class="badge">${esc(c.status || "")}</span></article>`).join("") || "<div class='empty-state'>Aucune campagne.</div>";
+    container.innerHTML = campaigns.map(c => {
+      const markSentBtn = c.kind === "prospecting" && c.status === "draft"
+        ? `<button class="markCampaignSentBtn" data-campaign-id="${esc(c.campaign_id)}">Marquer envoyée</button>`
+        : "";
+      return `<article class="card"><p class="eyebrow">${esc(c.kind || "")}</p><h3>${esc(c.name || c.campaign_id)}</h3><span class="badge">${esc(c.status || "")}</span>${markSentBtn}</article>`;
+    }).join("") || "<div class='empty-state'>Aucune campagne.</div>";
+    container.querySelectorAll(".markCampaignSentBtn").forEach(btn => {
+      btn.addEventListener("click", () => markCampaignSent(btn.dataset.campaignId));
+    });
   } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function markCampaignSent(campaignId) {
+  try {
+    await api(`/api/campaigns/${encodeURIComponent(campaignId)}/mark-sent`, { method: "POST", body: JSON.stringify({}) });
+    loadCampaigns();
+  } catch (error) { window.alert(error.message); }
 }
 
 async function launchProspectingCampaign() {

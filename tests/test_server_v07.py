@@ -98,6 +98,9 @@ class FakeCampaigns:
     def prepare_cross_sell(self, root, *, study_id, actor):
         return {"nudging": {"study_id": study_id, "nudges": []}, "event": {"campaign_id": "XSELL-1", "study_id": study_id, "actor": actor}}
 
+    def mark_campaign_sent(self, root, campaign_id, *, actor):
+        return {"campaign_id": campaign_id, "status": "sent", "sent_by": actor, "sent_at": "2026-01-01T00:00:00+00:00"}
+
 
 AUTH_CTX = RequestContext(
     user_id="u1", email="a@b.com", is_admin=True, role=None, workspace_id=None
@@ -294,6 +297,18 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual(201, status)
         self.assertEqual("s1", data["nudging"]["study_id"])
         self.assertEqual(AUTH_CTX.email, data["event"]["actor"])
+
+    def test_campaigns_mark_sent_route(self) -> None:
+        status, data, _ = self.request("POST", "/api/campaigns/CAMP-2/mark-sent")
+        self.assertEqual(200, status)
+        self.assertEqual("CAMP-2", data["campaign_id"])
+        self.assertEqual("sent", data["status"])
+        self.assertEqual(AUTH_CTX.email, data["sent_by"])
+
+    def test_campaigns_mark_sent_route_requires_auth(self) -> None:
+        server_module.APP.dependency_overrides.pop(get_current_user, None)
+        status, _, _ = self.request("POST", "/api/campaigns/CAMP-2/mark-sent")
+        self.assertEqual(401, status)
 
     def test_account_360_route_aggregates_and_404s_for_unknown_company(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
