@@ -56,7 +56,14 @@ def _harvest_files(root: Path) -> list[Path]:
     return sorted(directory.glob("*/*.yaml"))
 
 
-def list_staged_candidates(root: Path) -> list[dict[str, Any]]:
+def list_staged_candidates(
+    root: Path,
+    *,
+    text: str | None = None,
+    promotion_status: str | None = None,
+    shelf_id: str | None = None,
+    company: str | None = None,
+) -> list[dict[str, Any]]:
     """Read every staged, unreviewed candidate item across all harvest
     documents under data/private/catalog_harvest/<company-slug>/*.yaml
     (the exact location app/catalog.py's CatalogHarvester.stage() writes
@@ -66,6 +73,12 @@ def list_staged_candidates(root: Path) -> list[dict[str, Any]]:
     composite `id` (f"{harvest_id}:{candidate_id}") since an item's bare
     candidate_id ("CAND-001") is only unique within its own harvest
     document, not globally.
+
+    All filter kwargs are optional and additive (AND'd together); calling
+    with no args returns exactly what it always has, unfiltered.
+    `text` does a case-insensitive substring match against the candidate's
+    name and its harvest's company. `promotion_status`, `shelf_id`, and
+    `company` are exact (case-insensitive) matches against those fields.
     """
 
     candidates: list[dict[str, Any]] = []
@@ -93,7 +106,37 @@ def list_staged_candidates(root: Path) -> list[dict[str, Any]]:
                     "path": path.relative_to(Path(root)).as_posix(),
                 }
             )
+
+    if text:
+        needle = text.strip().lower()
+        if needle:
+            candidates = [
+                c
+                for c in candidates
+                if needle in str(c.get("name") or "").lower()
+                or needle in str(c.get("company") or "").lower()
+            ]
+    if promotion_status:
+        wanted = promotion_status.strip().lower()
+        candidates = [c for c in candidates if str(c.get("promotion_status") or "").lower() == wanted]
+    if shelf_id:
+        wanted = shelf_id.strip().lower()
+        candidates = [c for c in candidates if str(c.get("shelf_id") or "").lower() == wanted]
+    if company:
+        wanted = company.strip().lower()
+        candidates = [c for c in candidates if str(c.get("company") or "").lower() == wanted]
+
     return candidates
+
+
+def get_staged_candidate(root: Path, candidate_id: str) -> dict[str, Any]:
+    """Return the full detail of one staged candidate (same shape as an
+    entry from list_staged_candidates, which already carries every field
+    the harvest captured -- raw_claims, source_url, source_metadata, etc.).
+    Raises ControlPlaneError if candidate_id is not found.
+    """
+
+    return _find_candidate(root, candidate_id)
 
 
 def _find_candidate(root: Path, candidate_id: str) -> dict[str, Any]:

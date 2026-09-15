@@ -47,6 +47,21 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn("promoteCandidateBtn", self.js)
         self.assertIn("/promote", self.js)
 
+    def test_candidates_filter_bar_is_wired(self) -> None:
+        self.assertIn('id="candidatesFilterForm"', self.html)
+        self.assertIn('id="candidatesFilterText"', self.html)
+        self.assertIn('id="candidatesFilterStatus"', self.html)
+        self.assertIn('id="candidatesFilterShelf"', self.html)
+        self.assertIn('id="candidatesFilterCompany"', self.html)
+        self.assertIn("candidatesFilterForm", self.js)
+        self.assertIn("loadCandidates", self.js)
+
+    def test_candidate_detail_view_reuses_data_panel(self) -> None:
+        self.assertIn("openCandidateDetail", self.js)
+        self.assertIn("viewCandidateBtn", self.js)
+        self.assertIn("/api/catalog/candidates/${encodeURIComponent(candidateId)}", self.js)
+        self.assertIn("openDataPanel", self.js)
+
     def test_offer_edit_form_calls_patch_offer_route(self) -> None:
         self.assertIn("openOfferEditForm", self.js)
         self.assertIn("offerEditBtn", self.js)

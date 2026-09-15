@@ -74,6 +74,13 @@
       <div class="subpanel" style="margin-top:16px;">
         <h3>Candidats stagés à promouvoir</h3>
         <p class="hint">Chaque candidat vient d'un harvest non revu (data/private/catalog_harvest). La promotion crée une fiche produit_catalog en statut "draft" avec des unknowns honnêtes.</p>
+        <form id="candidatesFilterForm" class="form">
+          <label>Texte<input id="candidatesFilterText" placeholder="Nom, entreprise…"></label>
+          <label>Statut<input id="candidatesFilterStatus" placeholder="unreviewed, promoted…"></label>
+          <label>Rayon<input id="candidatesFilterShelf" placeholder="shelf_id"></label>
+          <label>Entreprise<input id="candidatesFilterCompany" placeholder="company"></label>
+          <button class="primary" type="submit">Filtrer</button>
+        </form>
         <div id="candidatesGrid" class="grid result-grid"></div>
       </div>
 

@@ -20,7 +20,12 @@ from app.blocker_actions import BlockerActionLog
 from app import campaigns
 from app.catalog import CatalogHarvester
 from app.catalog_search import CatalogSearch
-from app.catalog_promotion import list_staged_candidates, promote_candidate, update_offer_sheet
+from app.catalog_promotion import (
+    get_staged_candidate,
+    list_staged_candidates,
+    promote_candidate,
+    update_offer_sheet,
+)
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
@@ -303,8 +308,26 @@ def build_app(
     # (S6/S7 landed the promotion/edit endpoints with no way to list what can
     # be promoted). Reads only -- never touches product_catalog/*.yaml.
     @app.get("/api/catalog/candidates")
-    async def api_catalog_candidates(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return list_staged_candidates(CONTROL.root)
+    async def api_catalog_candidates(
+        text: str = "",
+        promotion_status: str = "",
+        shelf_id: str = "",
+        company: str = "",
+        ctx: RequestContext = Depends(get_current_user),
+    ) -> Any:
+        return list_staged_candidates(
+            CONTROL.root,
+            text=text.strip() or None,
+            promotion_status=promotion_status.strip() or None,
+            shelf_id=shelf_id.strip() or None,
+            company=company.strip() or None,
+        )
+
+    @app.get("/api/catalog/candidates/{candidate_id:path}")
+    async def api_catalog_candidate_detail(
+        candidate_id: str, ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        return get_staged_candidate(CONTROL.root, candidate_id)
 
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).

@@ -491,12 +491,39 @@ async function runCatalogSearch() {
 // ------------------------------------------------------------------
 async function loadCandidates() {
   const grid = document.querySelector("#candidatesGrid");
+  const params = new URLSearchParams({
+    text: document.querySelector("#candidatesFilterText")?.value.trim() || "",
+    promotion_status: document.querySelector("#candidatesFilterStatus")?.value.trim() || "",
+    shelf_id: document.querySelector("#candidatesFilterShelf")?.value.trim() || "",
+    company: document.querySelector("#candidatesFilterCompany")?.value.trim() || "",
+  });
+  for (const key of [...params.keys()]) { if (!params.get(key)) params.delete(key); }
   try {
-    const candidates = await api("/api/catalog/candidates");
+    const candidates = await api(`/api/catalog/candidates${params.toString() ? `?${params}` : ""}`);
     state.candidates = candidates;
-    grid.innerHTML = candidates.map(c => `<article class="card"><p class="eyebrow">${esc(c.company)} · ${esc(c.shelf_id)}</p><h3>${esc(c.name || c.candidate_id)}</h3><p>${(c.raw_claims || []).join(" ") || "Aucun claim capturé."}</p><div class="meta"><span class="badge">${esc(c.promotion_status || "unreviewed")}</span></div><button class="promoteCandidateBtn primary" data-id="${esc(c.id)}">Promouvoir</button></article>`).join("") || "<div class='empty-state'>Aucun candidat stagé.</div>";
-    grid.querySelectorAll(".promoteCandidateBtn").forEach(btn => btn.addEventListener("click", () => promoteCandidate(btn.dataset.id)));
+    grid.innerHTML = candidates.map(c => `<article class="card candidateCard" data-id="${esc(c.id)}"><p class="eyebrow">${esc(c.company)} · ${esc(c.shelf_id)}</p><h3>${esc(c.name || c.candidate_id)}</h3><p>${(c.raw_claims || []).join(" ") || "Aucun claim capturé."}</p><div class="meta"><span class="badge">${esc(c.promotion_status || "unreviewed")}</span></div><button class="viewCandidateBtn" data-id="${esc(c.id)}">Voir le détail</button> <button class="promoteCandidateBtn primary" data-id="${esc(c.id)}">Promouvoir</button></article>`).join("") || "<div class='empty-state'>Aucun candidat stagé.</div>";
+    grid.querySelectorAll(".promoteCandidateBtn").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); promoteCandidate(btn.dataset.id); }));
+    grid.querySelectorAll(".viewCandidateBtn").forEach(btn => btn.addEventListener("click", event => { event.stopPropagation(); openCandidateDetail(btn.dataset.id); }));
   } catch (error) { grid.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+async function openCandidateDetail(candidateId) {
+  try {
+    const c = await api(`/api/catalog/candidates/${encodeURIComponent(candidateId)}`);
+    const claims = (c.raw_claims || []).map(claim => `<li>${esc(claim)}</li>`).join("") || "<li>Aucun claim capturé.</li>";
+    const html = `
+      <p><strong>Entreprise :</strong> ${esc(c.company)} · <strong>Rayon :</strong> ${esc(c.shelf_id)}</p>
+      <p><strong>Statut :</strong> ${esc(c.promotion_status || "unreviewed")}</p>
+      <p><strong>Source :</strong> ${c.source_url ? `<a href="${esc(c.source_url)}" target="_blank" rel="noopener">${esc(c.source_url)}</a>` : "Aucune"}</p>
+      <p><strong>Raw claims :</strong></p>
+      <ul>${claims}</ul>
+      <p><strong>Source metadata :</strong></p>
+      <pre>${esc(JSON.stringify(c.source_metadata || {}, null, 2))}</pre>
+      <button class="promoteCandidateBtn primary" data-id="${esc(c.id)}">Promouvoir</button>
+    `;
+    openDataPanel(`Candidat · ${c.name || c.candidate_id}`, "Revue avant promotion", "Contenu complet du candidat stagé, avant tout engagement de promotion.", html);
+    document.querySelector("#dataContent .promoteCandidateBtn").addEventListener("click", () => promoteCandidate(c.id));
+  } catch (error) { openDataPanel("Candidat", "Erreur", error.message, ""); }
 }
 
 async function promoteCandidate(candidateId) {
@@ -748,6 +775,8 @@ document.querySelector("#harvestForm").addEventListener("submit", async event =>
     result.textContent = JSON.stringify(payload, null, 2);
   } catch (error) { result.textContent = error.message; }
 });
+
+document.querySelector("#candidatesFilterForm").addEventListener("submit", event => { event.preventDefault(); loadCandidates(); });
 
 document.querySelectorAll(".nudgeBtn").forEach(btn => btn.addEventListener("click", () => generateNudges(btn.dataset.mode)));
 document.querySelector("#fullNudgeFlow").addEventListener("click", () => { const study_id = document.querySelector("#nudgeInventory").value; if (study_id) openWorkflow("nudging", { study_id }); });

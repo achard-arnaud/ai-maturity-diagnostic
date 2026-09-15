@@ -7,7 +7,12 @@ from pathlib import Path
 import yaml
 
 from app.catalog import CatalogHarvester
-from app.catalog_promotion import list_staged_candidates, promote_candidate, update_offer_sheet
+from app.catalog_promotion import (
+    get_staged_candidate,
+    list_staged_candidates,
+    promote_candidate,
+    update_offer_sheet,
+)
 from app.core import ControlPlaneError
 
 
@@ -72,6 +77,39 @@ class CatalogPromotionTests(unittest.TestCase):
         candidates = list_staged_candidates(self.root)
         self.assertEqual(candidates[0]["name"], "Widgetron")
         self.assertEqual(candidates[0]["id"], candidate_id)
+
+    def test_list_staged_candidates_with_no_filters_is_unchanged(self) -> None:
+        self._stage_one()
+        unfiltered = list_staged_candidates(self.root)
+        self.assertEqual(len(unfiltered), 1)
+
+    def test_list_staged_candidates_filters_by_text(self) -> None:
+        self._stage_one()
+        self.assertEqual(len(list_staged_candidates(self.root, text="widget")), 1)
+        self.assertEqual(len(list_staged_candidates(self.root, text="nomatch")), 0)
+
+    def test_list_staged_candidates_filters_by_company_and_shelf(self) -> None:
+        self._stage_one()
+        self.assertEqual(len(list_staged_candidates(self.root, company="Widgetron Inc")), 1)
+        self.assertEqual(len(list_staged_candidates(self.root, company="Other Co")), 0)
+        self.assertEqual(len(list_staged_candidates(self.root, shelf_id="shelf-1")), 1)
+        self.assertEqual(len(list_staged_candidates(self.root, shelf_id="shelf-9")), 0)
+
+    def test_list_staged_candidates_filters_by_promotion_status(self) -> None:
+        self._stage_one()
+        self.assertEqual(len(list_staged_candidates(self.root, promotion_status="promoted")), 0)
+
+    def test_get_staged_candidate_returns_full_detail(self) -> None:
+        candidate_id = self._stage_one()
+        candidate = get_staged_candidate(self.root, candidate_id)
+        self.assertEqual(candidate["id"], candidate_id)
+        self.assertEqual(candidate["name"], "Widgetron")
+        self.assertIn("raw_claims", candidate)
+        self.assertIn("source_url", candidate)
+
+    def test_get_staged_candidate_rejects_unknown_id(self) -> None:
+        with self.assertRaises(ControlPlaneError):
+            get_staged_candidate(self.root, "bogus:CAND-999")
 
     def test_promote_candidate_creates_schema_conformant_offer(self) -> None:
         candidate_id = self._stage_one()

@@ -636,6 +636,30 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(len(candidates), 1)
                 self.assertEqual(candidates[0]["name"], "Widgetron")
 
+                status, filtered, _ = self.request("GET", "/api/catalog/candidates?text=widget")
+                self.assertEqual(200, status)
+                self.assertEqual(len(filtered), 1)
+
+                status, none_matched, _ = self.request("GET", "/api/catalog/candidates?text=nomatch")
+                self.assertEqual(200, status)
+                self.assertEqual(none_matched, [])
+
+                status, by_shelf, _ = self.request("GET", "/api/catalog/candidates?shelf_id=shelf-1")
+                self.assertEqual(200, status)
+                self.assertEqual(len(by_shelf), 1)
+
+                candidate_id = candidates[0]["id"]
+                status, detail, _ = self.request(
+                    "GET", f"/api/catalog/candidates/{candidate_id}"
+                )
+                self.assertEqual(200, status)
+                self.assertEqual(detail["id"], candidate_id)
+                self.assertEqual(detail["name"], "Widgetron")
+                self.assertIn("raw_claims", detail)
+
+                status, missing, _ = self.request("GET", "/api/catalog/candidates/bogus:CAND-999")
+                self.assertEqual(400, status)
+
     def test_catalog_update_offer_requires_product_owner_or_admin(self) -> None:
         non_owner = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
         server_module.APP.dependency_overrides[get_current_user] = lambda: non_owner
