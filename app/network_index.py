@@ -72,6 +72,9 @@ def _is_stale(last_updated: Any, stale_after_months: Any, *, as_of: date) -> boo
     return as_of - parsed >= timedelta(days=months * 30)
 
 
+DEFAULT_WORKSPACE_ID = "default"
+
+
 SCHEMA = """
 CREATE TABLE people (
     person_id TEXT PRIMARY KEY,
@@ -97,12 +100,14 @@ CREATE TABLE companies (
     normalized_name TEXT,
     status TEXT,
     sector_code TEXT,
+    workspace_id TEXT NOT NULL,
     last_updated TEXT,
     stale_after_months INTEGER,
     record_json TEXT NOT NULL
 );
 CREATE INDEX idx_companies_status ON companies(status);
 CREATE INDEX idx_companies_sector_code ON companies(sector_code);
+CREATE INDEX idx_companies_workspace_id ON companies(workspace_id);
 
 CREATE TABLE relationships (
     relationship_id TEXT PRIMARY KEY,
@@ -171,12 +176,13 @@ def rebuild(data_root: Path, index_path: Path, *, as_of: date | None = None) -> 
             icb_mapping = item.get("icb_mapping") or {}
             sector = icb_mapping.get("sector") or {} if isinstance(icb_mapping, dict) else {}
             sector_code = sector.get("code") if isinstance(sector, dict) else None
+            workspace_id = item.get("workspace_id") or DEFAULT_WORKSPACE_ID
             connection.execute(
                 """
                 INSERT INTO companies (
                     company_id, canonical_name, normalized_name, status,
-                    sector_code, last_updated, stale_after_months, record_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    sector_code, workspace_id, last_updated, stale_after_months, record_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item.get("company_id"),
@@ -184,6 +190,7 @@ def rebuild(data_root: Path, index_path: Path, *, as_of: date | None = None) -> 
                     item.get("normalized_name"),
                     item.get("status"),
                     sector_code,
+                    workspace_id,
                     item.get("last_updated"),
                     item.get("stale_after_months"),
                     json.dumps(item, ensure_ascii=False),
@@ -227,11 +234,19 @@ def search_people(
     company_id: str | None = None,
     role: str | None = None,
     stale_only: bool = False,
+    workspace_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Search the people table. Returns [] if the index has not been built
     yet (index_path missing) rather than raising -- callers (e.g. the
     read-side API routes) should not error just because nobody has run
-    scripts/rebuild_network_index.py yet."""
+    scripts/rebuild_network_index.py yet.
+
+    `workspace_id` has no column of its own on people -- a person has no
+    workspace_id, it is always derived through their company. It is
+    implemented as a correlated lookup against companies.workspace_id via
+    seed_company_id; a seed_company_id that does not resolve to any indexed
+    company is treated as the "default" workspace (via COALESCE), matching
+    rebuild()'s default for companies with no workspace_id of their own."""
     if not Path(index_path).is_file():
         return []
     connection = sqlite3.connect(str(index_path))
@@ -254,6 +269,13 @@ def search_people(
             params.append(f'%"{role}"%')
         if stale_only:
             clauses.append("is_stale = 1")
+        if workspace_id:
+            clauses.append(
+                "COALESCE("
+                "(SELECT c.workspace_id FROM companies c WHERE c.company_id = people.seed_company_id),"
+                f" '{DEFAULT_WORKSPACE_ID}') = ?"
+            )
+            params.append(workspace_id)
         query = "SELECT record_json FROM people"
         if clauses:
             query += " WHERE " + " AND ".join(clauses)
@@ -269,6 +291,7 @@ def search_companies(
     *,
     text: str | None = None,
     sector: str | None = None,
+    workspace_id: str | None = None,
 ) -> list[dict[str, Any]]:
     if not Path(index_path).is_file():
         return []
@@ -284,6 +307,9 @@ def search_companies(
         if sector:
             clauses.append("sector_code = ?")
             params.append(sector)
+        if workspace_id:
+            clauses.append("workspace_id = ?")
+            params.append(workspace_id)
         query = "SELECT record_json FROM companies"
         if clauses:
             query += " WHERE " + " AND ".join(clauses)

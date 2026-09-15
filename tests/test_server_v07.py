@@ -212,6 +212,7 @@ class ServerV07Tests(unittest.TestCase):
                         "normalized_name": "edf",
                         "status": "active",
                         "icb_mapping": {"sector": {"code": "651010"}},
+                        "workspace_id": "acme-ws",
                         "last_updated": "2026-08-01",
                         "stale_after_months": 6,
                     }
@@ -235,6 +236,18 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(people, [])
 
                 status, companies, _ = self.request("GET", "/api/network/companies?sector=651010")
+                self.assertEqual(200, status)
+                self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
+
+                status, people, _ = self.request("GET", "/api/network/people?workspace_id=acme-ws")
+                self.assertEqual(200, status)
+                self.assertEqual([p["person_id"] for p in people], ["PERS-1"])
+
+                status, people, _ = self.request("GET", "/api/network/people?workspace_id=default")
+                self.assertEqual(200, status)
+                self.assertEqual(people, [])
+
+                status, companies, _ = self.request("GET", "/api/network/companies?workspace_id=acme-ws")
                 self.assertEqual(200, status)
                 self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
 

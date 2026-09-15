@@ -43,7 +43,14 @@ def person(
     }
 
 
-def company(company_id: str, canonical_name: str, *, status: str = "active", sector_code: str | None = None) -> dict:
+def company(
+    company_id: str,
+    canonical_name: str,
+    *,
+    status: str = "active",
+    sector_code: str | None = None,
+    workspace_id: str | None = None,
+) -> dict:
     return {
         "schema_version": "0.3",
         "company_id": company_id,
@@ -58,6 +65,7 @@ def company(company_id: str, canonical_name: str, *, status: str = "active", sec
         "network_screening": None,
         "study": None,
         "source_batch_ids": [],
+        "workspace_id": workspace_id,
         "status": status,
         "last_updated": "2026-08-01",
         "stale_after_months": 6,
@@ -183,6 +191,45 @@ class NetworkIndexTests(unittest.TestCase):
             self.assertEqual(
                 sorted(r["person_id"] for r in first),
                 sorted(r["person_id"] for r in second),
+            )
+
+
+    def test_workspace_id_indexing_and_filtering(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            people = [
+                person("PERS-1", "Alice Martin", "COMP-1"),
+                person("PERS-2", "Bob Durand", "COMP-2"),
+                person("PERS-3", "Nobody Nowhere", "COMP-MISSING"),
+            ]
+            companies = [
+                company("COMP-1", "EDF", workspace_id="acme-ws"),
+                company("COMP-2", "Orange"),  # no workspace_id -> defaults to "default"
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", companies)
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            # explicit workspace_id is indexed and filterable
+            results = network_index.search_companies(index_path, workspace_id="acme-ws")
+            self.assertEqual([r["company_id"] for r in results], ["COMP-1"])
+
+            # company with no workspace_id defaults to "default" and is found
+            results = network_index.search_companies(index_path, workspace_id="default")
+            self.assertEqual([r["company_id"] for r in results], ["COMP-2"])
+
+            # search_people resolves workspace through seed_company_id
+            results = network_index.search_people(index_path, workspace_id="acme-ws")
+            self.assertEqual([r["person_id"] for r in results], ["PERS-1"])
+
+            # a person whose seed_company_id has no indexed company falls back to "default"
+            results = network_index.search_people(index_path, workspace_id="default")
+            self.assertEqual(
+                {r["person_id"] for r in results},
+                {"PERS-2", "PERS-3"},
             )
 
 

@@ -219,6 +219,7 @@ def build_app(
         company_id: str = "",
         role: str = "",
         stale: bool = False,
+        workspace_id: str = "",
         ctx: RequestContext = Depends(get_current_user),
     ) -> Any:
         return search_people(
@@ -228,15 +229,22 @@ def build_app(
             company_id=company_id.strip() or None,
             role=role.strip() or None,
             stale_only=stale,
+            workspace_id=workspace_id.strip() or None,
         )
 
     @app.get("/api/network/companies")
     async def api_network_companies(
         text: str = "",
         sector: str = "",
+        workspace_id: str = "",
         ctx: RequestContext = Depends(get_current_user),
     ) -> Any:
-        return search_companies(NETWORK_INDEX_PATH, text=text.strip() or None, sector=sector.strip() or None)
+        return search_companies(
+            NETWORK_INDEX_PATH,
+            text=text.strip() or None,
+            sector=sector.strip() or None,
+            workspace_id=workspace_id.strip() or None,
+        )
 
     # ------------------------------------------------------------------
     # Admin-only network index rebuild trigger (manual/on-demand; the
