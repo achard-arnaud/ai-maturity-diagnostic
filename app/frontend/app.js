@@ -25,6 +25,13 @@ function statusClass(status) {
   return `status-${String(status || "unknown").replace(/_/g, "-")}`;
 }
 
+function ageBadge(item) {
+  if (item.days_in_current_state === null || item.days_in_current_state === undefined) return "";
+  const staleClass = item.is_stale ? "status-stale" : "";
+  const label = item.is_stale ? `${item.days_in_current_state} j · en attente` : `${item.days_in_current_state} j`;
+  return `<span class="badge badge-age ${staleClass}">${esc(label)}</span>`;
+}
+
 function openInvoke(skillId, input = "", contextPaths = []) {
   if (!skillId) return;
   state.selectedSkill = skillId;
@@ -431,7 +438,7 @@ async function generateNudges(mode) {
 function renderFollowUp() {
   const grid = document.querySelector("#followUpGrid");
   const business = state.followUp.filter(item => item.kind !== "technical_todo");
-  grid.innerHTML = business.length ? business.map(item => `<article class="card follow-card"><div class="sector-top"><div><p class="eyebrow">${esc(item.kind)} · ${esc(item.priority)}</p><h3>${esc(item.label)}</h3></div><span class="badge ${statusClass(item.state)}">${esc(item.state)}</span></div><p>${esc(item.message)}</p>${item.resolver ? resolverButton(item.resolver) : ""}<button class="followNavBtn" data-menu="${esc(item.navigation?.menu || "backlog")}" data-study="${esc(item.navigation?.study_id || "")}" data-sector="${esc(item.navigation?.sector_code || "")}">Ouvrir le contexte</button></article>`).join("") : `<div class="empty-state">Aucune action métier pending dans les données locales.</div>`;
+  grid.innerHTML = business.length ? business.map(item => `<article class="card follow-card"><div class="sector-top"><div><p class="eyebrow">${esc(item.kind)} · ${esc(item.priority)}</p><h3>${esc(item.label)}</h3></div><span class="badge ${statusClass(item.state)}">${esc(item.state)}</span></div><p>${esc(item.message)}</p><div class="meta">${ageBadge(item)}</div>${item.resolver ? resolverButton(item.resolver) : ""}<button class="followNavBtn" data-menu="${esc(item.navigation?.menu || "backlog")}" data-study="${esc(item.navigation?.study_id || "")}" data-sector="${esc(item.navigation?.sector_code || "")}">Ouvrir le contexte</button></article>`).join("") : `<div class="empty-state">Aucune action métier pending dans les données locales.</div>`;
   bindResolverButtons(grid);
   grid.querySelectorAll(".followNavBtn").forEach(btn => btn.addEventListener("click", () => {
     if (btn.dataset.menu === "qualification" && btn.dataset.study) return jumpToQualification(btn.dataset.study);

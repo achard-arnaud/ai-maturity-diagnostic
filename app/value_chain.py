@@ -36,6 +36,8 @@ class ValueChainCatalog:
         for inventory_path in sorted(studies_root.glob("*/05b_use_case_inventory.yaml")):
             study_dir = inventory_path.parent
             inventory = _read_yaml(inventory_path)
+            manifest_path = study_dir / "00_manifest.yaml"
+            manifest = _read_yaml(manifest_path) if manifest_path.is_file() else {}
             analysis_path = study_dir / "05c_value_chain_causal_map.yaml"
             analysis = _read_yaml(analysis_path) if analysis_path.is_file() else {}
             analysed_ids = {
@@ -48,6 +50,7 @@ class ValueChainCatalog:
                 {
                     "study_id": inventory.get("study_id") or study_dir.name,
                     "company": inventory.get("company") or study_dir.name,
+                    "updated_at": manifest.get("updated_at"),
                     "inventory_path": inventory_path.relative_to(self.root).as_posix(),
                     "analysis_path": analysis_path.relative_to(self.root).as_posix() if analysis_path.is_file() else None,
                     "use_case_count": len(use_cases),

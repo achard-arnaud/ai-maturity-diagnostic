@@ -246,6 +246,8 @@ code { background: #edf1f4; padding: 2px 5px; border-radius: 5px; }
 .status-building, .status-in-progress, .status-ready, .status-benchmark-edge, .status-validate { color: #765b15; border-color: #dac894; }
 .status-benchmark-ready, .status-consolidated, .status-completed { color: #2e654e; border-color: #afd0c0; }
 .status-review, .status-conditional { color: #536b84; border-color: #b9c8d6; }
+.badge-age { color: #536170; }
+.badge-age.status-stale { color: #8a332f; border-color: #dab3af; }
 footer { padding: 0 24px 36px; color: #697581; font-size: .8rem; }
 @media (max-width: 900px) {
   .analysis-grid, .analysis-grid.three-cols { grid-template-columns: 1fr; }

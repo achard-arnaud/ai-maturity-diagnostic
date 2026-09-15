@@ -249,6 +249,7 @@ class QualificationCockpit:
                 "study_id": current_study_id,
                 "company": manifest.get("company") or profile.get("company") or study_dir.name,
                 "company_id": manifest.get("company_id"), "study_path": study_rel,
+                "updated_at": manifest.get("updated_at"),
                 "offer_id": fit.get("recommended_offer_id"),
                 "stage": stage, "decision": decision, "fit_violation": fit_violation, "issues": fit_issues,
                 "next_skill": next_skill, "next_action": next_action, "blocked_reason": blocked_reason, "current_blocker": current_blocker,

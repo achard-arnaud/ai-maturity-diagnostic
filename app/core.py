@@ -135,11 +135,16 @@ class RepoControlPlane:
             if not path.is_file():
                 continue
             doc = _read_yaml(path)
+            source_updated_at = doc.get("updated_at")
             for item in doc.get("items", []) or []:
                 if not isinstance(item, dict):
                     continue
                 row = dict(item)
                 row["source"] = path.relative_to(self.root).as_posix()
+                # Individual backlog items have no timestamp of their own; the
+                # source file's document-level `updated_at` is the closest
+                # available signal of when this backlog was last touched.
+                row.setdefault("source_updated_at", source_updated_at)
                 result.append(row)
         return result
 

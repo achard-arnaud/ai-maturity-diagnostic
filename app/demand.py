@@ -313,6 +313,7 @@ class DemandCatalog:
                     "eligible": bool(study.get("eligible")),
                     "use_case_count": int(study.get("use_case_count") or 0),
                     "use_case_inventory_path": study.get("use_case_inventory_path"),
+                    "study_updated_at": study.get("updated_at"),
                 }
             )
 
@@ -320,6 +321,8 @@ class DemandCatalog:
         for code, meta in sorted(taxonomy.items(), key=lambda pair: (pair[1]["industry_code"], pair[0])):
             company_rows = sorted(sector_companies.get(code, []), key=lambda row: str(row.get("company") or ""))
             eligible = [row for row in company_rows if row["eligible"]]
+            study_updates = [row["study_updated_at"] for row in company_rows if row.get("study_updated_at")]
+            most_recent_study_update = max(study_updates) if study_updates else None
             rollup_path = self.root / "data" / "private" / "sector_rollups" / f"ICB-{code}.yaml"
             rollup_exists = rollup_path.is_file()
             # A historical rollup is never sufficient to bypass the current >=3 eligibility gate.
@@ -351,6 +354,7 @@ class DemandCatalog:
                     "rollup_stale": rollup_exists and len(eligible) < 3,
                     "use_case_count": sum(row["use_case_count"] for row in company_rows),
                     "rollup_path": rollup_path.relative_to(self.root).as_posix() if rollup_exists else None,
+                    "most_recent_study_update": most_recent_study_update,
                     "companies": company_rows,
                 }
             )
