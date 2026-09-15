@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from starlette.testclient import TestClient
 
-from app import server as server_module
+from app import network_index, server as server_module
 from app.authruntime.deps import RequestContext, get_current_user
 
 
@@ -170,6 +172,71 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual(data[0]["matched_query"], "agent")
         self.assertEqual(data[0]["category"], "cat1")
         self.assertEqual(data[0]["status"], "sourced")
+
+    def test_network_routes_return_empty_when_index_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(server_module, "NETWORK_INDEX_PATH", Path(tmp) / "missing.sqlite"):
+                status, people, _ = self.request("GET", "/api/network/people")
+                self.assertEqual(200, status)
+                self.assertEqual(people, [])
+                status, companies, _ = self.request("GET", "/api/network/companies")
+                self.assertEqual(200, status)
+                self.assertEqual(companies, [])
+
+    def test_network_routes_search_built_index(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                json.dumps(
+                    {
+                        "person_id": "PERS-1",
+                        "display_name": "Alice Martin",
+                        "normalized_name": "alice martin",
+                        "seed_company_id": "COMP-1",
+                        "identity_confidence": "high",
+                        "role_hypotheses": ["economic_sponsor"],
+                        "status": "active",
+                        "last_updated": "2026-08-01",
+                        "stale_after_months": 6,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text(
+                json.dumps(
+                    {
+                        "company_id": "COMP-1",
+                        "canonical_name": "EDF",
+                        "normalized_name": "edf",
+                        "status": "active",
+                        "icb_mapping": {"sector": {"code": "651010"}},
+                        "last_updated": "2026-08-01",
+                        "stale_after_months": 6,
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, people, _ = self.request("GET", "/api/network/people?text=alice")
+                self.assertEqual(200, status)
+                self.assertEqual([p["person_id"] for p in people], ["PERS-1"])
+
+                status, people, _ = self.request("GET", "/api/network/people?status=active&role=economic_sponsor")
+                self.assertEqual(200, status)
+                self.assertEqual(len(people), 1)
+
+                status, people, _ = self.request("GET", "/api/network/people?company_id=COMP-1&stale=true")
+                self.assertEqual(200, status)
+                self.assertEqual(people, [])
+
+                status, companies, _ = self.request("GET", "/api/network/companies?sector=651010")
+                self.assertEqual(200, status)
+                self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
 
     def test_post_domain_routes(self) -> None:
         cases = [

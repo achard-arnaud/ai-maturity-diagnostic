@@ -20,6 +20,7 @@ from app.catalog_search import CatalogSearch
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
+from app.network_index import search_companies, search_people
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
 from app.reach import ReachMatchmaker
@@ -42,6 +43,10 @@ FOLLOWUP = FollowUpDashboard(ROOT)
 HERITAGE = UseCaseHeritage(ROOT)
 WORKFLOWS = WorkflowPlanner(ROOT)
 BLOCKER_ACTIONS = BlockerActionLog(ROOT)
+# Derived, rebuildable SQLite search index over data/private/network/*.jsonl
+# (see app/network_index.py). Never a write target; rebuilt out-of-band via
+# scripts/rebuild_network_index.py, not on every request.
+NETWORK_INDEX_PATH = ROOT / "data" / "private" / "network" / "network_index.sqlite"
 
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
@@ -203,6 +208,32 @@ def build_app(
         q: str = "", category: str = "", status: str = "", ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
         return CATALOG_SEARCH.search(query=q, category=category, status=status)
+
+    @app.get("/api/network/people")
+    async def api_network_people(
+        text: str = "",
+        status: str = "",
+        company_id: str = "",
+        role: str = "",
+        stale: bool = False,
+        ctx: RequestContext = Depends(get_current_user),
+    ) -> Any:
+        return search_people(
+            NETWORK_INDEX_PATH,
+            text=text.strip() or None,
+            status=status.strip() or None,
+            company_id=company_id.strip() or None,
+            role=role.strip() or None,
+            stale_only=stale,
+        )
+
+    @app.get("/api/network/companies")
+    async def api_network_companies(
+        text: str = "",
+        sector: str = "",
+        ctx: RequestContext = Depends(get_current_user),
+    ) -> Any:
+        return search_companies(NETWORK_INDEX_PATH, text=text.strip() or None, sector=sector.strip() or None)
 
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).
