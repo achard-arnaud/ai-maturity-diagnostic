@@ -68,6 +68,11 @@ class FakeWorkflows:
     def plan(self, payload): return {"kind": payload.get("kind"), "steps": []}
 
 
+class FakeCatalogSearch:
+    def search(self, query="", category="", status=""):
+        return [{"offer_id": "OFFER-A", "matched_query": query, "category": category, "status": status}]
+
+
 class FakeBlockerActions:
     def record(self, *, study_id, step_id, action, actor, reason=None, target_step_id=None):
         return {"study_id": study_id, "step_id": step_id, "action": action, "actor": actor, "reason": reason, "target_step_id": target_step_id, "timestamp": "2026-01-01T00:00:00+00:00"}
@@ -98,6 +103,7 @@ class ServerV07Tests(unittest.TestCase):
             QUALIFICATION=FakeQualification(), NUDGING=FakeNudging(), VALUE_CHAIN=FakeValueChain(),
             UC_GRAPH=FakeGraph(), REACH=FakeReach(), FOLLOWUP=FakeFollowUp(),
             HERITAGE=FakeHeritage(), WORKFLOWS=FakeWorkflows(), BLOCKER_ACTIONS=FakeBlockerActions(),
+            CATALOG_SEARCH=FakeCatalogSearch(),
         )
         self.patches.start()
         self.env = patch.dict(os.environ, {"AI_DIAGNOSTIC_HTTP_LOG": "0"}, clear=False)
@@ -156,6 +162,14 @@ class ServerV07Tests(unittest.TestCase):
         status, actions, _ = self.request("GET", "/api/qualification/actions?study_id=s1")
         self.assertEqual(200, status)
         self.assertIsInstance(actions, list)
+
+    def test_catalog_search_route(self) -> None:
+        status, data, _ = self.request("GET", "/api/catalog/search?q=agent&category=cat1&status=sourced")
+        self.assertEqual(200, status)
+        self.assertIsInstance(data, list)
+        self.assertEqual(data[0]["matched_query"], "agent")
+        self.assertEqual(data[0]["category"], "cat1")
+        self.assertEqual(data[0]["status"], "sourced")
 
     def test_post_domain_routes(self) -> None:
         cases = [

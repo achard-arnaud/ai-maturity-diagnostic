@@ -16,6 +16,7 @@ from app.authruntime.deps import RequestContext, get_current_user
 from app.authruntime.oidc import OIDCClient
 from app.blocker_actions import BlockerActionLog
 from app.catalog import CatalogHarvester
+from app.catalog_search import CatalogSearch
 from app.core import ControlPlaneError, RepoControlPlane
 from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
@@ -30,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "app" / "frontend"
 CONTROL = RepoControlPlane(ROOT)
 HARVESTER = CatalogHarvester(ROOT)
+CATALOG_SEARCH = CatalogSearch(ROOT)
 DEMAND = DemandCatalog(ROOT)
 QUALIFICATION = QualificationCockpit(ROOT)
 NUDGING = UseCaseNudger(ROOT)
@@ -195,6 +197,12 @@ def build_app(
     @app.get("/api/follow-up")
     async def api_follow_up(ctx: RequestContext = Depends(get_current_user)) -> Any:
         return FOLLOWUP.items()
+
+    @app.get("/api/catalog/search")
+    async def api_catalog_search(
+        q: str = "", category: str = "", status: str = "", ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        return CATALOG_SEARCH.search(query=q, category=category, status=status)
 
     # ------------------------------------------------------------------
     # POST domain routes (all authenticated).
