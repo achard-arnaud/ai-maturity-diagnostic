@@ -166,19 +166,51 @@ class ControlStoreSchemaTests(unittest.TestCase):
         rows = self.store.list_overrides(workspace_id="ws-inbox-c")
         self.assertEqual([row["workspace_id"] for row in rows], ["ws-inbox-c"])
 
-    def test_list_overrides_resolved_filter_has_no_open_closed_concept(self) -> None:
-        """Documented finding: the overrides table has no resolved/open
-        column, so `resolved=False` cannot return a genuine open queue --
-        it returns [] (nothing is trackable as unresolved), and
-        `resolved=True`/None both return every recorded override."""
+    def test_list_overrides_resolved_filter(self) -> None:
         self.store.create_workspace("ws-inbox-e", "Workspace Inbox E")
-        self.store.record_override("ws-inbox-e", "study-e:demand", "po-e@example.com", "reason e")
+        open_id = self.store.record_override("ws-inbox-e", "study-e:demand", "po-e@example.com", "reason e")
+        resolved_id = self.store.record_override("ws-inbox-e", "study-e:matching", "po-e@example.com", "reason f")
+        self.store.resolve_override(resolved_id, actor="admin@example.com")
 
-        self.assertEqual(self.store.list_overrides(workspace_id="ws-inbox-e", resolved=False), [])
-        rows_true = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=True)
-        rows_none = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=None)
-        self.assertEqual(len(rows_true), 1)
-        self.assertEqual(len(rows_none), 1)
+        open_rows = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=False)
+        self.assertEqual([row["id"] for row in open_rows], [open_id])
+
+        resolved_rows = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=True)
+        self.assertEqual([row["id"] for row in resolved_rows], [resolved_id])
+        self.assertEqual(resolved_rows[0]["resolved_by"], "admin@example.com")
+        self.assertIsNotNone(resolved_rows[0]["resolved_at"])
+
+        all_rows = self.store.list_overrides(workspace_id="ws-inbox-e", resolved=None)
+        self.assertEqual({row["id"] for row in all_rows}, {open_id, resolved_id})
+
+    def test_resolve_override_is_idempotent(self) -> None:
+        self.store.create_workspace("ws-inbox-f", "Workspace Inbox F")
+        override_id = self.store.record_override("ws-inbox-f", "study-f:demand", "po-f@example.com", "reason g")
+
+        self.store.resolve_override(override_id, actor="admin1@example.com")
+        first = self.store.list_overrides(workspace_id="ws-inbox-f")[0]
+        self.assertEqual(first["resolved_by"], "admin1@example.com")
+
+        # Resolving again is a no-op: the original resolver/timestamp stick.
+        self.store.resolve_override(override_id, actor="admin2@example.com")
+        second = self.store.list_overrides(workspace_id="ws-inbox-f")[0]
+        self.assertEqual(second["resolved_by"], "admin1@example.com")
+        self.assertEqual(second["resolved_at"], first["resolved_at"])
+
+    def test_schema_migration_is_safe_on_existing_db_file(self) -> None:
+        """Re-running init_schema (e.g. on process restart) against a db
+        file that already has the resolved_at/resolved_by columns must
+        not raise (guards the ALTER TABLE against 'duplicate column')."""
+        self.store.init_schema()
+        self.store.init_schema()
+        self.store.create_workspace("ws-migration-check", "Workspace Migration Check")
+        override_id = self.store.record_override(
+            "ws-migration-check", "study-m:demand", "po-m@example.com", "reason m"
+        )
+        rows = self.store.list_overrides(workspace_id="ws-migration-check")
+        self.assertEqual(rows[0]["id"], override_id)
+        self.assertIsNone(rows[0]["resolved_at"])
+        self.assertIsNone(rows[0]["resolved_by"])
 
 
 if __name__ == "__main__":

@@ -171,6 +171,59 @@ class AuthRuntimeAppTests(unittest.TestCase):
         self.assertIn("study-a:demand", response.text)
         self.assertNotIn("study-b:demand", response.text)
 
+    def test_admin_overrides_page_splits_open_and_resolved(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin-overrides3@example.com")
+        admin_user = self.store.get_or_create_user("admin-overrides3@example.com", "AdminOverrides3")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.create_workspace("ws-ov-c", "Workspace Ov C")
+        open_id = self.store.record_override("ws-ov-c", "study-open:demand", "po-c@example.com", "reason open")
+        resolved_id = self.store.record_override(
+            "ws-ov-c", "study-resolved:demand", "po-c@example.com", "reason resolved"
+        )
+        self.store.resolve_override(resolved_id, actor="admin-overrides3@example.com")
+
+        response = client.get("/admin/overrides")
+        self.assertEqual(response.status_code, 200)
+        text = response.text
+        self.assertIn("Open", text)
+        self.assertIn("Resolved", text)
+        self.assertIn("study-open:demand", text)
+        self.assertIn("study-resolved:demand", text)
+        self.assertIn(f"/admin/overrides/{open_id}/resolve", text)
+        # The already-resolved row has no Resolve form for it.
+        self.assertNotIn(f"/admin/overrides/{resolved_id}/resolve", text)
+
+    def test_resolve_override_route_requires_admin(self) -> None:
+        client = self._client()
+        self._login_as(client, "plain-resolver@example.com")
+        self.store.create_workspace("ws-resolve-auth", "Workspace Resolve Auth")
+        override_id = self.store.record_override(
+            "ws-resolve-auth", "study-x:demand", "po-x@example.com", "reason x"
+        )
+        response = client.post(f"/admin/overrides/{override_id}/resolve", follow_redirects=False)
+        self.assertEqual(response.status_code, 403)
+
+    def test_resolve_override_route_records_real_actor(self) -> None:
+        client = self._client()
+        self._login_as(client, "admin-resolver@example.com")
+        admin_user = self.store.get_or_create_user("admin-resolver@example.com", "AdminResolver")
+        self.store.set_admin(admin_user["id"], True)
+        self.store.create_workspace("ws-resolve", "Workspace Resolve")
+        override_id = self.store.record_override(
+            "ws-resolve", "study-y:demand", "po-y@example.com", "reason y"
+        )
+
+        response = client.post(f"/admin/overrides/{override_id}/resolve", follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+
+        rows = self.store.list_overrides(workspace_id="ws-resolve")
+        self.assertEqual(rows[0]["resolved_by"], "admin-resolver@example.com")
+        self.assertIsNotNone(rows[0]["resolved_at"])
+
+        audit = self.store.list_audit()
+        self.assertTrue(any(e["action"] == "resolve_override" for e in audit))
+
     def test_admin_users_page_forbidden_for_non_admin(self) -> None:
         client = self._client()
         self._login_as(client, "plain2@example.com")

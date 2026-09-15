@@ -63,6 +63,10 @@ CREATE TABLE IF NOT EXISTS audit_events (
 -- on top of the business hard gate in app/qualification.py. It never
 -- mutates or deletes the underlying blocker; the dashboard may later
 -- choose to surface it alongside the still-present blocker.
+-- resolved_at/resolved_by are added via a guarded ALTER TABLE migration
+-- in init_schema (below) rather than here, so that an existing db file
+-- created before this column existed picks it up safely. Both NULL
+-- means "open/unresolved".
 CREATE TABLE IF NOT EXISTS overrides (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     workspace_id TEXT NOT NULL REFERENCES workspaces(id),
@@ -72,6 +76,15 @@ CREATE TABLE IF NOT EXISTS overrides (
     created_at TEXT NOT NULL
 );
 """
+
+# Columns added after the initial CREATE TABLE overrides shipped. Each
+# entry is (table, column, ddl-type) and is applied with a guarded
+# ALTER TABLE so that init_schema stays safe to run against a
+# pre-existing db file that predates the column.
+_SCHEMA_MIGRATIONS: tuple[tuple[str, str, str], ...] = (
+    ("overrides", "resolved_at", "TEXT"),
+    ("overrides", "resolved_by", "TEXT"),
+)
 
 DEFAULT_WORKSPACE_ID = "default"
 DEFAULT_WORKSPACE_NAME = "Default (legacy mono-root)"
@@ -110,6 +123,10 @@ class ControlStore:
     def init_schema(self) -> None:
         with self.connect() as conn:
             conn.executescript(SCHEMA)
+            for table, column, ddl_type in _SCHEMA_MIGRATIONS:
+                existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+                if column not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")
             row = conn.execute(
                 "SELECT id FROM workspaces WHERE id = ?", (DEFAULT_WORKSPACE_ID,)
             ).fetchone()
@@ -294,33 +311,43 @@ class ControlStore:
         self, workspace_id: str | None = None, *, resolved: bool | None = None
     ) -> list[sqlite3.Row]:
         """List recorded qualification-blocker overrides for the approval
-        inbox (CRM-audit gap #2), optionally filtered by workspace.
+        inbox (CRM-audit gap #2), optionally filtered by workspace and by
+        resolved state.
 
         `workspace_id` is positional for backward compatibility with
         existing call sites; new callers should use it as a keyword.
 
-        `resolved` finding: the `overrides` table (see SCHEMA above) has
-        no "resolved"/"open" concept of its own -- it is an append-only
-        record of a human decision already made (the override *is* the
-        resolution of the underlying blocker at the moment it was
-        recorded; the blocker itself, in app/qualification.py, may later
-        reappear or be recomputed independently). There is therefore no
-        column to filter on, and this task explicitly does not add one to
-        the `overrides` schema. Passing `resolved` is accepted for the
-        interface the task asked for, but since every row is equally
-        "resolved" (or equally not a queue of separately-trackable open
-        items) under the current schema, `resolved=False` always yields
-        an empty list and `resolved=True` is equivalent to no filter at
-        all. This is a documented finding, not a real filter -- a future
-        sprint that wants a genuine open/closed override queue needs a
-        schema change (e.g. a `resolved_at` column), which is out of
-        scope here.
+        `resolved` filters on the `resolved_at` column: `True` returns
+        only rows with `resolved_at IS NOT NULL`, `False` only rows with
+        `resolved_at IS NULL` (the open queue), and `None` (default)
+        applies no filter.
         """
-        if resolved is False:
-            return []
+        clauses: list[str] = []
+        params: list[str] = []
+        if workspace_id is not None:
+            clauses.append("workspace_id = ?")
+            params.append(workspace_id)
+        if resolved is True:
+            clauses.append("resolved_at IS NOT NULL")
+        elif resolved is False:
+            clauses.append("resolved_at IS NULL")
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         with self.connect() as conn:
-            if workspace_id is None:
-                return conn.execute("SELECT * FROM overrides ORDER BY id DESC").fetchall()
             return conn.execute(
-                "SELECT * FROM overrides WHERE workspace_id = ? ORDER BY id DESC", (workspace_id,)
+                f"SELECT * FROM overrides {where} ORDER BY id DESC", params
             ).fetchall()
+
+    def resolve_override(self, override_id: int, *, actor: str) -> None:
+        """Mark a recorded override as resolved by `actor`.
+
+        Idempotent-safe: resolving an already-resolved override is a
+        no-op (the original resolved_at/resolved_by are preserved), it
+        never raises. This mirrors `revoke_session`'s style of guarding
+        the UPDATE with a WHERE clause rather than doing a read-then-write
+        or raising on a repeat call.
+        """
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE overrides SET resolved_at = ?, resolved_by = ? WHERE id = ? AND resolved_at IS NULL",
+                (_now(), actor, override_id),
+            )
