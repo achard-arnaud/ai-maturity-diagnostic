@@ -129,6 +129,11 @@ def launch_prospecting_campaign(root: Path, *, name: str, criteria: dict[str, An
         "target_count": len(results),
         "created_at": created_at,
         "actor": actor,
+        # TODO(red-team-spec): status never advances past "draft" anywhere in
+        # this codebase, despite this module's own docstring saying a campaign
+        # "can also change over time". Revisit once the first real campaign is
+        # actually sent, so the next status value reflects a real workflow
+        # rather than a guessed one.
         "status": "draft",
     }
     _save_campaign(root, record)

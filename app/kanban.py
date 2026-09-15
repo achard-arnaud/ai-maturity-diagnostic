@@ -63,6 +63,12 @@ CANONICAL_STAGES: tuple[str, ...] = (
 # qualification.py also emits "matching_invalid" for a fit whose decision cannot be
 # reconciled with its selected match; it is the same pipeline position as "matching"
 # (repair needed before progressing), so it folds into the "matching" column.
+# TODO(red-team-spec): this hand-written alias table is the only thing
+# reconciling qualification's stage vocabulary with kanban's; nothing lints
+# it against QualificationCockpit's actual stage values, so it will silently
+# go stale if a new stage is added upstream. Revisit once a second stage
+# vocabulary (e.g. from a new module) needs the same reconciliation, or once
+# this drifts once in practice.
 _QUALIFICATION_STAGE_ALIASES: dict[str, str] = {"matching_invalid": "matching"}
 
 

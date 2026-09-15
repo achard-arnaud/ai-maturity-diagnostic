@@ -134,6 +134,11 @@ class FollowUpDashboard:
                     "source": todo.get("source"),
                 }
             )
+        # TODO(red-team-spec): items are recomputed fresh on every call with no
+        # first-seen/age tracking, so there is no way to measure how long a
+        # follow-up has been open or how many pile up per week. Revisit once
+        # follow-up volume exceeds a handful of open P0/P1 items per week and a
+        # staleness/triage view actually becomes necessary.
         return sorted(items, key=lambda item: (str(item.get("priority") or "P9"), item["kind"], item["label"]))
 
 

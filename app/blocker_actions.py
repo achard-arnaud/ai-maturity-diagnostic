@@ -12,6 +12,11 @@ from app.core import ControlPlaneError
 # imported from app.qualification to avoid coupling the audit log's validation to the
 # cockpit's derived-state computation (ADR-004: this module never recomputes stage
 # truth, it only records human-triggered dashboard actions against known step ids).
+# TODO(red-team-spec): this audit log only understands the six qualification
+# steps below; reach role-coverage blockers, nudging rationale, and other
+# stage's blockers have no equivalent tracked-action log. Revisit once a
+# second workspace or a second real GTM engagement needs a tracked human
+# action outside this fixed six-step pipeline.
 STEP_ORDER: list[str] = ["demand", "snapshots", "matching", "contacts", "reach", "pilot"]
 
 ACTIONS = {"cancel", "step_back", "force"}

@@ -42,6 +42,11 @@ class QualificationCockpit:
         selected = next((item for item in matches if item.get("decision") == decision), None)
         return selected or (matches[0] if len(matches) == 1 else None)
 
+    # TODO(red-team-spec): a "pursue"/"validate" decision that passes this
+    # check is never later reconciled with what actually happened (won,
+    # lost, stalled) -- there is no fit false-positive tracking at all.
+    # Revisit once one real end-to-end business cycle has closed, so there
+    # is at least one real outcome to check a past fit decision against.
     @classmethod
     def _fit_violation(cls, fit: dict[str, Any]) -> str | None:
         decision = fit.get("decision")

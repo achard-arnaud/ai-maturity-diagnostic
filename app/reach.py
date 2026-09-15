@@ -192,6 +192,11 @@ class ReachMatchmaker:
                 }
             )
 
+        # TODO(red-team-spec): role-coverage blockers below are regenerated
+        # fresh on every preview() call and are never persisted or
+        # dismissable with a reason (unlike qualification's BlockerActionLog).
+        # Revisit once a human repeatedly has to re-dismiss the same
+        # missing-role blocker across multiple preview calls for one study.
         role_coverage = {role for item in stakeholders for role in item["stakeholder_roles"] if item["wave"] != "validation_only"}
         for role, label in (("promoter", "promoteur/sponsor"), ("prescriber", "prescripteur"), ("terrain_user", "utilisateur/terrain")):
             if role in role_coverage:
@@ -248,6 +253,11 @@ class ReachMatchmaker:
             "boundaries": {"recomputes_fit": False, "sends_outbound": False, "title_proves_authority": False, "newsflow_changes_fit": False},
         }
 
+    # TODO(red-team-spec): this only ever prepares a skill-invocation request;
+    # it never writes 06c_reach_strategy.yaml itself, so "prepare" from the UI
+    # still dead-ends in an offline skill run. Revisit once a first customer's
+    # operator hits this dead end live rather than pre-building a writer for
+    # a workflow that has not been exercised end to end yet.
     def prepare_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         study_id = str(payload.get("study_id") or "").strip()
         if not study_id:

@@ -146,6 +146,10 @@ def create_company(
     return company
 
 
+# TODO(red-team-spec): create_person/create_company never rebuild
+# network_index.sqlite (see module docstring above); revisit once a live
+# customer onboarding session has actually hit this "I just added someone
+# and can't find them" gap, rather than fixing it speculatively now.
 def create_person(
     data_root: Path,
     *,

@@ -185,6 +185,10 @@ class UseCaseNudger:
             nudges.extend(self._upsell(use_cases))
         if mode in {"cross_sell_package", "all"}:
             nudges.extend(self._cross_sell(use_cases))
+        # TODO(red-team-spec): a nudge is always returned with status="hypothesis"
+        # and nothing downstream ever reads a nudge_id back to record accept/reject.
+        # Revisit once a second or third real GTM engagement generates enough
+        # nudges that "which ones were actually useful" becomes a real question.
         return {
             "schema_version": "0.6",
             "company": inventory.get("company"),

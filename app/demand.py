@@ -36,6 +36,9 @@ def _iso_date(value: Any) -> date | None:
 
 
 @dataclass(frozen=True)
+# TODO(red-team-spec): stale_after_days is a single flat constant for every
+# sector/company; revisit once a second workspace onboards with a genuinely
+# different demand-refresh cadence than the first customer's.
 class DemandCatalog:
     root: Path
     stale_after_days: int = 180
