@@ -300,6 +300,71 @@ class FindPotentialDuplicatesTests(unittest.TestCase):
                 network_index.find_potential_duplicates(Path(tmp) / "missing.sqlite"), []
             )
 
+    def test_group_carries_a_stable_group_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Jean Dupont", "COMP-2"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            groups = network_index.find_potential_duplicates(index_path)
+            self.assertTrue(groups[0]["group_key"])
+            # Same group_key regardless of member ordering in the underlying rows.
+            again = network_index.find_potential_duplicates(index_path)
+            self.assertEqual(groups[0]["group_key"], again[0]["group_key"])
+
+    def test_dismissed_group_is_excluded_by_default_when_root_given(self) -> None:
+        from app.duplicate_dismissals import dismiss_duplicate_group
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_root = root / "data" / "private" / "network"
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Jean Dupont", "COMP-2"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = data_root / "network_index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            groups = network_index.find_potential_duplicates(index_path, root=root)
+            self.assertEqual(len(groups), 1)
+            dismiss_duplicate_group(root, ["PERS-1", "PERS-2"], actor="rep@acme.com")
+
+            after = network_index.find_potential_duplicates(index_path, root=root)
+            self.assertEqual(after, [])
+
+            still_visible = network_index.find_potential_duplicates(index_path, root=root, include_dismissed=True)
+            self.assertEqual(len(still_visible), 1)
+
+    def test_without_root_dismissals_are_not_filtered(self) -> None:
+        from app.duplicate_dismissals import dismiss_duplicate_group
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_root = root / "data" / "private" / "network"
+            people = [
+                person("PERS-1", "Jean Dupont", "COMP-1"),
+                person("PERS-2", "Jean Dupont", "COMP-2"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = data_root / "network_index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            dismiss_duplicate_group(root, ["PERS-1", "PERS-2"], actor="rep@acme.com")
+
+            groups = network_index.find_potential_duplicates(index_path)
+            self.assertEqual(len(groups), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -318,3 +318,38 @@ class UseCaseNudger:
 
     def reject_nudge(self, study_id: str, nudge_id: str, *, actor: str, reason: str | None = None) -> dict[str, Any]:
         return self._decide(study_id, nudge_id, decision="rejected", actor=actor, reason=reason)
+
+    def acknowledge_falsifier(self, study_id: str, nudge_id: str, *, actor: str) -> dict[str, Any]:
+        """Record that a human has read and considered this nudge's `falsifier`
+        text (red-team-side-story C2).
+
+        This is a lightweight human acknowledgment only -- it never changes
+        `status` (accept/reject, via `_decide()` above, stays the only thing
+        that transitions a nudge's decision) and it never re-derives or
+        validates the falsifier text itself. It is deliberately separate from
+        `_decide()`'s accepted/rejected states, mirroring this module's
+        epistemic-status boundary: acknowledging a falsifier means "a human
+        looked at this," not "a human decided this nudge is right or wrong."
+        Idempotent and settable on an already-decided nudge (reading a
+        falsifier is orthogonal to whether the nudge was ultimately accepted
+        or rejected).
+        """
+        study_id = str(study_id or "").strip()
+        nudge_id = str(nudge_id or "").strip()
+        actor = str(actor or "").strip()
+        if not study_id:
+            raise ControlPlaneError("study_id is required")
+        if not nudge_id:
+            raise ControlPlaneError("nudge_id is required")
+        if not actor:
+            raise ControlPlaneError("actor is required to acknowledge a falsifier")
+        records = self._load_nudges(study_id)
+        record = next((item for item in records if item.get("nudge_id") == nudge_id), None)
+        if record is None:
+            raise ControlPlaneError(f"unknown nudge_id: {nudge_id}")
+        updated = dict(record)
+        updated["falsifier_acknowledged"] = True
+        updated["falsifier_acknowledged_by"] = actor
+        updated["falsifier_acknowledged_at"] = utc_now()
+        self._save_nudges(study_id, [updated if item.get("nudge_id") == nudge_id else item for item in records])
+        return updated

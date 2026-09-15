@@ -31,6 +31,7 @@ from app.dashboard import FollowUpDashboard, UseCaseHeritage
 from app.demand import DemandCatalog
 from app import kanban
 from app import network_index
+from app.duplicate_dismissals import dismiss_duplicate_group
 from app.network_index import find_potential_duplicates, search_companies, search_people
 from app.network_writer import create_company, create_person, reassign_company_workspace
 from app.nudging import UseCaseNudger
@@ -315,8 +316,19 @@ def build_app(
         )
 
     @app.get("/api/network/duplicates")
-    async def api_network_duplicates(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return find_potential_duplicates(NETWORK_INDEX_PATH)
+    async def api_network_duplicates(
+        include_dismissed: bool = False, ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        return find_potential_duplicates(NETWORK_INDEX_PATH, root=ROOT, include_dismissed=include_dismissed)
+
+    @app.post("/api/network/duplicates/dismiss")
+    async def api_network_duplicates_dismiss(
+        payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = dismiss_duplicate_group(
+            ROOT, payload.get("person_ids") or [], actor=ctx.email, reason=payload.get("reason")
+        )
+        return JSONResponse(status_code=200, content=record)
 
     # ------------------------------------------------------------------
     # Admin-only network index rebuild trigger (manual/on-demand; the
@@ -428,6 +440,15 @@ def build_app(
             nudge_id.strip(),
             actor=ctx.email,
             reason=payload.get("reason"),
+        )
+        return JSONResponse(status_code=200, content=record)
+
+    @app.post("/api/nudges/{nudge_id}/ack-falsifier")
+    async def api_nudges_ack_falsifier(
+        nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
+    ) -> Any:
+        record = NUDGING.acknowledge_falsifier(
+            str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
         )
         return JSONResponse(status_code=200, content=record)
 

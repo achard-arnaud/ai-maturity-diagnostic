@@ -208,6 +208,49 @@ class NudgePersistenceTests(unittest.TestCase):
             with self.assertRaises(ControlPlaneError):
                 nudger.accept_nudge("acme-1", nudge_id, actor="")
 
+    def test_acknowledge_falsifier_records_actor_without_touching_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_inventory(root)
+            nudger = UseCaseNudger(root)
+            nudge_id = nudger.generate("acme-1", "all")["nudges"][0]["nudge_id"]
+            updated = nudger.acknowledge_falsifier("acme-1", nudge_id, actor="rep@acme.com")
+            self.assertTrue(updated["falsifier_acknowledged"])
+            self.assertEqual("rep@acme.com", updated["falsifier_acknowledged_by"])
+            self.assertTrue(updated["falsifier_acknowledged_at"])
+            self.assertEqual("hypothesis", updated["status"])
+            persisted = nudger.list_nudges("acme-1")
+            self.assertTrue(next(item for item in persisted if item["nudge_id"] == nudge_id)["falsifier_acknowledged"])
+
+    def test_acknowledge_falsifier_works_on_already_decided_nudge(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_inventory(root)
+            nudger = UseCaseNudger(root)
+            nudge_id = nudger.generate("acme-1", "all")["nudges"][0]["nudge_id"]
+            nudger.accept_nudge("acme-1", nudge_id, actor="rep@acme.com")
+            updated = nudger.acknowledge_falsifier("acme-1", nudge_id, actor="rep@acme.com")
+            self.assertEqual("accepted", updated["status"])
+            self.assertTrue(updated["falsifier_acknowledged"])
+
+    def test_acknowledge_falsifier_unknown_nudge_id_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_inventory(root)
+            nudger = UseCaseNudger(root)
+            nudger.generate("acme-1", "all")
+            with self.assertRaises(ControlPlaneError):
+                nudger.acknowledge_falsifier("acme-1", "NUD-does-not-exist", actor="rep@acme.com")
+
+    def test_acknowledge_falsifier_missing_actor_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_inventory(root)
+            nudger = UseCaseNudger(root)
+            nudge_id = nudger.generate("acme-1", "all")["nudges"][0]["nudge_id"]
+            with self.assertRaises(ControlPlaneError):
+                nudger.acknowledge_falsifier("acme-1", nudge_id, actor="")
+
 
 if __name__ == "__main__":
     unittest.main()

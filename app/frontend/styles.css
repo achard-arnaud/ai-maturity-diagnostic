@@ -295,3 +295,9 @@ footer { padding: 0 24px 36px; color: #697581; font-size: .8rem; }
 .kanban-card strong { display: block; }
 .admin-link { color: #536b84; text-decoration: underline; }
 .confirmation-banner { padding: 9px 11px; border-radius: 9px; background: #eef7ea; color: #2e654e; border: 1px solid #afd0c0; margin: 8px 0; font-weight: 650; }
+
+/* Falsifier callout (C2 -- makes a nudge's falsifier text a prominent,
+   acknowledgeable callout instead of a trailing <small> caption). */
+.falsifier-callout { margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: #fdf3e7; border: 1px solid #eac789; font-size: .82rem; color: #6b4a12; }
+.falsifier-callout label { display: flex; gap: 6px; align-items: center; margin-top: 4px; cursor: pointer; }
+.falsifier-callout.falsifier-acknowledged { background: #eef7ea; border-color: #afd0c0; color: #2e654e; }

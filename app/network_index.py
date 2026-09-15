@@ -21,6 +21,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from scripts.network_common import stable_id
+
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
@@ -303,7 +305,9 @@ def get_company(index_path: Path, company_id: str) -> dict[str, Any] | None:
         connection.close()
 
 
-def find_potential_duplicates(index_path: Path) -> list[dict[str, Any]]:
+def find_potential_duplicates(
+    index_path: Path, *, root: Path | None = None, include_dismissed: bool = False
+) -> list[dict[str, Any]]:
     """Detection-only duplicate-person finder (CRM-audit gap #3).
 
     contracts/person.schema.yaml recomputes `person_id` per company, so a
@@ -320,6 +324,18 @@ def find_potential_duplicates(index_path: Path) -> list[dict[str, Any]]:
     company are not flagged here (that is an identity-key collision, a
     different and separately-tracked problem, not a company-change
     duplicate). Returns [] if the index has not been built yet.
+
+    Each returned group carries a `group_key` -- the same content-derived id
+    `app.duplicate_dismissals.dismiss_duplicate_group` computes from the
+    group's person_ids -- so a caller can dismiss it. When `root` (the
+    workspace root that owns `data/private/network/duplicate_dismissals.jsonl`,
+    same convention as `app.duplicate_dismissals`) is passed, a group a human
+    has already dismissed as "not a duplicate" (red-team-side-story C3) is
+    excluded from the result by default, since re-running detection
+    recomputes groups fresh every call and would otherwise make a dismissed
+    group reappear forever; pass `include_dismissed=True` to see everything,
+    dismissed or not. `root` is optional (and ignored when absent) so
+    existing callers that only care about raw detection are unaffected.
     """
     if not Path(index_path).is_file():
         return []
@@ -341,14 +357,25 @@ def find_potential_duplicates(index_path: Path) -> list[dict[str, Any]]:
     for row in rows:
         by_name.setdefault(row["normalized_name"], []).append(row)
 
+    dismissed_keys: set[str] = set()
+    if root is not None and not include_dismissed:
+        from app.duplicate_dismissals import list_dismissed_group_keys
+
+        dismissed_keys = list_dismissed_group_keys(root)
+
     groups: list[dict[str, Any]] = []
     for normalized_name, group_rows in by_name.items():
         companies = {row["seed_company_id"] for row in group_rows}
         if len(group_rows) < 2 or len(companies) < 2:
             continue
+        person_ids = sorted({row["person_id"] for row in group_rows if row["person_id"]})
+        group_key = stable_id("DUPDISMISS", *person_ids) if len(person_ids) >= 2 else None
+        if group_key is not None and group_key in dismissed_keys:
+            continue
         groups.append(
             {
                 "normalized_name": normalized_name,
+                "group_key": group_key,
                 "records": [
                     {
                         "person_id": row["person_id"],

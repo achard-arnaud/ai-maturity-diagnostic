@@ -433,6 +433,22 @@ function nudgeDecisionButtons(studyId, nudge) {
   </div>`;
 }
 
+// C2 (red-team-spec): a lightweight human acknowledgment on the falsifier text
+// -- ticking this only records that a human read and considered it (via
+// POST /api/nudges/{id}/ack-falsifier); it never changes the nudge's
+// accept/reject status. Once acknowledged it stays a plain confirmation, not
+// an interactive control, mirroring accept/reject's own first-decision-wins
+// display pattern above.
+function falsifierBlock(studyId, nudge) {
+  const label = esc(nudge.falsifier || "");
+  if (nudge.falsifier_acknowledged) {
+    return `<div class="falsifier-callout falsifier-acknowledged"><strong>Falsifier :</strong> ${label}<br><small>Vérifié par ${esc(nudge.falsifier_acknowledged_by || "")}</small></div>`;
+  }
+  return `<div class="falsifier-callout"><strong>Falsifier :</strong> ${label}<br>
+    <label><input type="checkbox" class="falsifierAckCheckbox" data-study-id="${esc(studyId)}" data-nudge-id="${esc(nudge.nudge_id)}"> J'ai vérifié ce falsifier</label>
+  </div>`;
+}
+
 async function generateNudges(mode) {
   const studyId = document.querySelector("#nudgeInventory").value;
   if (!studyId) return;
@@ -440,9 +456,12 @@ async function generateNudges(mode) {
   results.innerHTML = `<div class="empty-state">Calcul…</div>`;
   try {
     const payload = await api("/api/nudging/generate", { method: "POST", body: JSON.stringify({ study_id: studyId, mode }) });
-    results.innerHTML = (payload.nudges || []).map(n => `<article class="card"><p class="eyebrow">${esc(n.mode)}</p><h3>${esc((n.target_use_case_ids || []).join(" + "))}</h3><p>${esc(n.rationale)}</p><div class="meta"><span class="badge">${esc(n.status)}</span><span class="badge">${esc(n.confidence)}</span></div><small>Falsifier: ${esc(n.falsifier)}</small>${nudgeDecisionButtons(studyId, n)}</article>`).join("") || `<div class="empty-state">Aucune piste admissible avec les preuves actuelles.</div>`;
+    results.innerHTML = (payload.nudges || []).map(n => `<article class="card"><p class="eyebrow">${esc(n.mode)}</p><h3>${esc((n.target_use_case_ids || []).join(" + "))}</h3><p>${esc(n.rationale)}</p><div class="meta"><span class="badge">${esc(n.status)}</span><span class="badge">${esc(n.confidence)}</span></div>${falsifierBlock(studyId, n)}${nudgeDecisionButtons(studyId, n)}</article>`).join("") || `<div class="empty-state">Aucune piste admissible avec les preuves actuelles.</div>`;
     results.querySelectorAll(".nudgeDecisionBtn").forEach(btn => {
       btn.addEventListener("click", () => decideNudge(btn.dataset.studyId, btn.dataset.nudgeId, btn.dataset.decision, mode));
+    });
+    results.querySelectorAll(".falsifierAckCheckbox").forEach(box => {
+      box.addEventListener("change", () => ackFalsifier(box.dataset.studyId, box.dataset.nudgeId, mode));
     });
   } catch (error) { results.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
 }
@@ -455,6 +474,13 @@ async function decideNudge(studyId, nudgeId, decision, mode) {
       if (reason) body.reason = reason;
     }
     await api(`/api/nudges/${encodeURIComponent(nudgeId)}/${decision}`, { method: "POST", body: JSON.stringify(body) });
+    generateNudges(mode);
+  } catch (error) { window.alert(error.message); }
+}
+
+async function ackFalsifier(studyId, nudgeId, mode) {
+  try {
+    await api(`/api/nudges/${encodeURIComponent(nudgeId)}/ack-falsifier`, { method: "POST", body: JSON.stringify({ study_id: studyId }) });
     generateNudges(mode);
   } catch (error) { window.alert(error.message); }
 }
@@ -671,8 +697,22 @@ async function loadDuplicates() {
   container.innerHTML = "<div class='empty-state'>Détection…</div>";
   try {
     const groups = await api("/api/network/duplicates");
-    container.innerHTML = groups.map(g => `<article class="card"><p class="eyebrow">${esc(g.normalized_name || "")}</p>${(g.records || g.people || []).map(r => `<div class="data-row"><span>${esc(r.display_name || r.person_id)}</span><span class="badge">${esc(r.seed_company_id || "")}</span></div>`).join("")}</article>`).join("") || "<div class='empty-state'>Aucun doublon potentiel détecté.</div>";
+    container.innerHTML = groups.map(g => `<article class="card" data-group-key="${esc(g.group_key || "")}"><p class="eyebrow">${esc(g.normalized_name || "")}</p>${(g.records || g.people || []).map(r => `<div class="data-row"><span>${esc(r.display_name || r.person_id)}</span><span class="badge">${esc(r.seed_company_id || "")}</span></div>`).join("")}${g.group_key ? `<button class="dismissDuplicateBtn" data-group-key="${esc(g.group_key)}" data-person-ids="${esc((g.records || []).map(r => r.person_id).join(","))}">Pas un doublon</button>` : ""}</article>`).join("") || "<div class='empty-state'>Aucun doublon potentiel détecté.</div>";
+    container.querySelectorAll(".dismissDuplicateBtn").forEach(btn => {
+      btn.addEventListener("click", () => dismissDuplicate(btn.dataset.personIds.split(",").filter(Boolean)));
+    });
   } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
+}
+
+// C3 (red-team-side-story): persists a human's "not a duplicate" decision
+// (POST /api/network/duplicates/dismiss) so the group stops reappearing on
+// future detection runs; it never merges or otherwise touches the person
+// records themselves.
+async function dismissDuplicate(personIds) {
+  try {
+    await api("/api/network/duplicates/dismiss", { method: "POST", body: JSON.stringify({ person_ids: personIds }) });
+    loadDuplicates();
+  } catch (error) { window.alert(error.message); }
 }
 
 // ------------------------------------------------------------------

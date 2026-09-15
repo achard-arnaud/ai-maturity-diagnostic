@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 import yaml
 
-from app.kanban import CANONICAL_STAGES, build_board
+from app.kanban import CANONICAL_STAGES, _QUALIFICATION_STAGE_ALIASES, build_board
+
+_QUALIFICATION_SOURCE = Path(__file__).resolve().parent.parent / "app" / "qualification.py"
 
 
 def dump(path: Path, data: object) -> None:
@@ -156,6 +159,51 @@ class KanbanBoardTests(unittest.TestCase):
             sources = {card["source"] for card in matching_cards}
             self.assertIn("qualification", sources)
             self.assertIn("follow_up", sources)
+
+    def test_kanban_covers_every_qualification_stage_literal(self) -> None:
+        """C1 (red-team-spec): _QUALIFICATION_STAGE_ALIASES is a hand-maintained
+        table reconciling QualificationCockpit's stage vocabulary with kanban's
+        CANONICAL_STAGES. Nothing else lints it against qualification.py's actual
+        stage values, so it can silently go stale if a new stage literal is
+        introduced upstream. This test extracts every string assigned to the
+        local `stage` variable in app/qualification.py's stage-assignment logic
+        (the same `stage, next_skill, next_action, ... = "..."` tuple-assignment
+        pattern used throughout that function) and asserts each one is either a
+        CANONICAL_STAGES member outright or has an alias in
+        _QUALIFICATION_STAGE_ALIASES that maps it into one. It fails loudly
+        (rather than just silently defaulting to "demand" via
+        `_qualification_stage`) the moment a new stage literal appears in
+        qualification.py without a matching kanban update.
+        """
+        source = _QUALIFICATION_SOURCE.read_text(encoding="utf-8")
+        # Matches each `stage, next_skill, ... = "demand", ...` (or a ternary like
+        # `stage, ... = "matching" if not fit_violation else "matching_invalid", ...`)
+        # line individually, then pulls every quoted string literal out of just
+        # that line's right-hand side, so unrelated `else "..."` expressions
+        # elsewhere in the file are never picked up.
+        stage_literals: set[str] = set()
+        for line in source.splitlines():
+            if not re.match(r"\s*stage,.*=", line):
+                continue
+            rhs = line.split("=", 1)[1]
+            # `stage` is always the first name on the left, so its value is the
+            # first comma-separated expression on the right (a plain literal, or
+            # a `"a" if cond else "b"` ternary) -- take only that first slot's
+            # literal(s), not every literal in the whole tuple assignment.
+            first_slot = rhs.split(",", 1)[0]
+            stage_literals.update(re.findall(r'"([^"]+)"', first_slot))
+        self.assertTrue(stage_literals, "expected to find at least one stage literal in app/qualification.py")
+        uncovered = sorted(
+            literal
+            for literal in stage_literals
+            if literal not in CANONICAL_STAGES and literal not in _QUALIFICATION_STAGE_ALIASES
+        )
+        self.assertEqual(
+            [],
+            uncovered,
+            "qualification.py stage literal(s) not covered by kanban's CANONICAL_STAGES "
+            f"or _QUALIFICATION_STAGE_ALIASES: {uncovered!r} -- update app/kanban.py",
+        )
 
 
 if __name__ == "__main__":
