@@ -4,6 +4,9 @@
     home: { title: "Home", description: "Files de travail, blockers et prochaines actions.", endpoint: "/api/follow-up" },
     discover: { title: "Discover", description: "Signaux et comptes à examiner, sans inférer la demande.", endpoint: "/api/v1/workspaces/{workspace}/signals" },
     research: { title: "Research", description: "Dossiers de recherche product-blind et preuves associées.", endpoint: "/api/v1/workspaces/{workspace}/research-cases" },
+    fit: { title: "Fit", description: "Décisions explicables, gates et alternatives avant tout ciblage.", endpoint: "/api/v1/workspaces/{workspace}/fit-assessments" },
+    targets: { title: "Targets", description: "Plans de compte et parties prenantes autorisés par le Fit.", endpoint: "/api/v1/workspaces/{workspace}/target-plans" },
+    reach: { title: "Reach", description: "Séquences, tâches et contraintes d'exécution visibles.", endpoint: "/api/v1/workspaces/{workspace}/sequences" },
   };
   const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
   const itemsFrom = payload => Array.isArray(payload) ? payload : (payload.items || []);
@@ -20,7 +23,10 @@
     try {
       const payload = await request(config.endpoint.replace("{workspace}", encodeURIComponent(route.workspace)));
       const items = itemsFrom(payload);
-      const cards = items.map(item => `<article class="card"><p class="eyebrow">${escapeHtml(item.status || item.kind || "à traiter")}</p><h3>${escapeHtml(item.name || item.title || item.company_name || itemId(item))}</h3><p>${escapeHtml(item.summary || item.reason || item.next_action || "")}</p></article>`).join("");
+      const cards = items.map(item => {
+        const gates = (item.gates || []).map(gate => `<span class="badge ${gate.passed ? 'status-ready' : 'status-stale'}">${escapeHtml(gate.name || gate.gate_id)} · ${gate.passed ? 'pass' : 'bloqué'}</span>`).join("");
+        return `<article class="card"><p class="eyebrow">${escapeHtml(item.status || item.kind || "à traiter")}</p><h3>${escapeHtml(item.name || item.title || item.company_name || itemId(item))}</h3><p>${escapeHtml(item.summary || item.reason || item.next_action || "")}</p><div class="meta">${gates}</div></article>`;
+      }).join("");
       container.querySelector(".space-loading").outerHTML = `<div class="grid result-grid">${cards || '<div class="empty-state">Aucun élément dans cette file.</div>'}</div>`;
     } catch (error) {
       container.querySelector(".space-loading").outerHTML = `<div class="error" role="alert">${escapeHtml(error.message)}</div>`;
