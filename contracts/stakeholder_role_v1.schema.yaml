@@ -1,0 +1,44 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalStakeholderRoleV1
+type: object
+required:
+  - stakeholder_role_id
+  - target_plan_id
+  - person_entity_id
+  - role
+  - title
+  - status
+  - assigned_at
+  - assigned_by
+properties:
+  stakeholder_role_id: {type: string}
+  target_plan_id: {type: string}
+  person_entity_id:
+    type: string
+    description: Epic 02 CanonicalPersonV1 entity_id.
+  role:
+    enum: [sponsor, champion, user, prescripteur, technique, procurement, blocker]
+    description: >
+      The buying-committee function this person is assigned in this
+      plan. Never derived from `title` -- see app.target_plan_policy's
+      own docstring and tests: a person's job title never determines,
+      defaults, or constrains their assigned role.
+  title:
+    type: string
+    description: >
+      The person's actual job title, exactly as sourced (e.g. from Epic
+      02's Person record) -- kept purely informational. This Epic's own
+      invariant ("un titre de poste ne prouve ni autorité ni rôle") means
+      `title` is never read by any policy function in this Epic to infer
+      or validate `role`.
+  status:
+    enum: [active, superseded, removed]
+  assigned_at: {type: string, format: date-time}
+  assigned_by: {type: string}
+  supersedes_stakeholder_role_id:
+    type: [string, "null"]
+    default: null
+additionalProperties: false
+x-rules:
+  - "Cardinality: sponsor and champion are singular per active TargetPlan (at most one active stakeholder in each of those roles at a time); user/prescripteur/technique/procurement/blocker are unbounded. See app.target_plan_policy.validate_role_cardinality."

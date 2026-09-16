@@ -1,0 +1,29 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalInfluenceV1
+type: object
+required:
+  - influence_id
+  - stakeholder_role_id
+  - confidence
+  - evidence_ids
+properties:
+  influence_id: {type: string}
+  stakeholder_role_id: {type: string}
+  warm_path:
+    type: [string, "null"]
+    default: null
+    description: >
+      A known connection path to this stakeholder (e.g. a mutual
+      contact), if any. Null is an explicit, visible unknown -- never
+      inferred or fabricated.
+  confidence:
+    enum: [high, medium, low, unknown]
+  evidence_ids:
+    type: array
+    default: []
+    items: {type: string}
+    description: Epic 04 CanonicalEvidenceV1 ids grounding this influence assessment.
+additionalProperties: false
+x-rules:
+  - "confidence is never derived from title or role alone -- it reflects the strength of the warm_path/evidence, independent of the stakeholder's assigned buying-committee role."
