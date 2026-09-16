@@ -1,0 +1,62 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalClaimV1
+type: object
+required:
+  - claim_id
+  - workspace_id
+  - research_case_id
+  - company_entity_id
+  - statement
+  - claim_type
+  - evidence_ids
+  - status
+properties:
+  claim_id: {type: string}
+  workspace_id: {type: string}
+  research_case_id: {type: string}
+  company_entity_id: {type: string}
+  statement:
+    type: string
+    maxLength: 500
+  claim_type:
+    enum: [fact, inference, hypothesis]
+    description: >
+      Per 02_DOMAIN_AND_TRUTH_MODEL.md's types of truth: a fact is an
+      observation accepted per policy, an inference is an explicable
+      conclusion drawn from claims, a hypothesis is an assertion needing an
+      owner and a due date before it can be validated.
+  evidence_ids:
+    type: array
+    items: {type: string}
+    description: >
+      Evidence this claim is directly built on. A "fact" claim requires at
+      least one evidence_id whose evidence_grade is not N0 (see
+      app/research_policy.validate_claim_lineage). An "inference" claim may
+      cite other claim_ids instead (see derived_from_claim_ids).
+  derived_from_claim_ids:
+    type: array
+    items: {type: string}
+    default: []
+    description: Other claims this one is inferred from (inference/hypothesis only).
+  hypothesis_owner:
+    type: [string, "null"]
+    default: null
+  hypothesis_due_at:
+    type: [string, "null"]
+    format: date-time
+    default: null
+  status:
+    enum: [active, superseded, retracted]
+  supersedes_claim_id:
+    type: [string, "null"]
+    default: null
+  contradicted_by_claim_ids:
+    type: array
+    items: {type: string}
+    default: []
+additionalProperties: false
+x-rules:
+  - "A claim is never silently overwritten: an update creates a new claim with status active and supersedes_claim_id pointing at the old one, whose own status flips to superseded (immutability, per 02_DOMAIN_AND_TRUTH_MODEL.md)."
+  - "An inference is never promoted to a fact by anything other than an explicit human decision recorded outside this record (08_EVIDENCE_DECISION_AND_GATES.md: 'a score never turns a FAIL or open critical blocker into PURSUE' generalizes to: no automated process silently upgrades claim_type)."
+  - "A hypothesis claim must carry hypothesis_owner and hypothesis_due_at; see app/research_policy.validate_claim_lineage."
