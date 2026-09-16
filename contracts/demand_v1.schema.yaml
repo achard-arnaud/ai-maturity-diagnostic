@@ -1,0 +1,67 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalDemandV1
+type: object
+required:
+  - demand_id
+  - workspace_id
+  - company_entity_id
+  - status
+  - problem
+  - population
+  - impact
+  - urgency
+  - initiative
+  - sponsor
+  - budget
+  - timing
+  - claim_ids
+  - created_at
+  - updated_at
+properties:
+  demand_id: {type: string}
+  workspace_id: {type: string}
+  company_entity_id: {type: string}
+  status:
+    enum: [observed, qualifying, qualified, rejected, stale, reopened]
+  # Each of the 7 dimensions below is "known or unknown" per this Epic's
+  # target state ("problème, population, impact, urgence, initiative,
+  # sponsor/budget/timing connus ou inconnus") -- an unset dimension is a
+  # visible, typed unknown, never a silently-omitted field.
+  problem: {"$ref": "#/$defs/knowable_field"}
+  population: {"$ref": "#/$defs/knowable_field"}
+  impact: {"$ref": "#/$defs/knowable_field"}
+  urgency: {"$ref": "#/$defs/knowable_field"}
+  initiative: {"$ref": "#/$defs/knowable_field"}
+  sponsor: {"$ref": "#/$defs/knowable_field"}
+  budget: {"$ref": "#/$defs/knowable_field"}
+  timing: {"$ref": "#/$defs/knowable_field"}
+  claim_ids:
+    type: array
+    items: {type: string}
+    description: Epic 04 CanonicalClaimV1 ids this Demand's known fields are grounded in.
+  origin_profile_ref:
+    type: [string, "null"]
+    default: null
+    description: >
+      Relative path of the legacy 05_enterprise_demand_profile.yaml this
+      Demand was migrated from, if any. Null for a Demand created directly
+      as a v1 object.
+  created_at: {type: string, format: date-time}
+  updated_at: {type: string, format: date-time}
+additionalProperties: false
+$defs:
+  knowable_field:
+    type: object
+    required: [known]
+    properties:
+      known: {type: boolean}
+      value: {type: [string, "null"], default: null}
+    additionalProperties: false
+    description: >
+      known=false means this dimension is an explicit, visible unknown
+      (value must be null); known=true requires a non-null value.
+x-rules:
+  - "Demand is independent of the catalogue: this schema carries no product/catalog/offer/fit field anywhere -- see app.demand_policy's structural guard, same pattern as Epic 04's Company 360 view."
+  - "Fit and targeting are forbidden in this context (Epic's own invariant): no match/score/recommendation field exists here; that belongs exclusively to Fit (Epic 07, not yet built)."
+  - "An unknown dimension is never inferred or defaulted to a plausible-sounding guess -- known=false with value=null is the only correct representation of 'not yet known' (mirrors app.demand.create_demand_profile's existing discipline for the legacy profile)."
