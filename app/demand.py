@@ -6,7 +6,6 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-import yaml
 
 from app.artifact_store import ArtifactStore
 
