@@ -1,0 +1,65 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalCompanyV1
+type: object
+required:
+  - entity_id
+  - legacy_ids
+  - canonical_name
+  - workspace_id
+  - valid_from
+  - status
+  - provenance
+  - last_updated
+properties:
+  entity_id: {type: string}
+  legacy_ids:
+    type: array
+    items: {type: string}
+    minItems: 1
+  canonical_name: {type: string}
+  normalized_name: {type: string}
+  aliases:
+    type: array
+    items: {type: string}
+  countries:
+    type: array
+    items: {type: string}
+  workspace_id:
+    type: string
+    description: >
+      Unlike the legacy contract (workspace_id nullable, coalesced to
+      "default" by readers), this is required on the v1 projection: every
+      canonical company is explicitly scoped.
+  valid_from:
+    type: string
+    format: date
+  valid_to:
+    type: [string, "null"]
+    format: date
+  status:
+    enum: [seeded, active, refresh_due, merged, superseded]
+  merged_into_entity_id:
+    type: [string, "null"]
+  provenance:
+    type: object
+    required: [source_refs, epistemic_status, evidence_grade]
+    properties:
+      source_refs:
+        type: array
+        items: {type: string}
+      epistemic_status:
+        enum: [fact, inference, hypothesis, unknown]
+      evidence_grade:
+        enum: [P1, P2, U1, W1, N0]
+    additionalProperties: false
+  last_updated:
+    type: string
+    format: date
+  stale_after_months:
+    type: integer
+additionalProperties: false
+x-rules:
+  - "entity_id is assigned once and never recomputed from canonical_name."
+  - "A legacy company_id maps to exactly one entity_id at any point in time."
+  - "Merging two companies sets status: merged and merged_into_entity_id on the losing entity_id; it never deletes the record."

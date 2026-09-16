@@ -1,0 +1,67 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalPersonV1
+type: object
+required:
+  - entity_id
+  - legacy_ids
+  - display_name
+  - workspace_id
+  - valid_from
+  - status
+  - provenance
+  - last_updated
+properties:
+  entity_id:
+    type: string
+    description: >
+      Immutable canonical identifier, stable across identity-key changes
+      (e.g. a person changing employer). Never recomputed from name/company
+      like the legacy person_id.
+  legacy_ids:
+    type: array
+    items: {type: string}
+    minItems: 1
+    description: >
+      One or more legacy contracts/person.schema.yaml (v0.3) person_id values
+      that resolve to this canonical entity. A person changing company
+      previously produced a brand-new legacy person_id with no linkage; this
+      array is that linkage.
+  display_name: {type: string}
+  normalized_name: {type: string}
+  workspace_id: {type: string}
+  valid_from:
+    type: string
+    format: date
+    description: Start of this identity's temporal validity window.
+  valid_to:
+    type: [string, "null"]
+    format: date
+    description: End of validity, null while still current.
+  status:
+    enum: [seeded, active, refresh_due, merged, superseded]
+  merged_into_entity_id:
+    type: [string, "null"]
+    description: Set only when status is merged; points at the surviving entity_id.
+  provenance:
+    type: object
+    required: [source_refs, epistemic_status, evidence_grade]
+    properties:
+      source_refs:
+        type: array
+        items: {type: string}
+      epistemic_status:
+        enum: [fact, inference, hypothesis, unknown]
+      evidence_grade:
+        enum: [P1, P2, U1, W1, N0]
+    additionalProperties: false
+  last_updated:
+    type: string
+    format: date
+  stale_after_months:
+    type: integer
+additionalProperties: false
+x-rules:
+  - "entity_id is assigned once and never recomputed from name/company fields."
+  - "A legacy person_id maps to exactly one entity_id at any point in time; legacy_ids only grows via an audited merge (see docs/ADR-009), never silently."
+  - "valid_to is set only by an explicit merge or supersession event, never by a routine re-import."
