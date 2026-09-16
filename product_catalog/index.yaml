@@ -12,7 +12,7 @@ offers:
   - offer_id: OFFER-AF-01
     file: OFFER-AF-01_astraforge.yaml
     name: Astraforge
-    status: reconstructed
+    status: sourced
   - offer_id: OFFER-CD-01
     file: OFFER-CD-01_ai-consulting-delivery.yaml
     name: AI Consulting & Delivery

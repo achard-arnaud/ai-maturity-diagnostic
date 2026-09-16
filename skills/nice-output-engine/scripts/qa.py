@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, asyncio, json, math, os, shutil
+import argparse, asyncio, json, os, shutil
 from pathlib import Path
 from playwright.async_api import async_playwright
 

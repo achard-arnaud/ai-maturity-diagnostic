@@ -26,6 +26,13 @@ def _slug(value: str) -> str:
 class CatalogHarvester:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "CatalogHarvester":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     def _shelf_ids(self) -> set[str]:
         data = _read_yaml(self.root / "catalog_sources" / "shelves.yaml")
         return {

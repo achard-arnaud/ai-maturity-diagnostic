@@ -38,3 +38,36 @@ sources:
       - current_product_thesis
       - flow_acceleration_positioning
     caveat: Stronger claims and technology specifics require revalidation against primary product documentation.
+  - source_id: AF-SRC-005
+    type: vendor_site
+    date: "2026-09-14"
+    path_or_ref: "https://astraforge.dev/"
+    reliability: vendor_claim
+    supports:
+      - governed_execution_positioning_and_primitives
+      - devfactory_wedge_and_demonstrator
+      - unified_memory_graph_ambition
+    caveat: >
+      astraforge.ai is a duplicate/incorrect domain for this product; the canonical
+      site is astraforge.dev (owner-confirmed 2026-09-14). This source is the
+      vendor's own site copy — treat every claim here as vendor_claim, not fact,
+      until independently corroborated. DataFactory/SecFactory are named as
+      architecture extensions on this site, not demonstrated at DevFactory's
+      maturity level.
+  - source_id: AF-SRC-006
+    type: owner_analysis_note
+    date: "2026-09-14"
+    path_or_ref: owner_analysis_note_20260914
+    reliability: analyst_interpretation
+    supports:
+      - autonomy_x_criticality_value_model
+      - moat_layering_weak_intermediate_strong
+      - land_and_expand_sequencing_devfactory_to_devops_to_data_to_security
+    caveat: >
+      This is the owner's own strategic reading (thesis, moat assessment,
+      contre-positioning), not a vendor claim or independently verified fact.
+      Kept as inference in the canonical profile; the account-specific
+      Plasma/Skilld application of this reading belongs in a study artifact,
+      not in this canonical, account-agnostic product profile
+      (contracts/product_profile.schema.yaml: "No account-specific evidence
+      is allowed in a canonical product profile except a formal reference case").

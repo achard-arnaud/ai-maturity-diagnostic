@@ -16,7 +16,7 @@ from jsonschema import Draft202012Validator
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_PARTS = {".git", ".venv", "__pycache__", ".pytest_cache", "data/private"}
+EXCLUDED_PARTS = {".git", ".venv", "__pycache__", ".pytest_cache", "data/private", "node_modules", ".claude", "playwright-report", "test-results"}
 
 
 def excluded(path: Path) -> bool:
@@ -88,6 +88,7 @@ def privacy_and_portability(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
+    run("ruff lint", [sys.executable, "-m", "ruff", "check", "."], errors)
     run("package validator", [sys.executable, "scripts/validate_package.py"], errors)
     run("LinkedIn deferred-design validator", [sys.executable, "scripts/validate_linkedin_design.py"], errors)
     run(

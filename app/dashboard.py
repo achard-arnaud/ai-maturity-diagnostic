@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -12,11 +13,55 @@ from app.uc_graph import UseCaseGraph
 from app.value_chain import ValueChainCatalog
 
 
+def _parse_iso_date(value: Any) -> date | None:
+    if value in (None, ""):
+        return None
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except ValueError:
+        return None
+
+
+def _age_fields(last_touched: Any, stale_after_months: int, *, as_of: date) -> dict[str, Any]:
+    """Age/staleness computation for a follow-up item, reusing the same
+    `stale_after_months` convention app.network_index._is_stale already uses
+    for people/companies (a whole number of months == months * 30 days).
+
+    `last_touched` is whatever timestamp already exists for that item's kind
+    (a study manifest's `updated_at`, a sector's most-recently-updated study,
+    or a backlog file's document-level `updated_at`) -- no new "last touched"
+    field is invented here. When no such timestamp is available at all,
+    `days_in_current_state` is None and the item is never flagged stale
+    (silence, not a false "0 days fresh")."""
+    parsed = _parse_iso_date(last_touched)
+    if parsed is None:
+        return {"days_in_current_state": None, "is_stale": False}
+    days = max((as_of - parsed).days, 0)
+    try:
+        months = int(stale_after_months)
+    except (TypeError, ValueError):
+        months = 0
+    is_stale = months >= 1 and days >= months * 30
+    return {"days_in_current_state": days, "is_stale": is_stale}
+
+
 @dataclass(frozen=True)
 class FollowUpDashboard:
     root: Path
+    # Same convention/name as app.network_index's per-record stale_after_months,
+    # applied here as a single dashboard-wide default (see TODO(red-team-spec)
+    # below for why this is flat rather than per-kind for now).
+    stale_after_months: int = 1
 
-    def items(self) -> list[dict[str, Any]]:
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "FollowUpDashboard":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
+    def items(self, *, as_of: date | None = None) -> list[dict[str, Any]]:
+        effective_date = as_of or date.today()
         items: list[dict[str, Any]] = []
         for row in QualificationCockpit(self.root).list_studies():
             current = row.get("current_blocker")
@@ -31,6 +76,7 @@ class FollowUpDashboard:
                         "message": current["message"],
                         "resolver": current,
                         "navigation": {"menu": "qualification", "study_id": row["study_id"]},
+                        **_age_fields(row.get("updated_at"), self.stale_after_months, as_of=effective_date),
                     }
                 )
 
@@ -58,6 +104,7 @@ class FollowUpDashboard:
                     "message": resolution["message"],
                     "resolver": resolution,
                     "navigation": {"menu": "demand", "study_id": row["study_id"]},
+                    **_age_fields(row.get("updated_at"), self.stale_after_months, as_of=effective_date),
                 }
             )
 
@@ -84,6 +131,7 @@ class FollowUpDashboard:
                         "message": resolution["message"],
                         "resolver": resolution,
                         "navigation": {"menu": "demand", "sector_code": sector["sector_code"]},
+                        **_age_fields(sector.get("most_recent_study_update"), self.stale_after_months, as_of=effective_date),
                     }
                 )
             elif sector["benchmark_state"] == "benchmark_ready":
@@ -108,6 +156,7 @@ class FollowUpDashboard:
                         "message": resolution["message"],
                         "resolver": resolution,
                         "navigation": {"menu": "demand", "sector_code": sector["sector_code"]},
+                        **_age_fields(sector.get("most_recent_study_update"), self.stale_after_months, as_of=effective_date),
                     }
                 )
 
@@ -125,14 +174,32 @@ class FollowUpDashboard:
                     "resolver": None,
                     "navigation": {"menu": "followup"},
                     "source": todo.get("source"),
+                    **_age_fields(todo.get("source_updated_at"), self.stale_after_months, as_of=effective_date),
                 }
             )
+        # TODO(red-team-spec): days_in_current_state/is_stale above are computed
+        # from the most recent timestamp already available per item kind (study
+        # manifest updated_at, sector's most-recently-updated study, or backlog
+        # file updated_at) using a single flat stale_after_months threshold for
+        # every kind. There is still no first-seen-in-*this exact stage*
+        # tracking (a study sitting in "reach" for 3 months looks the same as
+        # one that moved stages last week but whose manifest wasn't touched
+        # since), and no per-kind threshold. Revisit once follow-up volume
+        # exceeds a handful of open P0/P1 items per week and a real per-stage
+        # triage view becomes necessary.
         return sorted(items, key=lambda item: (str(item.get("priority") or "P9"), item["kind"], item["label"]))
 
 
 @dataclass(frozen=True)
 class UseCaseHeritage:
     root: Path
+
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "UseCaseHeritage":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
 
     def company(self, study_id: str) -> dict[str, Any]:
         graph = UseCaseGraph(self.root).company(study_id)
