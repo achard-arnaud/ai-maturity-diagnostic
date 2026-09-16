@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 import logging
 import mimetypes
 import os
 import subprocess
+import sys
+import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -94,6 +98,43 @@ async def _json_body(request: Request) -> dict[str, Any]:
     return data
 
 
+_REQUEST_LOG = logging.getLogger("app.request")
+_REQUEST_LOG.propagate = False
+if not _REQUEST_LOG.handlers:
+    _request_log_handler = logging.StreamHandler(sys.stdout)
+    _request_log_handler.setFormatter(logging.Formatter("%(message)s"))
+    _REQUEST_LOG.addHandler(_request_log_handler)
+    _REQUEST_LOG.setLevel(logging.INFO)
+
+
+async def _log_requests(request: Request, call_next):
+    """Structured JSON access log: one line per request, no sensitive data.
+
+    Per ADR-007's rule against logging sensitive data, this deliberately
+    never logs the request body, cookies, Authorization header, or query
+    string -- only method, path, status, duration, and a request id.
+    """
+
+    request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    started = time.monotonic()
+    response = await call_next(request)
+    duration_ms = round((time.monotonic() - started) * 1000, 2)
+    response.headers["X-Request-ID"] = request_id
+    _REQUEST_LOG.info(
+        json.dumps(
+            {
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status": response.status_code,
+                "duration_ms": duration_ms,
+            }
+        )
+    )
+    return response
+
+
 def _static_response(name: str) -> Response:
     target = (FRONTEND / name).resolve()
     try:
@@ -129,6 +170,8 @@ def build_app(
         config=config,
         session_secret=session_secret,
     )
+
+    app.middleware("http")(_log_requests)
 
     # ------------------------------------------------------------------
     # Error handling parity with the old stdlib Handler (ADR-004/S1).

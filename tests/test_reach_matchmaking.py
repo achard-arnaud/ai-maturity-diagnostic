@@ -138,7 +138,7 @@ class ReachMatchmakerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); study = self.seed(root)
             matchmaker = ReachMatchmaker(root)
-            first = matchmaker.prepare_request({"study_id": "acme-1"})
+            matchmaker.prepare_request({"study_id": "acme-1"})
             artifact_path = study / "06c_reach_strategy.yaml"
             first_generated_at = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))["generated_at"]
 

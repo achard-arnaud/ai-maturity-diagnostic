@@ -51,7 +51,7 @@ class UseCaseNudger:
         write_jsonl(self._nudges_path(study_id), records, sort_key="nudge_id")
 
     def _inventory_path(self, study_id: str) -> Path:
-        candidates = list((self.root / "studies").glob(f"*/05b_use_case_inventory.yaml")) if (self.root / "studies").is_dir() else []
+        candidates = list((self.root / "studies").glob("*/05b_use_case_inventory.yaml")) if (self.root / "studies").is_dir() else []
         for path in candidates:
             doc = _read_yaml(path)
             if (doc.get("study_id") or path.parent.name) == study_id:

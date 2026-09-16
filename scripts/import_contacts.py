@@ -7,7 +7,6 @@ import argparse
 import csv
 import shutil
 import sys
-from collections import defaultdict
 from datetime import date
 from pathlib import Path
 from typing import Any

@@ -67,7 +67,7 @@ class CatalogPromotionTests(unittest.TestCase):
         if with_source:
             item["source_url"] = "https://widgetron.example/"
             item["raw_claims"] = ["Automates widget assembly."]
-        result = harvester.stage({"company": "Widgetron Inc", "shelf_id": "shelf-1", "items": [item]})
+        harvester.stage({"company": "Widgetron Inc", "shelf_id": "shelf-1", "items": [item]})
         candidates = list_staged_candidates(self.root)
         self.assertEqual(len(candidates), 1)
         return candidates[0]["id"]

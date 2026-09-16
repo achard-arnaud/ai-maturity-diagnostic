@@ -27,10 +27,39 @@ docs = [
 dev = [
   "coverage>=7,<8",
   "pytest>=8,<10",
+  "ruff>=0.6,<1",
 ]
 
 [tool.setuptools]
-packages = []
+packages = ["app", "scripts"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Keep the gate small and honest for a hotfix sprint: only flag categories
+# that are safe to fix mechanically (unused imports/names, obvious style)
+# without touching working, tested business logic. Broader categories below
+# are ignored for now with the reason documented; revisit under issue #24.
+select = ["E", "F", "W"]
+ignore = [
+  # E501 (line too long): the codebase has many pre-existing long lines
+  # (data literals, long ADR-referencing docstrings/messages) well past
+  # any reasonable limit; rewrapping them is a cosmetic, high-diff change
+  # to working code that this hotfix sprint is not scoped to make.
+  "E501",
+  # E701/E702 (compound statements / semicolons): the test suite widely
+  # uses `root = Path(tmp); self.seed(root)` as a deliberate one-line
+  # setup idiom across dozens of tests. Splitting all of those is a
+  # large, purely cosmetic diff to tested code, out of scope here.
+  "E701",
+  "E702",
+  # E401 (multiple imports on one line): a few pre-existing scripts use
+  # comma-separated imports; rewriting them is cosmetic and out of scope
+  # for this hotfix sprint.
+  "E401",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

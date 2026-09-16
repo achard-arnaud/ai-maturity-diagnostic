@@ -88,6 +88,7 @@ def privacy_and_portability(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
+    run("ruff lint", [sys.executable, "-m", "ruff", "check", "."], errors)
     run("package validator", [sys.executable, "scripts/validate_package.py"], errors)
     run("LinkedIn deferred-design validator", [sys.executable, "scripts/validate_linkedin_design.py"], errors)
     run(

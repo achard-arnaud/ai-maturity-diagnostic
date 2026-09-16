@@ -12,7 +12,7 @@ import html
 import os
 import uuid
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -20,7 +20,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.authruntime.config import AuthConfig
 from app.authruntime.db import ControlStore
-from app.authruntime.deps import RequestContext, get_current_user, get_store, require_role, require_workspace_access
+from app.authruntime.deps import RequestContext, get_store, require_role, require_workspace_access
 from app.authruntime.oidc import GoogleOIDCClient, OIDCClient, OIDCUserInfo
 
 ROOT = Path(__file__).resolve().parents[2]
