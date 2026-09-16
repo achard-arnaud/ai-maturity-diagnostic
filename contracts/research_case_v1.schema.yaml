@@ -1,0 +1,41 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalResearchCaseV1
+type: object
+required:
+  - research_case_id
+  - workspace_id
+  - company_entity_id
+  - status
+  - created_at
+  - updated_at
+properties:
+  research_case_id: {type: string}
+  workspace_id: {type: string}
+  company_entity_id: {type: string}
+  status:
+    enum: [open, in_progress, blocked, in_review, accepted, reopened, stale]
+  owner: {type: [string, "null"], default: null}
+  created_at: {type: string, format: date-time}
+  updated_at: {type: string, format: date-time}
+  origin_signal_id:
+    type: [string, "null"]
+    default: null
+    description: >
+      Set when this case was opened from Epic 03's ResearchQueued handoff
+      (app/signal_handoff.queue_research). Null for a case opened directly.
+  blockers:
+    type: array
+    items:
+      type: object
+      required: [reason, opened_at]
+      properties:
+        reason: {type: string}
+        opened_at: {type: string, format: date-time}
+        resolved_at: {type: [string, "null"], default: null}
+      additionalProperties: false
+    default: []
+additionalProperties: false
+x-rules:
+  - "ResearchCase never references a product/offer object -- research is product-blind by construction (this Epic's own invariant)."
+  - "status transitions are governed by app/research_policy.can_transition_case; a case with any unresolved blocker cannot move to accepted."

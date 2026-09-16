@@ -1,0 +1,75 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalEvidenceV1
+type: object
+required:
+  - evidence_id
+  - workspace_id
+  - source
+  - locator
+  - evidence_type
+  - dated_at
+  - excerpt
+  - hash
+  - license
+  - entity_refs
+  - evidence_grade
+properties:
+  evidence_id: {type: string}
+  workspace_id: {type: string}
+  source:
+    type: object
+    required: [kind, ref]
+    properties:
+      kind:
+        enum: [public, manual, import]
+      ref: {type: string}
+    additionalProperties: false
+  locator:
+    type: string
+    description: Where the evidence lives (URL, document id, operator note ref).
+  evidence_type:
+    enum: [fact_publication, observation, consultation]
+    description: >
+      Per 08_EVIDENCE_DECISION_AND_GATES.md: the date recorded in dated_at is
+      the date of the fact/publication, the observation date, or the
+      consultation date, depending on this type.
+  dated_at:
+    type: string
+    format: date-time
+  excerpt:
+    type: string
+    maxLength: 1000
+    description: Bounded excerpt -- never the full source document.
+  hash:
+    type: string
+    description: Content hash of the excerpt, for tamper-evidence and dedup.
+  license:
+    type: string
+    description: Usage/license note for this evidence's source.
+  entity_refs:
+    type: array
+    items: {type: string}
+    minItems: 1
+    description: CanonicalCompanyV1/CanonicalPersonV1 entity_id(s) this evidence is about.
+  supports_claim_ids:
+    type: array
+    items: {type: string}
+    default: []
+  contests_claim_ids:
+    type: array
+    items: {type: string}
+    default: []
+  freshness:
+    type: object
+    properties:
+      stale_after_days:
+        type: integer
+        minimum: 1
+    additionalProperties: false
+  evidence_grade:
+    enum: [P1, P2, U1, W1, N0]
+additionalProperties: false
+x-rules:
+  - "An Evidence record is immutable once created; a correction creates a new Evidence record, never an in-place edit (02_DOMAIN_AND_TRUTH_MODEL.md: 'a published snapshot is immutable; any correction creates a version/supersession')."
+  - "excerpt is bounded (maxLength) -- evidence is a pointer with a short excerpt, not a copy of the source."
