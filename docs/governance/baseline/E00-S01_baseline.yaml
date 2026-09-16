@@ -91,7 +91,7 @@ branches:
     relation_to_main: strict_ancestor_of_main
     commits_in_main_not_in_dev: 39
     commits_in_dev_not_in_main: 0
-    finding: "dev exists on origin but is stale (39 commits behind main); it does not currently act as the integration branch the target branching model (13_STOP_GO_RELEASE_PLAYBOOK) assumes sprint branches fork from and merge into. Bringing dev to parity with main is out of scope for S01 (inventory only) and is flagged for S03 (CI trigger + branch protection work)."
+    finding: "dev exists on origin but is stale (39 commits behind main); it does not currently act as the integration branch the target branching model (13_STOP_GO_RELEASE_PLAYBOOK) assumes sprint branches fork from and merge into. Bringing dev to parity with main is out of scope for S01 (inventory only) and is flagged for S03 (CI trigger + branch protection work). Concrete cost observed directly: a sprint branch forked from dev failed CI on scripts/build_sector_rollups.py's non-deterministic study-glob ordering, already fixed on main (commit c3dad49) but absent from dev; the fix was ported into this Sprint's PR rather than left red (see docs/governance/sprint-log/E00-S01_STOP.md, CI section)."
   agent_release_branches:
     - agent/advanced-research-public-first
     - agent/merge-majeur-agentic-market-mapping
@@ -140,6 +140,7 @@ documentation_inventory:
     - "PRD v0.5/v0.6/v0.7/v0.8 are stacked in docs/ with no registry recording which sections are superseded, matching audit gap G01/dette documentaire."
     - "README.md title states 'v0.4' while the git history (commit c6f594d) already added a v0.9 CRM section to its body; the top-level version marker and the content are out of sync."
     - "docs/TECHNICAL_BASELINE_v0_8.md describes several gaps as current state that are now partially implemented per git history since v0.8 (e.g. auth runtime)."
+    - "ruff is not declared anywhere in pyproject.toml (core deps, or the docs/dev extras), yet scripts/check_release.py's first check is `ruff check .`; its version/config on the CI runner is not pinned or reproducible from the package manifest. Not actioned in S01; candidate for S03 alongside the other CI-gate hardening."
 
 tests_and_routes_inventory:
   python_test_files: 40

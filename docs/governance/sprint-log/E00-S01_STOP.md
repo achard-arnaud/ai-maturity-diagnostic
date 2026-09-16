@@ -10,7 +10,8 @@ machine-readable. (Sprint plan, `docs/gtm-transformation/epics/EPIC_00_GOVERNANC
 - Sprint branch: `claude/peaceful-wozniak-8yqv32`, forked from `origin/dev` (commit `b5726c6`).
 - Base branch for the PR: `dev`, per the target branching model (`13_STOP_GO_RELEASE_PLAYBOOK.md`).
 - Audited revision described by the baseline: `main@5468e57` (matches the corpus's stated audit revision).
-- No application/runtime/test code changed. Docs-only addition.
+- Docs-only addition, plus one ported one-line fix (see "CI" below) — no new
+  application behavior, no scope change to this Sprint's inventory objective.
 
 ## Outputs
 
@@ -41,6 +42,23 @@ machine-readable. (Sprint plan, `docs/gtm-transformation/epics/EPIC_00_GOVERNANC
 - `README.md` title says `v0.4` while its body already documents a `v0.9` CRM
   section (git history) — a concrete, previously undocumented instance of the
   version-drift gap (G01).
+
+## CI
+
+The first `release-check` run on this PR (base `dev`) failed on
+`test_rollup_ingests_company_use_case_evidence`
+(`AssertionError: 'UC-1' != 'UC-3'`). Root cause: `scripts/build_sector_rollups.py`
+iterated `studies_root.glob(...)` in unsorted filesystem readdir order — the test
+data passed locally (creation order happened to match) but not on the CI
+runner. This was **not caused by this PR** (no `app/`/`scripts/`/`tests/`
+files were touched by the original commit) and is not a flake either: it
+reproduced identically on a re-run. `git log origin/dev..origin/main --
+scripts/build_sector_rollups.py` showed the fix already exists and is
+merged on `main` (commit `c3dad49`, "fix: sort study manifest glob for
+deterministic sector rollups") — `main@5468e57`'s own CI run
+(35092966945) is green with it. Ported the same one-line `sorted(...)`
+fix into this branch (`dev` doesn't have it yet) rather than widening the
+PR further; verified locally (isolated test + full 84-test suite, twice).
 
 ## Remaining (deferred, not blocking this Sprint's stop condition)
 
