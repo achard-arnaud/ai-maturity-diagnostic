@@ -1,5 +1,5 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
-schema_version: "0.3"
+schema_version: "1.0"
 title: ExternalIdentityMapping
 type: object
 required:
@@ -32,3 +32,4 @@ additionalProperties: false
 x-rules:
   - External identifiers are aliases and never replace internal IDs.
   - This object is private and must not enter Git with real identifiers.
+  - "internal_entity_id references a v1 entity_id (person_v1.schema.yaml / company_v1.schema.yaml / relationship_v1.schema.yaml), not a legacy person_id/company_id/relationship_id. See docs/ADR-009-canonical-identity-model.md."

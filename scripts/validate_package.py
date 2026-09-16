@@ -91,7 +91,7 @@ REQUIRED_RELEASE_RESOURCES = {
     "data/network_release_manifest.yaml",
     "scripts/check_release.py",
 }
-ALLOWED_CONTRACT_VERSIONS = {"0.2", "0.3", "0.5", "0.6", "0.7"}
+ALLOWED_CONTRACT_VERSIONS = {"0.2", "0.3", "0.5", "0.6", "0.7", "1.0"}
 
 
 def load_yaml(path: Path) -> Any:
