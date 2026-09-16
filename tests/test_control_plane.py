@@ -57,6 +57,10 @@ class ControlPlaneTests(unittest.TestCase):
         self.assertIn("TODO-REL-001", ids)
         self.assertIn("TODO-V05-007", ids)
 
+    def test_backlog_includes_runtime_foundation_v0_8_items(self) -> None:
+        ids = {item["id"] for item in self.control.backlog()}
+        self.assertIn("TODO-V08-005", ids)
+
     def test_read_yaml_raises_control_plane_error_on_parse_failure(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             bad_file = Path(tmp) / "broken.yaml"

@@ -129,6 +129,7 @@ class RepoControlPlane:
             self.root / "artifacts" / "TODO_productization_v0_5.yaml",
             self.root / "artifacts" / "TODO_productization_v0_6.yaml",
             self.root / "artifacts" / "TODO_productization_v0_7.yaml",
+            self.root / "artifacts" / "TODO_runtime_foundation_v0_8.yaml",
         ]
         result: list[dict[str, Any]] = []
         for path in sources:
