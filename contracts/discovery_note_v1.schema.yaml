@@ -1,0 +1,22 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalDiscoveryNoteV1
+type: object
+required: [discovery_note_id, workspace_id, opportunity_id, conversation_id, author_id, occurred_at, summary, evidence_refs]
+properties:
+  discovery_note_id: {type: string}
+  workspace_id: {type: string}
+  opportunity_id: {type: string}
+  conversation_id: {type: string}
+  author_id: {type: string}
+  occurred_at: {type: string, format: date-time}
+  summary: {type: string, minLength: 1, maxLength: 4000}
+  evidence_refs:
+    type: array
+    minItems: 1
+    items: {type: string}
+  created_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "A DiscoveryNote records an observed conversation with provenance; it never rewrites Demand, Fit, TargetPlan or Engagement evidence."
+  - "The summary is bounded to 4,000 characters to prevent the commercial log from becoming an ungoverned evidence store."

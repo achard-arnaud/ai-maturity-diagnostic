@@ -1,0 +1,20 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalCommercialDecisionV1
+type: object
+required: [commercial_decision_id, workspace_id, opportunity_id, decision, rationale, evidence_refs, decided_by, decided_at]
+properties:
+  commercial_decision_id: {type: string}
+  workspace_id: {type: string}
+  opportunity_id: {type: string}
+  decision: {enum: [advance, hold, stop]}
+  rationale: {type: string, minLength: 1, maxLength: 2000}
+  evidence_refs:
+    type: array
+    minItems: 1
+    items: {type: string}
+  decided_by: {type: string}
+  decided_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "A commercial decision is append-only, attributed and evidence-linked; it does not mutate upstream truth or bypass an Opportunity stage gate."
