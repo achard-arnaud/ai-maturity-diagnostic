@@ -1,0 +1,68 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalSignalV1
+type: object
+required:
+  - signal_id
+  - workspace_id
+  - source
+  - observed_at
+  - status
+  - dedup_key
+  - freshness
+  - provenance
+properties:
+  signal_id: {type: string}
+  workspace_id: {type: string}
+  source:
+    type: object
+    required: [kind, ref]
+    properties:
+      kind:
+        enum: [public, manual, import]
+      ref:
+        type: string
+        description: Locator of the source (URL, batch id, or operator note ref).
+    additionalProperties: false
+  observed_at:
+    type: string
+    format: date-time
+  status:
+    enum: [new, reviewed, linked, dismissed, expired]
+  company_entity_id:
+    type: [string, "null"]
+    description: >
+      Set only once the signal has been linked to a CanonicalCompanyV1
+      (Epic 02) entity_id via an explicit "reviewed -> linked" transition.
+      Null for an unreviewed or unlinked signal.
+  dedup_key:
+    type: string
+    description: >
+      Deterministic key (see app/signal_policy.compute_dedup_key) used to
+      detect the same underlying signal observed twice, e.g. via two
+      different ingestion adapters.
+  freshness:
+    type: object
+    required: [stale_after_days]
+    properties:
+      stale_after_days:
+        type: integer
+        minimum: 1
+    additionalProperties: false
+  provenance:
+    type: object
+    required: [source_refs, epistemic_status, evidence_grade]
+    properties:
+      source_refs:
+        type: array
+        items: {type: string}
+      epistemic_status:
+        enum: [fact, inference, hypothesis, unknown]
+      evidence_grade:
+        enum: [P1, P2, U1, W1, N0]
+    additionalProperties: false
+additionalProperties: false
+x-rules:
+  - "A signal never proves demand; it only ever prioritizes research (Epic 03 purpose, Epic 00 Principle #1: evidence before inference; gate before score; fit before person)."
+  - "This contract deliberately excludes any demand-only field (problem, population, impact, urgency, sponsor, budget, timing, initiative) -- those belong exclusively to Demand (Epic 05). See app/signal_policy.assert_no_demand_fields."
+  - "Lifecycle: new -> reviewed -> {linked, dismissed}; any non-terminal status -> expired via freshness. See app/signal_policy.can_transition."
