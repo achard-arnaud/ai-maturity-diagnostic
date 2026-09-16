@@ -27,7 +27,7 @@ Per `docs/gtm-transformation/epics/EPIC_00_GOVERNANCE_BASELINE_AND_DELIVERY.md`:
 - [x] S03: CI triggers extended; `dev`/`main` drift closed.
 - [x] S04: E2E journeys wired into a real, reproducible, regression-gated CI job.
 - [x] S05: this traceability matrix + the Sprint/Epic/handoff templates below.
-- [ ] Epic acceptance: a witness PR to `dev` (this one, #33) and a witness release to `main` both pass the gates; baseline/limitations published. The `dev`→`main` release PR is the remaining step, opened once this PR merges.
+- [x] Epic acceptance: witness PRs to `dev` (#32, #33) passed the gates; baseline/limitations published in `docs/governance/EPIC_00_ACCEPTANCE.md`. The witness release to `main` is the PR that carries this commit.
 
 ## Known limitations carried forward (not blocking Epic 00 acceptance)
 
