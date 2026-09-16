@@ -5,7 +5,11 @@ on:
   push:
     branches:
       - main
+      - dev
       - 'agent/**'
+      - 'sprint/**'
+      - 'epic/**'
+      - 'claude/**'
 
 permissions:
   contents: read
@@ -34,3 +38,49 @@ jobs:
 
       - name: Run release gate
         run: python scripts/check_release.py
+
+  e2e-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[docs,dev]'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright + browser
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Start app
+        run: |
+          nohup python -m uvicorn app.server:APP --host 127.0.0.1 --port 8080 > app.log 2>&1 &
+          echo "started"
+
+      - name: Run E2E gate (regressions only; GAP-titled tests are expected-red per tests/e2e/README.md)
+        run: python scripts/run_e2e_gate.py
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-failure-artifacts
+          path: |
+            app.log
+            test-results/
+          retention-days: 14

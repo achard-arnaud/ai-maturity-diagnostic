@@ -1,4 +1,4 @@
-# AI Maturity Diagnostic & Enterprise Intelligence v0.4
+# AI Maturity Diagnostic & Enterprise Intelligence v0.9
 
 Ce dépôt fournit un système modulaire pour transformer des preuves publiques, des vérités produit et des données privées autorisées en diagnostics IA, décisions commerciales, notes exécutives et dossiers de candidature traçables.
 
