@@ -29,6 +29,17 @@ properties:
   status:
     enum: [active, archived]
   created_at: {type: string, format: date-time}
+  overlay_of_product_id:
+    type: [string, "null"]
+    default: null
+    description: >
+      Set only on a workspace-owned overlay (owner_scope.kind=workspace)
+      that explicitly supersedes a shared product -- per ADR-008, an
+      overlay may add or supersede a shared offer only with an explicit
+      base product reference; silent shadowing is forbidden. Null for a
+      standalone workspace product, and always null for a shared product
+      (a shared product can never overlay anything).
 additionalProperties: false
 x-rules:
   - "Product is the durable identity only -- it carries no content of its own. All content (description, exclusions, hard gates, capabilities) lives on a ProductSnapshot, never on the Product record itself (02_DOMAIN_AND_TRUTH_MODEL.md: 'a snapshot is a projection, never a primary source' generalizes here in reverse: Product is identity, Snapshot is the published truth)."
+  - "See app.product_visibility.validate_overlay_product for the runtime enforcement of the base-product-must-exist rule."
