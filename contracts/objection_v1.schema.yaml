@@ -1,0 +1,35 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalObjectionV1
+type: object
+required:
+  - objection_id
+  - engagement_event_id
+  - category
+  - confidence
+  - status
+  - raised_at
+properties:
+  objection_id: {type: string}
+  engagement_event_id: {type: string}
+  category:
+    enum: [price, timing, authority, fit, competitor, no_need, other]
+  confidence:
+    type: number
+    minimum: 0
+    maximum: 1
+  status:
+    enum: [draft, reviewed]
+    default: draft
+    description: A low-confidence classification is always created draft and routed to human review (S03) -- see 'faible confiance routée'.
+  raised_at: {type: string, format: date-time}
+  reviewed_by:
+    type: [string, "null"]
+    default: null
+  reviewed_at:
+    type: [string, "null"]
+    format: date-time
+    default: null
+additionalProperties: false
+x-rules:
+  - "faible confiance routée: an Objection below the classification-confidence threshold is always created status=draft and must be routed to human review before it can drive any downstream action (S03/S04) -- never auto-acted-on silently."
