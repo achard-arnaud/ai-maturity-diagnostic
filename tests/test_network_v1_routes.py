@@ -102,6 +102,18 @@ class NetworkV1RoutesTests(unittest.TestCase):
         response = self.client.get("/api/v1/workspaces/ws-a/people/p1", cookies=self._cookie(self.bob_token))
         self.assertEqual(404, response.status_code)
 
+    def test_person_360_composes_without_fusing_truths(self) -> None:
+        response = self.client.get("/api/v1/workspaces/ws-a/people/p1/360", cookies=self._cookie(self.alice_token))
+        self.assertEqual(200, response.status_code)
+        body = response.json()
+        self.assertIn("person", body)
+        self.assertIn("relationships", body)
+        self.assertIn("companies", body)
+
+    def test_person_360_cross_workspace_is_404(self) -> None:
+        response = self.client.get("/api/v1/workspaces/ws-a/people/p1/360", cookies=self._cookie(self.bob_token))
+        self.assertEqual(404, response.status_code)
+
     def test_admin_can_access_any_workspace(self) -> None:
         admin = self.store.get_or_create_user("admin@example.com", "Admin")
         self.store.set_admin(admin["id"], True)

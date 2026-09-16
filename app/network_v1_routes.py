@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.authruntime.deps import RequestContext, require_workspace_access
 from app.network_v1_store import EntityNotFound, get_entity, list_entities
+from app.person_view import get_person_360
 
 
 def _paginated_response(root: Path, workspace_id: str, kind: str, limit: int, cursor: str | None) -> dict:
@@ -88,5 +89,16 @@ def create_v1_network_router(root: Path) -> APIRouter:
         _ctx: RequestContext = Depends(require_workspace_access()),
     ):
         return _get_or_404(root, workspace_id, "relationship", entity_id)
+
+    @router.get("/people/{entity_id}/360")
+    def person_360(
+        workspace_id: str,
+        entity_id: str,
+        _ctx: RequestContext = Depends(require_workspace_access()),
+    ):
+        view = get_person_360(root, workspace_id, entity_id)
+        if view is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+        return view
 
     return router
