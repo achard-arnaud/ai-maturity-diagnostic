@@ -1,0 +1,15 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalExpansionV1
+type: object
+required: [expansion_id, workspace_id, deal_id, status, created_at]
+properties:
+  expansion_id: {type: string}
+  workspace_id: {type: string}
+  deal_id: {type: string}
+  status: {enum: [identified, qualified, active, closed_won, closed_lost]}
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "Expansion is linked to a won Deal; it does not rewrite the original Opportunity, Proof or Deal history."

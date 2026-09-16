@@ -1,0 +1,15 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalProofV1
+type: object
+required: [proof_id, workspace_id, opportunity_id, status, created_at]
+properties:
+  proof_id: {type: string}
+  workspace_id: {type: string}
+  opportunity_id: {type: string}
+  status: {enum: [draft, designed, running, completed, cancelled]}
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "A Proof belongs to exactly one Opportunity and cannot establish a client claim until its outcome is recorded (Epic 11 S04)."

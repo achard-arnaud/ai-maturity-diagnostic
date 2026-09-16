@@ -1,0 +1,19 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalOpportunityV1
+type: object
+required: [opportunity_id, workspace_id, lead_id, demand_id, fit_assessment_id, target_plan_id, status, created_at]
+properties:
+  opportunity_id: {type: string}
+  workspace_id: {type: string}
+  lead_id: {type: string}
+  demand_id: {type: string}
+  fit_assessment_id: {type: string}
+  target_plan_id: {type: string}
+  status: {enum: [draft, discovery, proof, proposal, closed_won, closed_lost]}
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "Opportunity is created only from a qualified Lead. It is never a container for unqualified prospects."
+  - "Demand, Fit and TargetPlan references preserve the upstream decision chain and are never rewritten by commercial stages."
