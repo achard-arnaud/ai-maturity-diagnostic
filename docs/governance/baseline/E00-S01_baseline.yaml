@@ -1,0 +1,170 @@
+id: E00-S01-baseline-2026-09-16
+schema_version: 1.0.0
+workspace_id: ai-maturity-diagnostic
+status: versioned
+created_at: "2026-09-16T00:00:00Z"
+created_by: claude-sonnet-5-session
+provenance:
+  - kind: git-inventory
+    method: direct clone + local command execution
+  - kind: release-gate-reproduction
+    method: "python scripts/check_release.py, reproduced locally after repo-audit note that jsonschema was missing in the audit environment"
+supersedes: null
+
+repo:
+  full_name: achard-arnaud/ai-maturity-diagnostic
+  head_branch: main
+  head_commit: 5468e5747f52b152814ca6ba1a41b8e7aabdadf2
+  head_commit_short: 5468e57
+  head_commit_date: "2026-09-16T11:54:13+00:00"
+  matches_audit_revision: true
+
+runtime:
+  language: python
+  python_version_pin: "3.11"
+  framework: FastAPI
+  frontend: HTML/CSS/JS (app/frontend, served by app/server.py)
+  persistence:
+    business_artifacts: YAML/Markdown files, versioned in-repo (canonical memory)
+    control_plane: SQLite (auth/workspace runtime, data/control/control.sqlite3, gitignored, runtime-generated)
+  app_loc_python: 6384
+  app_modules_count: 27
+
+ci:
+  github_workflow_path: .github/workflows/qa.yml
+  gitlab_pipeline_path: .gitlab-ci.yml
+  triggers:
+    pull_request: true
+    push_main: true
+    push_agent_glob: true
+    push_dev: false
+    push_sprint_branches: false
+    push_epic_branches: false
+  gate_script: scripts/check_release.py
+  gate_reproduced_locally: true
+  gate_result: PASS
+  gate_total_errors: 0
+  checks:
+    - name: ruff lint
+      result: PASS
+    - name: package validator
+      result: PASS
+    - name: LinkedIn deferred-design validator
+      result: PASS
+    - name: unit and integration tests with app coverage
+      result: PASS
+      test_files: 40
+      test_functions_approx: 352
+    - name: app line coverage >=80%
+      result: PASS
+      measured_coverage_pct: 88
+      threshold_pct: 80
+    - name: YAML/JSON parsing and JSON Schema meta-validation
+      result: PASS
+    - name: local Markdown links
+      result: PASS
+    - name: private-key and absolute-home-path scan
+      result: PASS
+    - name: DOCX example configuration
+      result: PASS
+    - name: DOCX example generation
+      result: PASS
+    - name: private network validator
+      result: SKIP
+      reason: private data not present in clone (data/private/network/people.jsonl absent)
+  playwright:
+    configured: true
+    config_file: playwright.config.ts
+    journeys:
+      - tests/e2e/journey-a-product.spec.ts
+      - tests/e2e/journey-b-contact.spec.ts
+      - tests/e2e/journey-c-company.spec.ts
+    included_in_release_gate: false
+    app_autostart_in_config: false
+    finding: "Playwright is configured but not invoked by scripts/check_release.py or by either CI pipeline; it is a dormant spec, not an enforced gate. Owned by Epic 00 / Sprint S04."
+
+branches:
+  default: main
+  dev:
+    exists: true
+    head_commit: b5726c6f42302f4759f8b85f351a8e8759eeeed6
+    relation_to_main: strict_ancestor_of_main
+    commits_in_main_not_in_dev: 39
+    commits_in_dev_not_in_main: 0
+    finding: "dev exists on origin but is stale (39 commits behind main); it does not currently act as the integration branch the target branching model (13_STOP_GO_RELEASE_PLAYBOOK) assumes sprint branches fork from and merge into. Bringing dev to parity with main is out of scope for S01 (inventory only) and is flagged for S03 (CI trigger + branch protection work). Concrete cost observed directly: a sprint branch forked from dev failed CI on scripts/build_sector_rollups.py's non-deterministic study-glob ordering, already fixed on main (commit c3dad49) but absent from dev; the fix was ported into this Sprint's PR rather than left red (see docs/governance/sprint-log/E00-S01_STOP.md, CI section)."
+  agent_release_branches:
+    - agent/advanced-research-public-first
+    - agent/merge-majeur-agentic-market-mapping
+    - agent/skills-bi-application-nice
+    - agent/update-readme-v0-4
+    - agent/v0-5-productized-diagnostic
+    - agent/v0-6-demand-matching-nudging
+    - agent/v0-7-value-chain-reach-graph
+    - agent/v07-release-hotfix
+    - agent/v08-foundation-design
+    - agent/v08-workspace-ux-refinement
+    - agent/v09-canonical-entity-two-pager
+  documentary_or_wip_branches:
+    - name: docs/red-team-side-story-spec-deferred
+      merged_into_main: false
+      note: "input per 01_AS_IS_AUDIT_AND_GAP_MAP; not authoritative until a merge/retain/defer/reject decision is recorded"
+    - name: docs/benchmark-red-team-handoff
+      merged_into_main: false
+    - name: feat/prospection-principes-todo
+      merged_into_main: false
+  other_branches:
+    - chatgpt-connection-test
+    - claude/gifted-johnson-qxh9nx
+  note: "docs/red-team-side-story content also exists directly on main under docs/red-team-side-story/ (trigger-journey-audit.md, moscow-next-sprints.md, current-state-map.md); its relationship to the unmerged docs/red-team-side-story-spec-deferred branch is not reconciled and is deferred to S02 (registre de supersession)."
+
+documentation_inventory:
+  agents_contract:
+    path: AGENTS.md
+    declared_version: v0.3
+    compat_shim: agent.md
+  prd_files:
+    - docs/PRD_control_plane_v0_6.md
+    - docs/PRD_control_plane_v0_7.md
+    - docs/PRD_runtime_foundation_v0_8.md
+    - docs/PRD_productized_diagnostic_v0_5.md
+    - docs/PRD_linkedin_qualification_plugin_v0_1.md
+  adr_files:
+    - docs/ADR-004-web-control-plane-boundary.md
+    - docs/ADR-005-demand-use-case-nudging-boundaries.md
+    - docs/ADR-006-uc-graph-reach-blocker-resolution.md
+    - docs/ADR-007-multi-workspace-auth-runtime.md
+    - docs/ADR_linkedin_external_adapter.md
+  other_docs_count: 31
+  supersession_registry_exists: false
+  findings:
+    - "PRD v0.5/v0.6/v0.7/v0.8 are stacked in docs/ with no registry recording which sections are superseded, matching audit gap G01/dette documentaire."
+    - "README.md title states 'v0.4' while the git history (commit c6f594d) already added a v0.9 CRM section to its body; the top-level version marker and the content are out of sync."
+    - "docs/TECHNICAL_BASELINE_v0_8.md describes several gaps as current state that are now partially implemented per git history since v0.8 (e.g. auth runtime)."
+    - "ruff is not declared anywhere in pyproject.toml (core deps, or the docs/dev extras), yet scripts/check_release.py's first check is `ruff check .`; its version/config on the CI runner is not pinned or reproducible from the package manifest. Not actioned in S01; candidate for S03 alongside the other CI-gate hardening."
+
+tests_and_routes_inventory:
+  python_test_files: 40
+  python_test_functions_approx: 352
+  contracts_schema_files: 27
+  skills_count: 23
+  evals_files: 18
+  api_routes:
+    pattern: legacy flat "/api/*" and "/admin/*" (app/server.py, app/authruntime/app.py)
+    route_count_approx: 55
+    matches_target_v1_pattern: false
+    finding: "No route currently follows the target /api/v1/workspaces/{workspace_id}/... pattern (06_ROUTE_CONTEXT_AND_API_MODEL) nor the target UI route /w/{workspace_slug}/{space} (04_INFORMATION_ARCHITECTURE). All existing routes are de facto the 'legacy /api/... compatibility façades' the target model expects to keep until E12."
+
+gaps_confirmed_from_audit:
+  - id: G01
+    status: confirmed
+    evidence: "README version-marker/content mismatch; PRD/ADR stacking; no supersession registry"
+  - id: G02
+    status: confirmed
+    evidence: "qa.yml push triggers limited to main and agent/**; dev/sprint/epic pushes not covered; Playwright not wired into scripts/check_release.py"
+  - id: G14
+    status: confirmed
+    evidence: "all API routes are flat legacy /api/* and /admin/*; no workspace-scoped v1 API surface exists yet"
+
+open_decisions_for_next_sprints:
+  - "Whether dev is fast-forwarded to main (or rebuilt from main) before S03 rewires CI triggers, given it is currently a stale ancestor rather than a leading integration branch."
+  - "Disposition (merge/retain/defer/reject) of docs/red-team-side-story-spec-deferred, docs/benchmark-red-team-handoff and feat/prospection-principes-todo per 07_WORKFLOW_HANDOFF_AND_ARTIFACT_MODEL side-story rule — owned by S02."
