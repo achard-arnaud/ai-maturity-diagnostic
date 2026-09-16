@@ -5,34 +5,40 @@ status: in_progress
 items:
   - id: TODO-V07-001
     priority: P0
-    status: in_progress
+    status: completed
     area: value_chain
     task: Add Porter/Ishikawa company use-case deep dive and evidence-bounded 05c artifact.
+    result: Implemented in app/value_chain.py, which produces the evidence-bounded studies/<id>/05c_value_chain_causal_map.yaml artifact from a Porter/Ishikawa deep dive; covered by tests/test_value_chain.py.
   - id: TODO-V07-002
     priority: P0
-    status: in_progress
+    status: completed
     area: uc_graph
     task: Add lightweight derived typed UC graph with company and sector heritage views.
+    result: Implemented in app/uc_graph.py (typed, file-derived graph with company/sector heritage views), covered by tests/test_uc_graph.py.
   - id: TODO-V07-003
     priority: P0
-    status: in_progress
+    status: completed
     area: reach
     task: Bridge valid fit, ICP, org, newsflow, contacts and use-case context into iterative first/second-wave reach matchmaking.
+    result: Implemented in app/reach.py (including write_strategy), covered by tests/test_reach_matchmaking.py and tests/test_reach_workflow_resolver.py.
   - id: TODO-V07-004
     priority: P0
-    status: in_progress
+    status: completed
     area: blockers
     task: Normalize every workflow blocker with a resolver CTA, owner action and postcondition.
+    result: Implemented in app/blockers.py and app/blocker_actions.py, covered by tests/test_blocker_actions.py, tests/test_blocker_completeness_v07.py and tests/test_blocker_resolvers.py.
   - id: TODO-V07-005
     priority: P0
-    status: in_progress
+    status: completed
     area: ux
     task: Review cross-menu handoffs, contextual navigation, dashboards and full user journeys.
+    result: Cross-menu contextual navigation implemented in app/frontend/app.js (follow-card "Ouvrir le contexte" buttons carrying menu/study/sector deep links) atop the app/kanban.py, app/campaigns.py and app/account_view.py dashboards added in the CRM sprint.
   - id: TODO-V07-006
     priority: P0
-    status: in_progress
+    status: completed
     area: quality
     task: Enforce at least 80 percent line coverage on the documented Python control-plane scope and keep release QA green.
+    result: pyproject.toml's [tool.coverage.report] sets fail_under = 80 and scripts/check_release.py enforces it; verified 2026-09-16 with `python -m coverage run -m pytest` (352 passed, 88% overall line coverage) and `python scripts/check_release.py` (0 release errors).
   - id: TODO-V07-007
     priority: P1
     status: open
@@ -55,6 +61,7 @@ items:
     task: Reassess graph database/vector retrieval only if measured usage shows file-derived graph navigation or retrieval is insufficient.
   - id: TODO-V07-011
     priority: P1
-    status: open
+    status: completed
     area: persistence
     task: Decide after real usage whether reach/feedback/blocker resolution history needs durable event storage beyond study artifacts.
+    result: Decided on GitHub issue #20 (closed 2026-09-16, decision ladder rung 1) — kept the current file/artifact model; reach/blocker-override history stays JSONL/versioned artifacts plus the SQLite audit_events table (app/authruntime/db.py) for control-plane actions, with no second business-truth store introduced. Reopen trigger: multi-instance deployment or sustained concurrent-writer conflicts, not yet observed.

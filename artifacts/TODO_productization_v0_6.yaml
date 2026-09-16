@@ -39,6 +39,7 @@ items:
     task: Build a Gold Set for use-case extraction, dependency edges and nudge false positives before decision-grade automation.
   - id: TODO-V06-007
     priority: P1
-    status: open
+    status: completed
     area: persistence
     task: Decide whether workflow/nudge review history needs a dedicated durable store beyond study artifacts.
+    verification: Decided on GitHub issue #20 (closed 2026-09-16) — no new business-truth store; nudge/duplicate/campaign decisions persist as JSONL alongside a rebuildable search index (app/network_index.py), kept structurally separate from the SQLite control store per app/blockers.py's issue() invariants and app/authruntime/db.py's audit table.

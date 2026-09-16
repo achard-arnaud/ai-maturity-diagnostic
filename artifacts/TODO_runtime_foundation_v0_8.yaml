@@ -12,8 +12,17 @@ items:
   - id: TODO-V08-001
     priority: P0
     title: Typed settings, request IDs and safe error/logging boundary
-    status: open
+    status: completed
     owner: runtime
+    result: >-
+      Implemented in app/authruntime/config.py (AuthConfig.from_env, assert_safe_bind
+      fail-closed loopback guard) and app/server.py's _log_requests middleware
+      (structured JSON access log with request_id, X-Request-ID header) plus its
+      ControlPlaneError/TimeoutExpired/Exception handlers (400/504/500 mapping;
+      401/403/404 raised directly via app/authruntime/deps.py). Closed as
+      substantially delivered on GitHub issue #17 (2026-09-16); full 409/422/429
+      typed mapping (429 needs rate limiting) remains tracked under TODO-V08-006
+      and GitHub issue #24.
     exit:
       - startup configuration is validated and fail-closed in production mode
       - every protected request and public error carries request_id
@@ -23,9 +32,15 @@ items:
   - id: TODO-V08-002
     priority: P0
     title: Workspace model and scoped filesystem boundary
-    status: open
+    status: completed
     owner: security-runtime
     dependencies: [TODO-V08-001]
+    result: >-
+      Implemented: app/authruntime/deps.py's RequestContext/Membership contracts,
+      app/workspace_paths.py's WorkspacePaths (path-escape rejection), and
+      cross-workspace access returning 404 per require_workspace_access. Covered
+      by tests/test_workspace_paths.py and tests/test_authruntime_app.py. Closed
+      as substantially delivered on GitHub issue #17 (2026-09-16).
     exit:
       - User Workspace Membership and RequestContext contracts exist
       - all mutable/private paths resolve through WorkspacePaths
@@ -35,9 +50,17 @@ items:
   - id: TODO-V08-003
     priority: P0
     title: Lightweight control store and audit model
-    status: open
+    status: completed
     owner: runtime
     dependencies: [TODO-V08-002]
+    result: >-
+      Implemented in app/authruntime/db.py's ControlStore (SQLite WAL, users/
+      workspaces/memberships/sessions/audit_events/overrides tables, append-only
+      record_audit). PostgreSQL migration trigger documented (multi-instance or
+      sustained concurrent-writer conflicts) and not implemented, per GitHub
+      issue #20 (closed 2026-09-16, decision ladder rung 1) and
+      docs/red-team-side-story/current-state-map.md. Covered by
+      tests/test_authruntime_db.py.
     exit:
       - SQLite WAL stores only users workspaces memberships sessions and audit/runtime metadata
       - canonical business artifacts remain outside the control store
@@ -47,9 +70,19 @@ items:
   - id: TODO-V08-004
     priority: P0
     title: ASGI adapter, OIDC session and deny-by-default RBAC
-    status: open
+    status: completed
     owner: security-runtime
     dependencies: [TODO-V08-003]
+    result: >-
+      Implemented: app/authruntime/app.py (FastAPI ASGI adapter, Google OIDC
+      login/callback via Authlib, revocable server-side session), app/server.py's
+      build_app (RequestContext dependency/middleware boundary), and
+      app/authruntime/deps.py's require_role/require_workspace_access
+      (admin/product_owner/standard_user; role names differ from the RFC's
+      reader/reviewer/contributor/admin draft but the deny-by-default RBAC and
+      hard-gate independence — app/server.py:563-566 — are implemented and
+      tested). Covered by tests/test_authruntime_app.py, tests/test_control_plane.py.
+      Closed as substantially delivered on GitHub issue #17 (2026-09-16).
     feedback_gates:
       - first OIDC provider and deployment topology
       - global versus workspace-scoped product catalog
@@ -66,6 +99,13 @@ items:
     status: open
     owner: security-runtime
     dependencies: [TODO-V08-002, TODO-V08-004]
+    note: >-
+      Confirmed still open on 2026-09-16 (app/core.py's RepoControlPlane.invoke,
+      ~line 194): the executor subprocess.run call inherits the full parent
+      environment and returns unbounded raw stdout/stderr to the caller, with no
+      workspace-scoped context enforcement. Explicitly called out as "not yet
+      done" and moved to GitHub issue #24 in the #17 close comment
+      (2026-09-16); tracked there going forward rather than duplicated here.
     exit:
       - executor environment is allowlisted
       - stdout stderr are bounded and never returned raw in production
@@ -79,6 +119,13 @@ items:
     status: open
     owner: security-runtime
     dependencies: [TODO-V08-004, TODO-V08-005]
+    note: >-
+      Confirmed still open on 2026-09-16: app/server.py has no CSRF/Origin
+      policy, no secure-header middleware, no rate limiting, and no
+      trusted-host/proxy configuration or liveness/readiness split. Explicitly
+      itemized as "not yet done" and moved to GitHub issue #24 in the #17
+      close comment (2026-09-16); non-loopback exposure remains blocked until
+      this and an adversarial isolation test suite are complete.
     exit:
       - TLS reverse-proxy assumptions and trusted proxy/host policy are documented
       - CSRF Origin secure-cookie security-header and rate-limit tests pass
@@ -90,6 +137,13 @@ items:
     title: Reproducible package and minimal deployment artifact
     status: open
     owner: runtime
+    note: >-
+      Partially done as of 2026-09-16: pyproject.toml's [tool.setuptools]
+      now declares packages = ["app", "scripts"] (was packages = []), so the
+      app is explicitly packaged and installable outside repository cwd. Still
+      missing: a reproducible service entry point (no [project.scripts]) and
+      a container/deployment artifact (no Dockerfile in the repo). Tracked
+      under GitHub issue #24 work package A.
     exit:
       - app is explicitly packaged and installable outside repository cwd
       - service entry point exists
@@ -100,6 +154,15 @@ items:
     title: CI lint dependency and action hygiene
     status: open
     owner: engineering-quality
+    note: >-
+      Partially done as of 2026-09-16: a Ruff gate exists ([tool.ruff]/
+      [tool.ruff.lint] in pyproject.toml, invoked by scripts/check_release.py's
+      "ruff lint" step, verified passing) and GitHub/GitLab both call that same
+      script. Still missing: automated Python/GitHub Actions dependency updates
+      (no dependabot config found) and a dependency vulnerability check;
+      .github/workflows/qa.yml's actions (checkout@v4, setup-python@v5) look
+      current but were not independently re-verified for deprecation warnings.
+      Tracked under GitHub issue #24 work package D.
     exit:
       - Ruff gate added
       - automated Python and GitHub Actions dependency updates configured

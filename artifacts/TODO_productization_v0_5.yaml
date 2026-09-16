@@ -41,10 +41,11 @@ items:
     done_when: Capability/adoption scope is more explicit while proof remains U1 and unknowns remain visible.
   - id: TODO-V05-007
     priority: P0
-    status: open
+    status: completed
     area: security
     task: Add authentication, authorization, audit logging and deployment hardening before exposing the control plane on a network.
     done_when: Threat model, auth/RBAC, audit retention, secrets handling and deployment controls are reviewed and tested.
+    result: Delivered via the v0.8 runtime foundation (app/authruntime/*, app/server.py's build_app) and closed as substantially delivered on GitHub issue #17 (2026-09-16): OIDC login, revocable server-side sessions, deny-by-default RBAC, workspace isolation with 404-on-cross-workspace, append-only audit_events, and loopback-only auth-disabled guard are implemented and tested. Remaining network-hardening gaps (CSRF/secure headers/rate limiting) are tracked separately under artifacts/TODO_runtime_foundation_v0_8.yaml TODO-V08-006 and GitHub issue #24.
   - id: TODO-V05-008
     priority: P1
     status: open
@@ -53,10 +54,11 @@ items:
     done_when: A reviewed runtime can consume the unit invocation envelope, enforce context boundaries and return structured results.
   - id: TODO-V05-009
     priority: P1
-    status: open
+    status: completed
     area: persistence
     task: Define durable run history, artifact store and queue semantics if concurrent executions are required.
     done_when: Run state is restart-safe and artifacts remain traceable to skill, version and evidence.
+    result: Decided on GitHub issue #20 (closed 2026-09-16, decision ladder rung 1) — kept the current file/artifact model; SQLite (app/authruntime/db.py) covers only control-plane/audit state, business run history stays JSONL/versioned artifacts. See docs/red-team-side-story/current-state-map.md and docs/red-team-side-story/trigger-journey-audit.md. Reopen trigger: multi-instance deployment or sustained concurrent-writer conflicts, not yet observed.
   - id: TODO-V05-010
     priority: P1
     status: open
