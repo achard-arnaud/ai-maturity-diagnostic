@@ -69,6 +69,17 @@ class UseCaseGraphTests(unittest.TestCase):
             self.assertTrue(all(edge["confidence"] == "low" and edge["demand_proof"] is False for edge in graph["edges"]))
             self.assertIn("never prove company demand", graph["warning"])
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(UseCaseGraph.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            graph = UseCaseGraph.for_workspace("acme", repo_root=root)
+            self.assertEqual(graph.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

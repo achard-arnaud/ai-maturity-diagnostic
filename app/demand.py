@@ -6,7 +6,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from app.core import _read_yaml
+import yaml
+
+from app.core import ControlPlaneError, _read_yaml
+from scripts.init_study import slugify
+from scripts.network_common import utc_now
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -36,9 +40,174 @@ def _iso_date(value: Any) -> date | None:
 
 
 @dataclass(frozen=True)
+# TODO(red-team-spec): stale_after_days is a single flat constant for every
+# sector/company; revisit once a second workspace onboards with a genuinely
+# different demand-refresh cadence than the first customer's.
 class DemandCatalog:
     root: Path
     stale_after_days: int = 180
+
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "DemandCatalog":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
+    def _find_study_dir(self, study_id: str) -> Path:
+        studies_root = self.root / "studies"
+        if studies_root.is_dir():
+            for manifest_path in studies_root.glob("*/00_manifest.yaml"):
+                manifest = _read_yaml(manifest_path)
+                if str(manifest.get("study_id") or manifest_path.parent.name) == study_id:
+                    return manifest_path.parent
+        raise ControlPlaneError(f"unknown study_id: {study_id}")
+
+    def create_demand_profile(
+        self,
+        *,
+        company: str,
+        problem_statement: str,
+        company_id: str | None = None,
+        sector_code: str | None = None,
+        confidence: str = "low",
+        study_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Write a schema-conformant `05_enterprise_demand_profile.yaml`
+        (contracts/enterprise_demand_profile.schema.yaml) from the minimum
+        a human can type, closing the M2 gap: until now `DemandCatalog` had
+        no write path at all (see the module-level TODO history and
+        docs/red-team-side-story/trigger-journey-audit.md's M2 section) --
+        onboarding a new account required hand-authoring this YAML offline.
+
+        This is a plain structured-data form, not an agent/skill run: it
+        never calls an LLM and never infers or fabricates content. Only
+        `company` and `problem_statement` are required (matching the
+        contract's own required fields plus the one free-text field a
+        human can reasonably type off the top of their head). Every field
+        the human did not supply is written as an honest empty
+        list/`unknowns` entry, never a plausible-sounding guess -- compare
+        app/catalog_promotion.py's promote_candidate, which follows the
+        same discipline for a similarly human/harvest-entered record.
+
+        Evidence-status choice: `problem_statement` becomes a single
+        evidence_claims entry with `evidence_status: "hypothesis"` --
+        mirroring promote_candidate's rule that a claim with no
+        independent source is a hypothesis, not a vendor_claim (there is
+        no source_url/raw_claims equivalent here since a human typed this
+        directly into a form, with nothing to independently corroborate
+        it yet).
+
+        Study-directory collision handling (reusing scripts/init_study.py's
+        conventions, not inventing a new layout):
+        - `study_id` given: the target study must already exist (its
+          `00_manifest.yaml` resolves it) -- this call overwrites *only*
+          `05_enterprise_demand_profile.yaml` inside it. Use this for an
+          existing company/study.
+        - `study_id` omitted: a brand-new study directory is created using
+          scripts/init_study.py's exact naming convention
+          (`slugify(company)-YYYYMMDD`) plus a minimal
+          `00_manifest.yaml` (from templates/study_manifest.yaml). If a
+          directory with that name already exists, this raises
+          ControlPlaneError rather than silently overwriting an unrelated
+          study (same non-force default as scripts/init_study.py) -- the
+          caller should retry with an explicit `study_id` if they meant to
+          target that existing study.
+        """
+
+        company = str(company or "").strip()
+        if not company:
+            raise ControlPlaneError("company is required")
+        problem_statement = str(problem_statement or "").strip()
+        if not problem_statement:
+            raise ControlPlaneError("problem_statement is required")
+        confidence = str(confidence or "low").strip().lower()
+        if confidence not in {"low", "medium", "high"}:
+            raise ControlPlaneError("confidence must be one of: low, medium, high")
+
+        now = utc_now()
+        today = now[:10]
+
+        if study_id:
+            study_dir = self._find_study_dir(str(study_id).strip())
+            resolved_study_id = str(study_id).strip()
+        else:
+            resolved_study_id = f"{slugify(company)}-{today.replace('-', '')}"
+            study_dir = self.root / "studies" / resolved_study_id
+            if study_dir.exists():
+                raise ControlPlaneError(
+                    f"study already exists: {resolved_study_id} "
+                    "(pass study_id to target it explicitly instead of creating a new one)"
+                )
+            # templates/ lives at the repo root, not per-workspace (mirrors
+            # scripts/init_study.py's `pkg = Path(__file__).resolve().parents[1]`).
+            repo_root = Path(__file__).resolve().parents[1]
+            template_path = repo_root / "templates" / "study_manifest.yaml"
+            manifest = _read_yaml(template_path) if template_path.is_file() else {}
+            manifest.update(
+                {
+                    "study_id": resolved_study_id,
+                    "company_id": company_id,
+                    "company": company,
+                    "created_at": today,
+                    "updated_at": today,
+                }
+            )
+            study_dir.mkdir(parents=True)
+            (study_dir / "00_manifest.yaml").write_text(
+                yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True), encoding="utf-8"
+            )
+
+        unknowns = [
+            "Strategic priorities are unknown -- not captured by this intake form yet.",
+            "Capability gaps are unknown -- not captured by this intake form yet.",
+            "Buying context (sponsors, terrain owners, veto players, timing signals) is unknown.",
+            "Constraints (technical, organizational, regulatory) are unknown.",
+        ]
+        if not sector_code:
+            unknowns.append("Sector (ICB code) is unknown -- not supplied at intake time.")
+
+        profile: dict[str, Any] = {
+            "schema_version": "0.2",
+            "study_id": resolved_study_id,
+            "profile_version": "manual-intake.v0.1",
+            "company": company,
+            "evidence_claims": [
+                {
+                    "claim_id": "E1",
+                    "statement": problem_statement,
+                    "source": "manual_entry",
+                    "evidence_status": "hypothesis",
+                }
+            ],
+            "strategic_priorities": [],
+            "capability_gaps": [],
+            "buying_context": {
+                "sponsors": [],
+                "terrain_owners": [],
+                "veto_players": [],
+                "timing_signals": [],
+            },
+            "constraints": {
+                "technical": [],
+                "organizational": [],
+                "regulatory": [],
+            },
+            "unknowns": unknowns,
+            "confidence": confidence,
+        }
+        if sector_code:
+            profile["sector_code"] = str(sector_code).strip()
+
+        profile_path = study_dir / "05_enterprise_demand_profile.yaml"
+        profile_path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        return {
+            "study_id": resolved_study_id,
+            "study_path": study_dir.relative_to(self.root).as_posix(),
+            "profile_path": profile_path.relative_to(self.root).as_posix(),
+            "profile": profile,
+            "created_study": not bool(study_id),
+        }
 
     def _taxonomy_sectors(self) -> dict[str, dict[str, Any]]:
         path = self.root / "data" / "taxonomies" / "icb_v5_2026.yaml"
@@ -144,6 +313,7 @@ class DemandCatalog:
                     "eligible": bool(study.get("eligible")),
                     "use_case_count": int(study.get("use_case_count") or 0),
                     "use_case_inventory_path": study.get("use_case_inventory_path"),
+                    "study_updated_at": study.get("updated_at"),
                 }
             )
 
@@ -151,6 +321,8 @@ class DemandCatalog:
         for code, meta in sorted(taxonomy.items(), key=lambda pair: (pair[1]["industry_code"], pair[0])):
             company_rows = sorted(sector_companies.get(code, []), key=lambda row: str(row.get("company") or ""))
             eligible = [row for row in company_rows if row["eligible"]]
+            study_updates = [row["study_updated_at"] for row in company_rows if row.get("study_updated_at")]
+            most_recent_study_update = max(study_updates) if study_updates else None
             rollup_path = self.root / "data" / "private" / "sector_rollups" / f"ICB-{code}.yaml"
             rollup_exists = rollup_path.is_file()
             # A historical rollup is never sufficient to bypass the current >=3 eligibility gate.
@@ -182,6 +354,7 @@ class DemandCatalog:
                     "rollup_stale": rollup_exists and len(eligible) < 3,
                     "use_case_count": sum(row["use_case_count"] for row in company_rows),
                     "rollup_path": rollup_path.relative_to(self.root).as_posix() if rollup_exists else None,
+                    "most_recent_study_update": most_recent_study_update,
                     "companies": company_rows,
                 }
             )

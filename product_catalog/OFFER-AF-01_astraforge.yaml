@@ -2,14 +2,28 @@ schema_version: "0.2"
 offer:
   offer_id: OFFER-AF-01
   name: Astraforge
-  profile_version: "2026-07-23.v0.2"
+  profile_version: "2026-09-14.v0.3"
   owner: null
-  status: reconstructed
-  category: agentic-execution-roadmap-acceleration
+  status: sourced
+  category: governed-agent-execution-runtime
+  canonical_site: "https://astraforge.dev/"
+  site_domain_note: >
+    astraforge.ai is a duplicate/incorrect domain for this product; the
+    canonical site is astraforge.dev (owner-confirmed 2026-09-14).
   positioning:
-    category_statement: Controlled agentic execution and orchestration for measurable flow acceleration.
-    one_liner: Transform individual AI-assisted development into controlled team workflows that accelerate a measurable delivery bottleneck.
-    commercial_entry_point: Roadmap or engineering flow acceleration
+    category_statement: >
+      Governed AI execution runtime — the layer that authorizes, isolates,
+      coordinates, observes, and proves what an autonomous agent is allowed
+      to do in a real system, as opposed to a chatbot, copilot, or
+      orchestration framework. (source: AF-SRC-005, vendor_claim)
+    one_liner: >
+      Transform agents that can reason into workers that can act durably on
+      real processes, under enterprise control.
+    contre_positioning: >
+      "Models decide. Agents work. Astraforge governs the execution."
+      (owner_analysis_note, inference — this is the analyst's framing, not a
+      verbatim vendor tagline)
+    commercial_entry_point: DevFactory / software engineering (explicit "first wedge" per AF-SRC-005)
   problem:
     canonical: AI usage is already present, but delivery bottlenecks remain collective and cannot be solved by isolated copilots alone.
     anti_problem:
@@ -41,13 +55,42 @@ offer:
       - Security model blocks any controlled execution environment
       - No access to required systems or no pilotable team
   market_context:
-    epistemic_status: hypothesis
-    evidence_grade: W1
+    epistemic_status: mixed
+    evidence_grade: P2
     category_reality_2026:
       - Isolated execution is available in major coding-agent platforms
       - Parallel and asynchronous agent work is increasingly native
       - Skills and custom-agent orchestration are becoming platform primitives
     implication: Sandboxing, multi-agent execution, and skills cannot be treated as sufficient standalone differentiation.
+    strategic_risk:
+      statement: >
+        Vertical compression by coding agents and AI/cloud platforms that
+        progressively absorb sandbox, orchestration, memory, policy, and
+        execution as native primitives — the horizontal sandbox/orchestration
+        layer is the most commoditizable part of the offer.
+      epistemic_status: inference
+      source: owner_analysis_note (AF-SRC-006)
+  value_model:
+    epistemic_status: inference
+    source: owner_analysis_note (AF-SRC-006)
+    framing: >
+      Value scales with autonomy x criticality. Low autonomy / low
+      criticality is copilot territory; low autonomy / high criticality is
+      workflow+HITL; high autonomy / low criticality is a batch/worker agent;
+      high autonomy / high criticality — long-running, parallel, real-SI-access,
+      high-stakes execution with reduced human per-action supervision — is
+      Astraforge's claimed territory.
+  moat_assessment:
+    epistemic_status: inference
+    source: owner_analysis_note (AF-SRC-006)
+    weak: [sandbox, agent_orchestration, multi_agent_execution, sdk] # commoditizable, absorbed by model/platform ecosystem
+    intermediate: [enterprise_governance, isolation, vpc_deployment, audit, hitl] # harder, but large platforms can also build this
+    potentially_strong: >
+      A persistent organizational execution memory graph — process, roles,
+      policies, permissions, agents, tools, decisions, artifacts, human
+      approvals, and execution history accumulated over time — is the asset
+      that would be hardest to replicate, if demonstrated at scale (currently
+      an ambition stated on the vendor site, not a proven moat).
   differentiation_hypotheses:
     - Enterprise workflow orchestration across internal systems, rules, and human gates
     - Reusable organizational harnesses and artifacts rather than session-local context
@@ -58,38 +101,117 @@ offer:
     - Portability across models and agent runtimes
     - Operational governance and audit advantages
     - Reusable workflow assets that materially improve time to value
+    - Whether the unified memory graph is a shipped capability or a roadmap ambition
   capabilities:
     - id: AF-CAP-01
-      name: Controlled agent runtime
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Sandbox (isolated execution environment)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
     - id: AF-CAP-02
-      name: Workflow and job orchestration
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Scoped access / RBAC (least-privilege tool and resource access)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
     - id: AF-CAP-03
-      name: Tool and enterprise integration
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Workflow runtime (prompt to durable execution)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
     - id: AF-CAP-04
-      name: Shared artifacts and working context
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Multi-agent execution (specialized, parallel agents)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
     - id: AF-CAP-05
-      name: Human control gates
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Policy engine (centralized execution rules)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
     - id: AF-CAP-06
-      name: Observability and execution trace
-      epistemic_status: inference
-      evidence_grade: P2
+      name: Approval gates / HITL
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+    - id: AF-CAP-07
+      name: Execution preview (pre-action visualization)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+    - id: AF-CAP-08
+      name: Artifacts (materialized intermediate/final results as proof of work)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+    - id: AF-CAP-09
+      name: Audit trail (actions and decisions logged)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+    - id: AF-CAP-10
+      name: Unified memory graph (context, artifacts, decisions across runs)
+      epistemic_status: vendor_claim
+      evidence_grade: W1
+      source: AF-SRC-005
+      caveat: The most strategically important claim and the least independently verified — treat as roadmap ambition until demonstrated.
+    - id: AF-CAP-11
+      name: Connectors (tool and SI integration)
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+    - id: AF-CAP-12
+      name: VPC / on-prem / local-model deployment
+      epistemic_status: vendor_claim
+      evidence_grade: W2
+      source: AF-SRC-005
+  execution_sequence:
+    canonical: [trigger, orchestrate, execute, approve, retain_memory, produce_artifacts]
+    epistemic_status: vendor_claim
+    source: AF-SRC-005
   use_case_families:
-    - roadmap_acceleration
-    - code_review_and_quality_remediation
-    - bug_triage_and_incident_preparation
-    - documentation_and_knowledge_renewal
-    - legacy_modernization
-    - operational_signal_to_action
+    # UC1-UC2 are horizontal/lower-moat; UC3 (DevFactory) is the demonstrated wedge;
+    # UC4-UC6 are land-and-expand targets; UC7 is platform vision, not a sold use case.
+    - id: UC1
+      name: secure_agent_sandbox
+      maturity: horizontal_low_moat
+      epistemic_status: mixed
+    - id: UC2
+      name: long_running_autonomous_workers
+      maturity: architecture_demonstrated
+      epistemic_status: mixed
+    - id: UC3
+      name: devfactory_software_engineering
+      maturity: demonstrated_wedge
+      epistemic_status: vendor_claim
+      source: AF-SRC-005
+      note: >
+        Official demonstrator names Planning Agent, SWE Swarm, Review Agent,
+        Deploy Agent, with artifacts (tasks.json, UI components, API routes,
+        SQL migration, review.md, release package). Sub-families: feature
+        delivery, bug fixing, refactoring/tech debt, migration, runbook
+        execution, incident response.
+    - id: UC4
+      name: devops_production_operations
+      maturity: land_and_expand_target
+      epistemic_status: inference
+      source: owner_analysis_note (AF-SRC-006)
+    - id: UC5
+      name: datafactory
+      maturity: architecture_extension_not_yet_demonstrated
+      epistemic_status: vendor_claim
+      source: AF-SRC-005
+      caveat: Named by the vendor as an architecture extension; public demonstration maturity is not comparable to DevFactory.
+    - id: UC6
+      name: secfactory
+      maturity: architecture_extension_not_yet_demonstrated
+      epistemic_status: vendor_claim
+      source: AF-SRC-005
+      caveat: Same caveat as UC5 — named, not demonstrated at DevFactory's level.
+    - id: UC7
+      name: business_process_execution
+      maturity: platform_vision_not_a_sold_use_case
+      epistemic_status: inference
+      source: owner_analysis_note (AF-SRC-006)
   hard_gates:
     - id: AF-GATE-01
       test: Measurable workflow problem exists
@@ -120,12 +242,19 @@ offer:
     pricing: unknown
   proof:
     source_registry: ../evidence/product/astraforge/source_registry.yaml
-    evidence_status: Partial primary evidence and owner guidance; external commercial proof is incomplete.
-    evidence_grade: P2
+    evidence_status: >
+      Vendor site now sourced directly (AF-SRC-005) for positioning,
+      primitives, and the DevFactory demonstrator; treat as vendor_claim,
+      not independently verified fact. Owner strategic analysis (AF-SRC-006)
+      adds a value/moat model, kept as inference. External, independent
+      commercial proof (customer references, pricing, certifications) is
+      still absent.
+    evidence_grade: W2
   unknowns:
-    - Official architecture and deployed sandbox technology
-    - Deployment models and supported environments
+    - Deployed sandbox technology and isolation mechanism (containers/VMs/other)
     - Security certifications and formal compliance claims
     - Commercial pricing and contracting model
-    - Validated external customer references
+    - Validated external customer references (none independently confirmed)
     - Quantified reference-case baseline and attributable results
+    - Whether the unified memory graph is shipped or a stated ambition
+    - DataFactory/SecFactory actual maturity versus DevFactory (currently named, not demonstrated)

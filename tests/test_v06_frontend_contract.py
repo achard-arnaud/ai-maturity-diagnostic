@@ -37,6 +37,12 @@ class V06FrontendContractTests(unittest.TestCase):
         self.assertIn("isolée du fit produit et de l’ICB", self.html)
         self.assertIn("/api/nudging/generate", self.js)
 
+    def test_nudge_decisions_are_actionable_and_persist_status(self) -> None:
+        self.assertIn("nudgeDecisionBtn", self.js)
+        self.assertIn("/api/nudges/${encodeURIComponent(nudgeId)}/${decision}", self.js)
+        self.assertIn("badge-accepted", self.js)
+        self.assertIn("badge-rejected", self.js)
+
     def test_qualification_exposes_actionable_next_and_full_flow(self) -> None:
         self.assertIn("Qualification, matching & reach", self.html)
         self.assertIn("resolverBtn", self.js)

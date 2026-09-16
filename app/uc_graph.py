@@ -47,6 +47,13 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 class UseCaseGraph:
     root: Path
 
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "UseCaseGraph":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
+
     @staticmethod
     def _edge(source: str, target: str, relation: str, *, scope: str, basis: str, confidence: str, evidence_refs: list[str] | None = None) -> dict[str, Any]:
         return {

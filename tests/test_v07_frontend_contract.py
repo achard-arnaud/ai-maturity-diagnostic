@@ -33,6 +33,7 @@ class V07FrontendContractTests(unittest.TestCase):
         self.assertIn("Validation only", self.js)
         self.assertIn("/api/reach/preview", self.js)
         self.assertIn("/api/reach/prepare", self.js)
+        self.assertIn("prepared.written", self.js)
 
     def test_blocked_steps_have_resolver_ui_instead_of_disabled_workflow_buttons(self) -> None:
         self.assertIn("resolverButton", self.js)

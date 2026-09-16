@@ -33,5 +33,14 @@ properties:
         unknowns: {type: array, items: {type: string}}
         falsifier: {type: string}
         confidence: {enum: [low, medium, high]}
-        status: {const: hypothesis}
+        # "hypothesis" is what generation always produces; "accepted"/"rejected"
+        # only appear once a human decision has been persisted for this nudge_id
+        # via POST /api/nudges/{nudge_id}/accept|reject (S4).
+        status: {enum: [hypothesis, accepted, rejected]}
+        # Set via POST /api/nudges/{nudge_id}/ack-falsifier (C2) once a human has
+        # read and considered `falsifier`. Purely a human-acknowledgment flag --
+        # it never changes `status` and is not itself a decision.
+        falsifier_acknowledged: {type: boolean}
+        falsifier_acknowledged_by: {type: string}
+        falsifier_acknowledged_at: {type: string}
 additionalProperties: true
