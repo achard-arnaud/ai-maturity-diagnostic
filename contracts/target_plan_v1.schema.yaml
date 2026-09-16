@@ -1,0 +1,30 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalTargetPlanV1
+type: object
+required:
+  - target_plan_id
+  - workspace_id
+  - company_entity_id
+  - fit_assessment_id
+  - status
+  - created_at
+properties:
+  target_plan_id: {type: string}
+  workspace_id: {type: string}
+  company_entity_id: {type: string}
+  fit_assessment_id:
+    type: string
+    description: >
+      The Epic 07 CanonicalFitAssessmentV1 this plan was authorized from.
+      Per this Epic's own invariant ("fit avant ciblage"), a TargetPlan
+      can only be created once app.fit_targeting_gate.can_create_target_plan
+      returns True for this fit_assessment_id -- enforced at creation
+      time (Epic 08 S03), not re-validated by this schema itself.
+  status:
+    enum: [draft, active, stale]
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "TargetPlan never carries stakeholder data inline -- each stakeholder is a separate CanonicalStakeholderRoleV1 record referencing this plan's target_plan_id, so cardinality rules can be enforced per role without rewriting the whole plan."
