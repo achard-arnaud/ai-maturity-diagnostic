@@ -36,6 +36,7 @@ from app.demand import DemandCatalog
 from app import kanban
 from app import network_index
 from app.duplicate_dismissals import dismiss_duplicate_group
+from app.execution_context import correlation_scope
 from app.network_index import find_potential_duplicates, search_companies, search_people
 from app.network_writer import create_company, create_person, reassign_company_workspace
 from app.nudging import UseCaseNudger
@@ -117,7 +118,8 @@ async def _log_requests(request: Request, call_next):
 
     request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
     started = time.monotonic()
-    response = await call_next(request)
+    with correlation_scope(request_id):
+        response = await call_next(request)
     duration_ms = round((time.monotonic() - started) * 1000, 2)
     response.headers["X-Request-ID"] = request_id
     _REQUEST_LOG.info(

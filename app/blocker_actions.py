@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.artifact_store import ArtifactStore
+
 from app.core import ControlPlaneError
 
 # Mirrors QualificationCockpit's step ids, in pipeline order. Kept here rather than
@@ -81,8 +83,7 @@ class BlockerActionLog:
             entry["target_step_id"] = target_step_id
         path = self._path(study_id)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        ArtifactStore(self.root).append_jsonl(path, entry)
         return entry
 
     def _read_path(self, path: Path) -> list[dict[str, Any]]:

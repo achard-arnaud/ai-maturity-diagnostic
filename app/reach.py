@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import yaml
+
+from app.artifact_store import ArtifactStore
 
 from app.blockers import blocker
 from app.core import ControlPlaneError, _read_yaml
@@ -300,7 +301,7 @@ class ReachMatchmaker:
 
         strategy_path = study_dir / "06c_reach_strategy.yaml"
         strategy_path.parent.mkdir(parents=True, exist_ok=True)
-        strategy_path.write_text(yaml.safe_dump(strategy, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        ArtifactStore(self.root).write_yaml(strategy_path, strategy)
         return strategy
 
     def prepare_request(self, payload: dict[str, Any]) -> dict[str, Any]:

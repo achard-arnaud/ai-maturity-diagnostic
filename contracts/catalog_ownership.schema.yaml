@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://example.local/contracts/catalog_ownership.schema.yaml
+title: Catalog ownership policy
+type: object
+additionalProperties: false
+required: [schema_version, model, shared_root, overlay_root, silent_shadowing]
+properties:
+  schema_version:
+    const: '1.0'
+  model:
+    const: shared_core_workspace_overlay
+  shared_root:
+    const: product_catalog
+  overlay_root:
+    const: workspaces/{workspace_id}/product_catalog
+  silent_shadowing:
+    const: false
+  immutable_fit_snapshots:
+    const: true
