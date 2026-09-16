@@ -20,18 +20,21 @@
   </header>
 
   <nav aria-label="Espaces GTM">
-    <button data-space="home" data-target="backlog">Home</button>
-    <button data-space="discover" data-target="reseau">Discover</button>
-    <button data-space="research" data-target="demand">Research</button>
-    <button data-space="fit" data-target="qualification">Fit</button>
-    <button data-space="targets" data-target="qualification">Targets</button>
-    <button data-space="reach" data-target="qualification">Reach</button>
-    <button data-space="engagement" data-target="backlog">Engagement</button>
-    <button data-space="pipeline" data-target="backlog">Pipeline</button>
-    <button data-space="insights" data-target="journal">Insights</button>
+    <button data-space="home" data-target="gtmSpace">Home</button>
+    <button data-space="discover" data-target="gtmSpace">Discover</button>
+    <button data-space="research" data-target="gtmSpace">Research</button>
+    <button data-space="fit" data-target="gtmSpace">Fit</button>
+    <button data-space="targets" data-target="gtmSpace">Targets</button>
+    <button data-space="reach" data-target="gtmSpace">Reach</button>
+    <button data-space="engagement" data-target="gtmSpace">Engagement</button>
+    <button data-space="pipeline" data-target="gtmSpace">Pipeline</button>
+    <button data-space="insights" data-target="gtmSpace">Insights</button>
   </nav>
 
   <main>
+    <section id="gtmSpace" class="panel active" aria-live="polite">
+      <div id="gtmSpaceContent" class="space-view"></div>
+    </section>
     <section id="demand" class="panel active">
       <div class="section-head">
         <div>
@@ -361,6 +364,7 @@
   <footer>Chaque menu orchestre des handoffs explicites. Les faits entreprise, produit, personnes et use cases restent dans leurs artefacts propriétaires.</footer>
   <script src="/vendor/mermaid.min.js"></script>
   <script src="/router.js"></script>
+  <script src="/gtm-spaces.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

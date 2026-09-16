@@ -87,6 +87,7 @@ _STATIC_FILES = {
     "/": "index.html",
     "/app.js": "app.js",
     "/router.js": "router.js",
+    "/gtm-spaces.js": "gtm-spaces.js",
     "/styles.css": "styles.css",
     "/login.html": "login.html",
     "/vendor/mermaid.min.js": "vendor/mermaid.min.js",

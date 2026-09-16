@@ -802,7 +802,8 @@ async function boot() {
   renderUserBar(user);
   window.GtmRouter.start(user.workspace_id, route => {
     const button = document.querySelector(`nav button[data-space="${route.space}"]`);
-    showPanel(button ? button.dataset.target : "backlog", route.space);
+    showPanel(button ? button.dataset.target : "gtmSpace", route.space);
+    window.GtmSpaces.render(route, api);
   });
   try {
     const [health, skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain] = await Promise.all([
