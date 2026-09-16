@@ -45,6 +45,9 @@ test.describe("Journey A - product/offer (authenticated)", () => {
 
   test("submitting the Découvrir form stages a candidate offer", async ({ page }) => {
     await page.getByRole("button", { name: "Offres", exact: true }).click();
+    // Shelves are loaded asynchronously after the shell becomes interactive.
+    // Wait for a real choice so native form validation cannot race the request.
+    await expect(page.locator("#discoverShelf option")).not.toHaveCount(0);
     await page.locator("#discoverCompany").fill("Acme Robotics");
     await page.getByRole("button", { name: "Découvrir et stager" }).click();
     // The staged/raw API result is dumped to a <pre>; the page does not
@@ -54,6 +57,7 @@ test.describe("Journey A - product/offer (authenticated)", () => {
 
   test("GAP: a staged catalog candidate can be reviewed and promoted to a canonical offer", async ({ page }) => {
     await page.getByRole("button", { name: "Offres", exact: true }).click();
+    await expect(page.locator("#discoverShelf option")).not.toHaveCount(0);
     await page.locator("#discoverCompany").fill("Acme Robotics");
     await page.getByRole("button", { name: "Découvrir et stager" }).click();
     await expect(page.locator("#discoverResult")).not.toHaveText("");
