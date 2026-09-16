@@ -9,7 +9,8 @@ import { assertLoginRedirectWorks, STORAGE_STATE } from "./helpers";
  * [GAP] post-invoke confirmation/feedback + no-op-until-executor-configured
  * banner (ADR-004) -> [GAP] /api/network/people search CTA -> [GAP] person
  * detail/profile page -> Reach flow (exists, operates on aggregate
- * stakeholder lanes, not a single contact) -> [GAP] kanban.
+ * stakeholder lanes, not a single contact) -> shared kanban (built after
+ * this spec was written -- see the kanban test below, no longer GAP-flagged).
  */
 
 test.describe("Journey B - contact (login)", () => {
@@ -105,10 +106,13 @@ test.describe("Journey B - contact (authenticated)", () => {
     }
   });
 
-  test("GAP: contacts and reach are organized on a shared kanban board", async ({ page }) => {
-    // GAP: no kanban exists anywhere in the app; reach stakeholders are
-    // rendered as static lanes inside a data-panel overlay, not a
-    // drag/drop or stage-tracked kanban tied to individual contacts.
+  test("contacts and reach are organized on a shared kanban board", async ({ page }) => {
+    // No longer GAP: app/kanban.py's build_board() now exists and
+    // app/frontend/index.html's #qualification panel renders it via
+    // #kanbanQualification (app.js's loadKanban()). This assertion used to
+    // be GAP-flagged before that build landed; it now genuinely passes.
+    // (Per-contact drag/drop staging still does not exist -- the board is
+    // per-study/per-company, not per-contact -- but the region itself is real.)
     await page.getByRole("button", { name: "Qualification", exact: true }).click();
     await expect(page.getByRole("region", { name: /Kanban/i })).toBeVisible();
   });

@@ -10,7 +10,8 @@ import { assertLoginRedirectWorks, STORAGE_STATE } from "./helpers";
  * intelligence: org, heritage, qualification, value chain, uc-graph — this
  * ALREADY WORKS) -> [GAP] no bridge/reconciliation between the network-layer
  * company (companies.jsonl) and the ICB/sector-intelligence company concept
- * -> [GAP] kanban.
+ * -> shared kanban (built after this spec was written -- see the kanban
+ * test below, no longer GAP-flagged).
  */
 
 test.describe("Journey C - company (login)", () => {
@@ -132,10 +133,11 @@ test.describe("Journey C - company (authenticated)", () => {
     await expect(page.getByText(/Lié à l.entreprise réseau|Rapprocher avec/i)).toBeVisible();
   });
 
-  test("GAP: company records and their pipeline stage are organized on a shared kanban board", async ({ page }) => {
-    // GAP: no kanban exists anywhere in the app for companies either —
-    // sector/company progress is shown as badges (benchmark_state,
-    // eligible/mapped counts) on cards, not a stage-tracked board.
+  test("company records and their pipeline stage are organized on a shared kanban board", async ({ page }) => {
+    // No longer GAP: app/kanban.py's build_board() now exists and
+    // app/frontend/index.html's #demand panel renders it via
+    // #kanbanDemand (app.js's loadKanban()). This assertion used to be
+    // GAP-flagged before that build landed; it now genuinely passes.
     await page.getByRole("button", { name: "Demande", exact: true }).click();
     await expect(page.getByRole("region", { name: /Kanban/i })).toBeVisible();
   });

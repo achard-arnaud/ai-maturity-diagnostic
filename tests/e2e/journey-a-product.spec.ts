@@ -8,7 +8,9 @@ import { assertLoginRedirectWorks, STORAGE_STATE } from "./helpers";
  * canonical product_catalog/*.yaml -> [GAP] "my product" owner-edit screen
  * -> [GAP] /api/catalog/search CTA -> matching to demand (Opportunités) ->
  * Qualification tab -> [GAP] rerun any pipeline evidence/synthesis step ->
- * Suivi tab -> Nudging cross-sell -> [GAP] shared kanban across Suivi/Nudging.
+ * Suivi tab -> Nudging cross-sell -> shared kanban across Suivi/Nudging
+ * (built after this spec was written -- see the kanban test below, no
+ * longer GAP-flagged).
  */
 
 test.describe("Journey A - product/offer (login)", () => {
@@ -143,12 +145,13 @@ test.describe("Journey A - product/offer (authenticated)", () => {
     }
   });
 
-  test("GAP: Suivi and Nudging share a single pipeline/stage kanban board", async ({ page }) => {
-    // GAP: today "Suivi" (#backlog, a flat follow-up list + governance table)
-    // and "Nudging" (#nudging, per-mode generation buttons keyed to one
-    // selected inventory) are two disconnected tabs. Neither renders a
-    // kanban, and there is no shared pipeline/stage board linking a study's
-    // qualification/reach stage to its nudging opportunities.
+  test("Suivi renders the shared pipeline/stage kanban board", async ({ page }) => {
+    // No longer GAP: app/kanban.py's build_board() aggregates
+    // qualification/reach/nudging/follow-up into one board over
+    // GET /api/kanban/board, and app/frontend/index.html's #backlog (Suivi)
+    // panel now renders it via #kanbanBoardRegion (app.js's loadKanban() ->
+    // renderKanbanInto). This assertion used to be GAP-flagged before that
+    // build landed; it now genuinely passes.
     await page.getByRole("button", { name: "Suivi", exact: true }).click();
     await expect(page.getByRole("region", { name: /Kanban|Pipeline/i })).toBeVisible();
   });
