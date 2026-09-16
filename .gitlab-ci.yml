@@ -2,6 +2,7 @@ image: python:3.11-slim
 
 stages:
   - validate
+  - e2e
 
 variables:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -20,3 +21,23 @@ release-check:
     - python -m pip install -e '.[docs,dev]'
   script:
     - python scripts/check_release.py
+
+# GitHub Actions (.github/workflows/qa.yml) is the enforced source of truth
+# for the E2E gate; this mirrors it for GitLab so the check is visible here
+# too, without duplicating a full browser-install matrix per runner image.
+e2e-gate:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.56.1-jammy
+  before_script:
+    - python -m pip install --upgrade pip
+    - python -m pip install -e '.[docs,dev]'
+    - npm install
+  script:
+    - (nohup python -m uvicorn app.server:APP --host 127.0.0.1 --port 8080 > app.log 2>&1 &)
+    - python scripts/run_e2e_gate.py
+  artifacts:
+    when: on_failure
+    paths:
+      - app.log
+      - test-results/
+    expire_in: 14 days
