@@ -1,0 +1,33 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalEngagementEventV1
+type: object
+required:
+  - engagement_event_id
+  - conversation_id
+  - kind
+  - occurred_at
+  - source_ref
+properties:
+  engagement_event_id: {type: string}
+  conversation_id: {type: string}
+  touchpoint_id:
+    type: [string, "null"]
+    default: null
+    description: The outbound Touchpoint (Epic 09) this event correlates to, if any -- null for an unsolicited inbound signal (e.g. a cold reply to an old thread).
+  kind:
+    enum: [replied, meeting_booked, opted_out, bounced]
+    description: Only inbound-originated signals are representable here. A send is never itself an EngagementEvent -- see app.engagement_policy.
+  channel:
+    enum: [email, linkedin, phone, manual]
+  occurred_at: {type: string, format: date-time}
+  source_ref:
+    type: string
+    description: Idempotency key for ingestion (e.g. an email message-id or an import row hash) -- see app.engagement_policy's dedup contract (S02).
+  raw_ref:
+    type: [string, "null"]
+    default: null
+additionalProperties: false
+x-rules:
+  - "outbound ≠ engagement: an EngagementEvent can only ever be constructed from an inbound-originated kind (replied/meeting_booked/opted_out/bounced). Recording that a Touchpoint was sent is tracked on the Touchpoint itself (Epic 09), never wrapped into this model -- app.engagement_policy.create_engagement_event refuses any other kind outright."
+  - "events idempotents: source_ref is the dedup key ingestion must key off of -- re-ingesting the same source_ref must never create a duplicate EngagementEvent (S02)."

@@ -1,0 +1,16 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalDealV1
+type: object
+required: [deal_id, workspace_id, opportunity_id, proof_id, status, created_at]
+properties:
+  deal_id: {type: string}
+  workspace_id: {type: string}
+  opportunity_id: {type: string}
+  proof_id: {type: string}
+  status: {enum: [draft, proposed, active, won, lost]}
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "A Deal is downstream of an Opportunity and its Proof; stage transition criteria are enforced by app.opportunity_lifecycle in Epic 11 S02."
