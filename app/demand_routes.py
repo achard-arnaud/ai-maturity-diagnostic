@@ -14,6 +14,7 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from app.authruntime.deps import RequestContext, require_workspace_access
+from app.demand_resolver import resolve_qualification_blocker
 from app.demand_store import (
     DemandAlreadyExists,
     DemandConflict,
@@ -93,5 +94,20 @@ def create_v1_demand_router(root: Path) -> APIRouter:
         except DemandConflict as exc:
             raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
         return {**updated, "version": new_version}
+
+    @router.get("/demands/{demand_id}/resolver")
+    def get_demand_resolver_route(
+        workspace_id: str,
+        demand_id: str,
+        _ctx: RequestContext = Depends(require_workspace_access()),
+    ):
+        try:
+            demand, _version = get_demand(root, workspace_id, demand_id)
+        except DemandNotFound as exc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "not found") from exc
+        contract = resolve_qualification_blocker(demand)
+        if contract is None:
+            return {"blocked": False}
+        return {"blocked": True, **contract.__dict__}
 
     return router

@@ -128,6 +128,57 @@ class DemandRoutesTests(unittest.TestCase):
         )
         self.assertEqual(404, response.status_code)
 
+    def test_resolver_blocked_when_no_buying_signal(self) -> None:
+        response = self.client.get(
+            "/api/v1/workspaces/ws-a/demands/d1/resolver", cookies=self._cookie(self.alice_token)
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.json()["blocked"])
+        self.assertIn("buying signal", response.json()["why_blocked"])
+
+    def test_e2e_detect_to_qualify_keeps_unknowns_visible(self) -> None:
+        # "Detect": a fresh demand exists with several dimensions unknown
+        # (d1's fixture already models this).
+        get_response = self.client.get(
+            "/api/v1/workspaces/ws-a/demands/d1", cookies=self._cookie(self.alice_token)
+        )
+        self.assertEqual(200, get_response.status_code)
+        demand = get_response.json()
+        self.assertFalse(demand["sponsor"]["known"])
+        self.assertFalse(demand["population"]["known"])
+
+        # Blocked: no buying signal known yet -- the resolver says so.
+        resolver_response = self.client.get(
+            "/api/v1/workspaces/ws-a/demands/d1/resolver", cookies=self._cookie(self.alice_token)
+        )
+        self.assertTrue(resolver_response.json()["blocked"])
+
+        # Move to qualifying, then supply the missing buying signal.
+        self.client.patch(
+            "/api/v1/workspaces/ws-a/demands/d1",
+            json={"expected_version": demand["version"], "status": "qualifying"},
+            cookies=self._cookie(self.alice_token),
+        )
+        patched = self.client.patch(
+            "/api/v1/workspaces/ws-a/demands/d1",
+            json={"expected_version": demand["version"] + 1, "sponsor": {"known": True, "value": "VP Sales"}},
+            cookies=self._cookie(self.alice_token),
+        )
+        self.assertEqual(200, patched.status_code)
+
+        # Now unblocked -- the resolver clears.
+        resolver_after = self.client.get(
+            "/api/v1/workspaces/ws-a/demands/d1/resolver", cookies=self._cookie(self.alice_token)
+        )
+        self.assertFalse(resolver_after.json()["blocked"])
+
+        # "unknowns visibles": population/impact/etc. are still explicitly
+        # unknown in the response -- qualifying never hides or fabricates them.
+        final = patched.json()
+        self.assertFalse(final["population"]["known"])
+        self.assertFalse(final["budget"]["known"])
+        self.assertTrue(final["sponsor"]["known"])
+
 
 if __name__ == "__main__":
     unittest.main()

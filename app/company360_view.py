@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any
 
 from app.claim_store import list_claims
+from app.demand_policy import KNOWABLE_FIELDS
+from app.demand_store import list_demands
 from app.evidence_store import list_evidence
 from app.research_case_store import list_cases
 from app.research_redteam import find_contradictions
@@ -46,6 +48,15 @@ def get_company_360(root: Path, workspace_id: str, company_entity_id: str) -> di
 
     contradictions = find_contradictions(claims)
 
+    demands = list_demands(root, workspace_id, company_entity_id=company_entity_id, limit=100).items
+    # "unknowns visibles" (Epic 05's own stop condition): every Demand's
+    # not-yet-known dimensions are surfaced explicitly by name, never
+    # hidden or silently dropped from the dossier view.
+    demands_view = [
+        {**demand, "unknown_dimensions": [f for f in KNOWABLE_FIELDS if not demand.get(f, {}).get("known")]}
+        for demand in demands
+    ]
+
     return {
         "company_entity_id": company_entity_id,
         "research_cases": research_cases,
@@ -53,4 +64,5 @@ def get_company_360(root: Path, workspace_id: str, company_entity_id: str) -> di
         "unknowns": unknowns,
         "contradictions": contradictions,
         "evidence_count": len(evidence),
+        "demands": demands_view,
     }
