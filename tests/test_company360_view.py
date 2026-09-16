@@ -6,6 +6,8 @@ from pathlib import Path
 
 from app.claim_store import put_claim
 from app.company360_view import _FORBIDDEN_FIELD_TOKENS, get_company_360
+from app.demand_policy import known, unknown
+from app.demand_store import create_demand
 from app.evidence_store import put_evidence
 from app.research_case_store import put_case
 
@@ -113,6 +115,36 @@ class CompanyThreeSixtyTests(unittest.TestCase):
         view = get_company_360(self.root, "ws-a", "entity_unknown")
         self.assertEqual([], view["research_cases"])
         self.assertEqual(0, view["evidence_count"])
+
+    def test_demands_are_included_with_unknown_dimensions_visible(self) -> None:
+        create_demand(
+            self.root, "ws-a",
+            {
+                "demand_id": "d1",
+                "workspace_id": "ws-a",
+                "company_entity_id": "entity_1",
+                "status": "observed",
+                "problem": known("manual onboarding"),
+                "population": unknown(),
+                "impact": unknown(),
+                "urgency": unknown(),
+                "initiative": unknown(),
+                "sponsor": known("VP Sales"),
+                "budget": unknown(),
+                "timing": unknown(),
+                "claim_ids": [],
+                "origin_profile_ref": None,
+                "created_at": "2026-01-01T00:00:00+00:00",
+                "updated_at": "2026-01-01T00:00:00+00:00",
+            },
+        )
+        view = get_company_360(self.root, "ws-a", "entity_1")
+        self.assertEqual(1, len(view["demands"]))
+        unknown_dims = view["demands"][0]["unknown_dimensions"]
+        self.assertIn("population", unknown_dims)
+        self.assertIn("budget", unknown_dims)
+        self.assertNotIn("problem", unknown_dims)
+        self.assertNotIn("sponsor", unknown_dims)
 
 
 class NoProductDataStructuralGuard(unittest.TestCase):
