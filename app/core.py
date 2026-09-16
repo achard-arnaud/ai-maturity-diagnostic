@@ -22,7 +22,10 @@ class ControlPlaneError(ValueError):
 
 
 def _read_yaml(path: Path) -> dict[str, Any]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        raise ControlPlaneError(f"invalid YAML in {path}: {exc}") from exc
     return data if isinstance(data, dict) else {}
 
 
@@ -55,6 +58,18 @@ class RepoControlPlane:
     @classmethod
     def default(cls) -> "RepoControlPlane":
         return cls(Path(__file__).resolve().parents[1])
+
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "RepoControlPlane":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1).
+
+        ``workspace_id="default"`` (or omitted) resolves the legacy
+        mono-root layout unchanged; any other id resolves under
+        ``workspaces/<id>/``. Not wired into any HTTP route yet.
+        """
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
 
     def list_skills(self) -> list[dict[str, Any]]:
         skills_root = self.root / "skills"
@@ -120,11 +135,16 @@ class RepoControlPlane:
             if not path.is_file():
                 continue
             doc = _read_yaml(path)
+            source_updated_at = doc.get("updated_at")
             for item in doc.get("items", []) or []:
                 if not isinstance(item, dict):
                     continue
                 row = dict(item)
                 row["source"] = path.relative_to(self.root).as_posix()
+                # Individual backlog items have no timestamp of their own; the
+                # source file's document-level `updated_at` is the closest
+                # available signal of when this backlog was last touched.
+                row.setdefault("source_updated_at", source_updated_at)
                 result.append(row)
         return result
 

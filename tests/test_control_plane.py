@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+import tempfile
 import unittest
 from pathlib import Path
 
-from app.core import ControlPlaneError, RepoControlPlane
+from app.core import ControlPlaneError, RepoControlPlane, _read_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -55,6 +56,20 @@ class ControlPlaneTests(unittest.TestCase):
         ids = {item["id"] for item in self.control.backlog()}
         self.assertIn("TODO-REL-001", ids)
         self.assertIn("TODO-V05-007", ids)
+
+    def test_read_yaml_raises_control_plane_error_on_parse_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bad_file = Path(tmp) / "broken.yaml"
+            bad_file.write_text("key: [unclosed\n", encoding="utf-8")
+            with self.assertRaises(ControlPlaneError) as ctx:
+                _read_yaml(bad_file)
+            self.assertIn(str(bad_file), str(ctx.exception))
+
+    def test_read_yaml_still_coerces_non_dict_to_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            list_file = Path(tmp) / "list.yaml"
+            list_file.write_text("- a\n- b\n", encoding="utf-8")
+            self.assertEqual({}, _read_yaml(list_file))
 
 
 if __name__ == "__main__":

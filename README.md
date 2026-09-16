@@ -1,4 +1,4 @@
-# AI Maturity Diagnostic & Enterprise Intelligence v0.4
+# AI Maturity Diagnostic & Enterprise Intelligence v0.9
 
 Ce dépôt fournit un système modulaire pour transformer des preuves publiques, des vérités produit et des données privées autorisées en diagnostics IA, décisions commerciales, notes exécutives et dossiers de candidature traçables.
 
@@ -76,6 +76,19 @@ python -m venv .venv
 python -m pip install -e '.[docs,dev]'
 python scripts/check_release.py
 ```
+
+`check_release.py` inclut désormais un gate `ruff check .` (lint déterministe minimal : imports/variables inutilisés, style de base — voir `[tool.ruff]` dans `pyproject.toml`).
+
+### Se connecter sans Google OIDC (usage local/dev)
+
+Le runtime auth (v0.8, voir plus bas) exige une identité OIDC réelle pour toute session par défaut. Pour parcourir les écrans localement sans configurer de credentials Google :
+
+```bash
+python -m app.server                      # démarre le serveur sur http://127.0.0.1:8080
+python scripts/dev_login.py vous@example.com   # affiche un cookie de session valide
+```
+
+Posez le cookie affiché (`aimd_session=...`) sur le domaine de l'app via les devtools du navigateur (Application → Cookies), puis rechargez. C'est le même mécanisme de session que celui utilisé par la suite Playwright — aucun appel réseau externe, aucun LLM impliqué.
 
 Commandes spécialisées :
 
@@ -255,23 +268,42 @@ Les menus principaux restent volontairement compacts : **Demande · Offres · Qu
 
 La v0.7 ne change pas la posture de sécurité : elle reste locale/interne. Elle ne constitue ni un CRM outbound, ni une autorisation d’exposition réseau, ni une automatisation décisionnelle sans Gold Set.
 
-## Runtime foundation v0.8 — spécification multi-workspace
+## Runtime foundation v0.8 — auth et multi-workspace (implémenté)
 
-La v0.8 est pour l’instant **spécifiée, pas déclarée production-ready**. Elle traite le passage du runtime local mono-root à un socle interne multi-utilisateur en préservant toutes les frontières métier v0.7.
+La v0.8 est **implémentée** (`app/authruntime/`) : l'adaptateur HTTP a migré vers FastAPI/Starlette, confiné à `app/authruntime/*` et `app/server.py` — tout le reste du code métier (`app/*.py`) reste plain Python, sans dépendance framework.
 
-Références : [PRD runtime v0.8](docs/PRD_runtime_foundation_v0_8.md), [ADR-007](docs/ADR-007-multi-workspace-auth-runtime.md), [baseline technique](docs/TECHNICAL_BASELINE_v0_8.md) et [TODO v0.8](artifacts/TODO_runtime_foundation_v0_8.yaml).
+Références : [PRD runtime v0.8](docs/PRD_runtime_foundation_v0_8.md), [ADR-007](docs/ADR-007-multi-workspace-auth-runtime.md), [baseline technique](docs/TECHNICAL_BASELINE_v0_8.md).
 
-Principes retenus :
+Livré :
 
-- `workspace` devient la frontière d’isolation technique, distincte des entreprises/accounts commerciaux ;
-- authentification externe OIDC, sans stockage de mots de passe applicatifs ;
-- sessions navigateur opaques et révocables ;
-- rôles techniques simples `reader / reviewer / contributor / admin`, sans capacité de contourner les hard gates métier ;
-- SQLite/WAL uniquement pour users, workspaces, memberships, sessions et audit runtime dans la première topologie mono-instance ;
-- données privées et mutables résolues sous un `WorkspacePaths`, les artefacts métier restant sources de vérité ;
-- migration recommandée du seul adaptateur HTTP vers FastAPI/Starlette pour disposer de middleware auth, RequestContext, erreurs et logs structurés sans réécrire le coeur métier ;
-- erreurs publiques stables et corrélées par `request_id` ;
-- logs applicatifs structurés séparés d’un audit append-only ;
-- executor, écritures fichiers, packaging et CI durcis avant tout bind non-loopback.
+- `workspace` comme frontière d'isolation technique, distincte des entreprises/comptes commerciaux ;
+- authentification OIDC (Google, via Authlib) — pas de mot de passe applicatif stocké ;
+- sessions navigateur opaques, révocables côté serveur (`ControlStore`, SQLite/WAL) ;
+- RBAC deny-by-default : `admin` / `product_owner` / `standard_user`, sans capacité de contourner les hard gates métier — un admin ne peut pas autoriser un claim produit ni lever un blocker par son seul rôle ;
+- accès cross-workspace refusé en 404 (jamais 403, pour ne pas confirmer l'existence d'une ressource) ;
+- `local_disabled` (auth désactivée) refuse tout bind hors loopback (`assert_safe_bind`) ;
+- audit append-only (`audit_events`) sur les écritures privilégiées ;
+- `WorkspacePaths`/`for_workspace()` branché sur les modules métier, données mutables résolues par workspace, artefacts métier toujours source de vérité ;
+- logs d'accès HTTP structurés JSON (`request_id`, méthode, chemin, statut, durée — jamais de body/cookie/Authorization).
 
-Les choix encore soumis à feedback sont : le premier IdP OIDC, la topologie de déploiement, le caractère global ou workspace-scoped du `product_catalog`, et le maintien de SQLite tant que les usages réels ne démontrent pas un besoin PostgreSQL/multi-instance.
+Pages d'administration server-rendered sous `/admin/*` : workspaces, utilisateurs, memberships, audit, overrides (queue Open/Resolved).
+
+Se connecter localement sans configurer Google : voir `scripts/dev_login.py` ci-dessus.
+
+Non fait, suivi séparément (`docs/red-team-side-story/current-state-map.md`) : hardening réseau complet (CSRF/headers/rate limiting) avant toute exposition non-loopback, tests d'isolation adversariale en conditions réelles, décision PostgreSQL (aucun trigger observé — SQLite suffit au volume actuel).
+
+## Control plane v0.9 — CRM opérationnel et boucle de renforcement
+
+La v0.9 ajoute les cas d'usage CRM standard (création directe contact/entreprise, promotion de candidats catalogue, kanban, campagnes, compte 360, détection de doublons, approval inbox) sans introduire de nouveau store canonique — tout reste JSONL/YAML versionné ou SQLite dérivé/rebuildable.
+
+Décisions et audits documentés sous `docs/red-team-side-story/` :
+
+- [`current-state-map.md`](docs/red-team-side-story/current-state-map.md) — cartographie demande/fit/reach/nudging/follow-up face au code réel ;
+- [`moscow-next-sprints.md`](docs/red-team-side-story/moscow-next-sprints.md) et [`trigger-journey-audit.md`](docs/red-team-side-story/trigger-journey-audit.md) — priorisation MoSCoW et audit déclencheur-UI vs agent, tous items Must/Should/Could livrés ;
+- `DEFERRED_STATUS.md` (branche `docs/red-team-side-story-spec-deferred`, non mergée sur `main`) — une proposition externe de couche Issue/CounterPerspective/SideStory/Red-Team/Dreaming, jugée prématurée sans premier cycle E2E réel et volontairement différée.
+
+Un concept minimal d'`issue()` non-bloquante (`app/blockers.py`) a néanmoins été retenu et branché sur les gates `severity: warning` de la qualification, auparavant calculées puis silencieusement perdues.
+
+Toutes les décisions humaines (résoudre un override, marquer une campagne envoyée, accepter/rejeter un nudge, écarter un doublon) suivent la même discipline : ID stable dérivé du contenu, "première décision gagne" (pas d'écrasement silencieux), et aucune ne promeut une hypothèse en fait canonique.
+
+La posture de sécurité reste celle de v0.8 : local-first, pas d'exposition réseau tant que le hardening n'est pas fermé.

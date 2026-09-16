@@ -65,6 +65,29 @@ class QualificationCockpitTests(unittest.TestCase):
             self.assertTrue(row["artifacts"]["fit_progression_allowed"])
             self.assertEqual("Cibler les contacts", row["current_blocker"]["cta_label"])
 
+    def test_warning_gate_surfaces_as_non_blocking_issue_not_a_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); study = self.seed_ready_study(root)
+            self.positive_fit(study, "validate", [{"id": "GATE-W", "status": "OPEN", "severity": "warning"}])
+            row = QualificationCockpit(root).list_studies()[0]
+            # A warning gate never blocks progression like a blocker/critical gate does.
+            self.assertTrue(row["artifacts"]["fit_progression_allowed"])
+            self.assertIsNone(row["fit_violation"])
+            self.assertEqual(1, len(row["issues"]))
+            found = row["issues"][0]
+            self.assertTrue(found["issue_id"].startswith("ISS-"))
+            self.assertEqual("anti_fit", found["kind"])
+            self.assertIn("GATE-W", found["statement"])
+            self.assertEqual("hypothesis", found["epistemic_status"])
+            self.assertFalse(found["can_change_decision"])
+
+    def test_no_warning_gates_means_no_issues(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); study = self.seed_ready_study(root)
+            self.positive_fit(study, "validate", [{"id": "GATE-1", "status": "OPEN", "severity": "blocker"}])
+            row = QualificationCockpit(root).list_studies()[0]
+            self.assertEqual([], row["issues"])
+
     def test_empty_contact_artifact_routes_to_second_round(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp); study = self.seed_ready_study(root); self.positive_fit(study)
@@ -84,6 +107,17 @@ class QualificationCockpitTests(unittest.TestCase):
             dump(study / "06c_reach_strategy.yaml", {"stakeholders": [{"person_id": "P1", "status": "ready"}], "blockers": []})
             refreshed = QualificationCockpit(root).list_studies()[0]
             self.assertEqual("pilot", refreshed["stage"])
+
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(QualificationCockpit.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cockpit = QualificationCockpit.for_workspace("acme", repo_root=root)
+            self.assertEqual(cockpit.root, (root / "workspaces" / "acme").resolve())
 
 
 if __name__ == "__main__":

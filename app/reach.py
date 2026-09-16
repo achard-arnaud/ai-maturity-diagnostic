@@ -4,9 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from app.blockers import blocker
 from app.core import ControlPlaneError, _read_yaml
 from app.qualification import QualificationCockpit
+from scripts.network_common import utc_now
 
 
 _TECH_PERSONAS = {"CIO", "CTO", "CDO", "CISO", "AI_Lead", "Architecture", "Head_of_Engineering", "Platform_Lead", "Product_Engineering_Lead"}
@@ -17,6 +20,13 @@ _VETO_PERSONAS = {"CISO", "Data_or_Security_Governance"}
 @dataclass(frozen=True)
 class ReachMatchmaker:
     root: Path
+
+    @classmethod
+    def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "ReachMatchmaker":
+        """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
+        from app.workspace_paths import resolve_workspace_root
+
+        return cls(resolve_workspace_root(workspace_id, repo_root))
 
     def _study_dir(self, study_id: str) -> Path:
         studies = self.root / "studies"
@@ -185,6 +195,11 @@ class ReachMatchmaker:
                 }
             )
 
+        # TODO(red-team-spec): role-coverage blockers below are regenerated
+        # fresh on every preview() call and are never persisted or
+        # dismissable with a reason (unlike qualification's BlockerActionLog).
+        # Revisit once a human repeatedly has to re-dismiss the same
+        # missing-role blocker across multiple preview calls for one study.
         role_coverage = {role for item in stakeholders for role in item["stakeholder_roles"] if item["wave"] != "validation_only"}
         for role, label in (("promoter", "promoteur/sponsor"), ("prescriber", "prescripteur"), ("terrain_user", "utilisateur/terrain")):
             if role in role_coverage:
@@ -241,11 +256,70 @@ class ReachMatchmaker:
             "boundaries": {"recomputes_fit": False, "sends_outbound": False, "title_proves_authority": False, "newsflow_changes_fit": False},
         }
 
+    def write_strategy(self, study_id: str, preview: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Persist `06c_reach_strategy.yaml` for `study_id` from the
+        already-computed preview() output -- every field written here is
+        either something preview() actually derived from real evidence
+        (fit decision, stakeholder waves/roles, blockers, newsflow/use-case
+        excerpts) or an honest `None`; nothing here fabricates an
+        evidence_status or hard-gate outcome that preview() did not compute.
+
+        Re-running this (e.g. clicking "Préparer" again after new contact
+        targets or fit data land) overwrites the previous artifact -- the
+        skill-invocation text this same call still returns explicitly says
+        "Construis ou rafraîchis" (build or refresh), and preview() itself
+        is fully recomputed from source YAML on every call, so treating the
+        written artifact as a refreshable projection of that same live state
+        is consistent with the rest of this module, unlike
+        catalog_promotion.promote_candidate's one-shot, never-overwrite
+        semantics for a canonical catalog entry.
+        """
+
+        study_id = str(study_id or "").strip()
+        if not study_id:
+            raise ControlPlaneError("study_id is required")
+        if preview is None:
+            preview = self.preview(study_id)
+        study_dir = self._study_dir(study_id)
+
+        strategy: dict[str, Any] = {
+            "schema_version": preview["schema_version"],
+            "generated_at": utc_now(),
+            "study_id": preview["study_id"],
+            "company_id": preview["company_id"],
+            "offer_id": preview["offer_id"],
+            "product_profile_version": preview.get("product_profile_version"),
+            "fit_decision": preview["fit_decision"],
+            "icb_context": preview.get("icb_context", {}),
+            "newsflow_triggers": preview.get("newsflow_triggers", []),
+            "relevant_use_cases": preview.get("relevant_use_cases", []),
+            "stakeholders": preview.get("stakeholders", []),
+            "blockers": preview.get("blockers", []),
+            "boundaries": preview.get("boundaries", {}),
+        }
+
+        strategy_path = study_dir / "06c_reach_strategy.yaml"
+        strategy_path.parent.mkdir(parents=True, exist_ok=True)
+        strategy_path.write_text(yaml.safe_dump(strategy, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        return strategy
+
     def prepare_request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Write `06c_reach_strategy.yaml` from the current preview() state
+        and, in the same call, hand back a skill-invocation request an
+        operator can still use to ask an agent to enrich/refresh it further
+        (e.g. once new organization intelligence lands). The write is not a
+        side effect of a read-only preview -- it only happens on this
+        explicit "Préparer" action, mirroring how candidate promotion
+        requires its own explicit click after viewing detail (see
+        app/catalog_promotion.py's promote_candidate) rather than firing on
+        every read.
+        """
+
         study_id = str(payload.get("study_id") or "").strip()
         if not study_id:
             raise ControlPlaneError("study_id is required")
         preview = self.preview(study_id)
+        strategy = self.write_strategy(study_id, preview=preview)
         study_dir = self._study_dir(study_id)
         context = []
         for name in (
@@ -257,19 +331,25 @@ class ReachMatchmaker:
             "06b_contact_targets.yaml",
             "02_organization_evidence.yaml",
             "04_newsflow_evidence.yaml",
+            "06c_reach_strategy.yaml",
         ):
             path = study_dir / name
             if path.is_file():
                 context.append(path.relative_to(self.root).as_posix())
+        artifact_path = f"{study_dir.relative_to(self.root).as_posix()}/06c_reach_strategy.yaml"
         return {
             "schema_version": "0.7",
             "status": "prepared",
+            "written": True,
+            "artifact_path": artifact_path,
+            "strategy": strategy,
             "skill": "iterative-reach-matchmaking",
             "input": (
                 f"Construis ou rafraîchis la stratégie de reach du study {study_id} après le fit {preview['fit_decision']} "
                 "en distinguant promoteur, prescripteur, utilisateur/terrain, sponsor technique et veto; organise first wave, second wave et validation-only. "
-                "Utilise le newsflow uniquement pour le why-now et ne déduis jamais l'autorité depuis un titre."
+                "Utilise le newsflow uniquement pour le why-now et ne déduis jamais l'autorité depuis un titre. "
+                f"Un brouillon a déjà été écrit dans {artifact_path} à partir de preview(); affine-le sans inventer de statut de preuve."
             ),
             "context_paths": context,
-            "expected_artifact": f"{study_dir.relative_to(self.root).as_posix()}/06c_reach_strategy.yaml",
+            "expected_artifact": artifact_path,
         }

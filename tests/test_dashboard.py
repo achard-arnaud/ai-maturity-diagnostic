@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 import yaml
 
-from app.dashboard import FollowUpDashboard, UseCaseHeritage
+from app.dashboard import FollowUpDashboard, UseCaseHeritage, _age_fields
 
 
 def dump(path: Path, data: object) -> None:
@@ -34,6 +35,46 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual("enterprise-demand-intelligence", business["resolver"]["owner_skill"])
             self.assertEqual("Compléter la demande", business["resolver"]["cta_label"])
             self.assertTrue(any(item["kind"] == "technical_todo" for item in rows))
+
+    def test_age_fields_computes_days_and_stale_flag(self) -> None:
+        as_of = date(2026, 9, 15)
+        fresh = _age_fields("2026-09-01", 1, as_of=as_of)
+        self.assertEqual(14, fresh["days_in_current_state"])
+        self.assertFalse(fresh["is_stale"])
+
+        stale = _age_fields("2026-06-01", 1, as_of=as_of)
+        self.assertEqual(106, stale["days_in_current_state"])
+        self.assertTrue(stale["is_stale"])
+
+    def test_age_fields_handles_missing_timestamp(self) -> None:
+        result = _age_fields(None, 1, as_of=date(2026, 9, 15))
+        self.assertIsNone(result["days_in_current_state"])
+        self.assertFalse(result["is_stale"])
+
+    def test_age_fields_zero_or_negative_threshold_never_stale(self) -> None:
+        result = _age_fields("2020-01-01", 0, as_of=date(2026, 9, 15))
+        self.assertFalse(result["is_stale"])
+        self.assertIsInstance(result["days_in_current_state"], int)
+
+    def test_follow_up_items_carry_days_in_current_state_from_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            study = root / "studies/acme"
+            dump(
+                study / "00_manifest.yaml",
+                {
+                    "study_id": "acme-1",
+                    "company": "Acme",
+                    "company_id": "C1",
+                    "product_snapshots": [],
+                    "updated_at": "2026-01-01",
+                },
+            )
+            dump(study / "05_enterprise_demand_profile.yaml", {"evidence_claims": [], "capability_gaps": [], "confidence": "low"})
+            rows = FollowUpDashboard(root).items(as_of=date(2026, 9, 15))
+            qualification = next(item for item in rows if item["kind"] == "qualification")
+            self.assertGreater(qualification["days_in_current_state"], 200)
+            self.assertTrue(qualification["is_stale"])
 
     def test_company_heritage_counts_derived_edges(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -64,6 +105,19 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual(2, heritage["company_count"])
             self.assertGreaterEqual(heritage["similarity_hypotheses"], 1)
             self.assertIn("never populates", heritage["warning"])
+
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(FollowUpDashboard.for_workspace("default", repo_root=root).root, root.resolve())
+            self.assertEqual(UseCaseHeritage.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            expected = (root / "workspaces" / "acme").resolve()
+            self.assertEqual(FollowUpDashboard.for_workspace("acme", repo_root=root).root, expected)
+            self.assertEqual(UseCaseHeritage.for_workspace("acme", repo_root=root).root, expected)
 
 
 if __name__ == "__main__":

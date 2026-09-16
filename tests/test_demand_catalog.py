@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from app.core import ControlPlaneError
 from app.demand import DemandCatalog
 
 
@@ -75,6 +76,106 @@ class DemandCatalogTests(unittest.TestCase):
             sector = DemandCatalog(root).snapshot(as_of=date(2026, 8, 7))["sectors"][0]
             self.assertEqual(1, sector["use_case_count"])
             self.assertEqual(1, sector["eligible_study_count"])
+
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = DemandCatalog.for_workspace("default", repo_root=root)
+            self.assertEqual(catalog.root, root.resolve())
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = DemandCatalog.for_workspace("acme", repo_root=root)
+            self.assertEqual(catalog.root, (root / "workspaces" / "acme").resolve())
+
+
+REQUIRED_PROFILE_FIELDS = [
+    "schema_version", "study_id", "profile_version", "company", "evidence_claims",
+    "strategic_priorities", "capability_gaps", "buying_context", "constraints",
+    "unknowns", "confidence",
+]
+
+
+class CreateDemandProfileTests(unittest.TestCase):
+    def test_creates_new_study_with_schema_conformant_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = DemandCatalog(root).create_demand_profile(
+                company="Acme Corp", problem_statement="No visibility into AI adoption ROI."
+            )
+            self.assertTrue(result["created_study"])
+            profile_path = root / result["profile_path"]
+            self.assertTrue(profile_path.is_file())
+            profile = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+            for field in REQUIRED_PROFILE_FIELDS:
+                self.assertIn(field, profile)
+            self.assertEqual(profile["company"], "Acme Corp")
+            self.assertEqual(profile["confidence"], "low")
+            self.assertEqual(profile["evidence_claims"][0]["statement"], "No visibility into AI adoption ROI.")
+            self.assertEqual(profile["evidence_claims"][0]["evidence_status"], "hypothesis")
+            manifest_path = (root / result["study_path"]) / "00_manifest.yaml"
+            self.assertTrue(manifest_path.is_file())
+            manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["company"], "Acme Corp")
+
+    def test_unspecified_fields_are_honest_unknowns_not_fabricated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = DemandCatalog(root).create_demand_profile(
+                company="Beta Inc", problem_statement="Manual reporting takes too long."
+            )
+            profile = result["profile"]
+            self.assertEqual(profile["strategic_priorities"], [])
+            self.assertEqual(profile["capability_gaps"], [])
+            self.assertEqual(profile["buying_context"]["sponsors"], [])
+            self.assertEqual(profile["constraints"]["technical"], [])
+            self.assertTrue(any("Sector" in item for item in profile["unknowns"]))
+            self.assertTrue(any("Strategic priorities" in item for item in profile["unknowns"]))
+
+    def test_missing_company_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(ControlPlaneError):
+                DemandCatalog(root).create_demand_profile(company="", problem_statement="Something")
+
+    def test_missing_problem_statement_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(ControlPlaneError):
+                DemandCatalog(root).create_demand_profile(company="Acme Corp", problem_statement="   ")
+
+    def test_invalid_confidence_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(ControlPlaneError):
+                DemandCatalog(root).create_demand_profile(
+                    company="Acme Corp", problem_statement="x", confidence="very-high"
+                )
+
+    def test_new_study_directory_collision_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            catalog = DemandCatalog(root)
+            first = catalog.create_demand_profile(company="Acme Corp", problem_statement="x")
+            with self.assertRaises(ControlPlaneError):
+                catalog.create_demand_profile(company="Acme Corp", problem_statement="y")
+            # Explicitly targeting the existing study_id overwrites only the profile.
+            second = catalog.create_demand_profile(
+                company="Acme Corp", problem_statement="y", study_id=first["study_id"]
+            )
+            self.assertEqual(second["study_id"], first["study_id"])
+            self.assertFalse(second["created_study"])
+            profile = yaml.safe_load((root / second["profile_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(profile["evidence_claims"][0]["statement"], "y")
+
+    def test_unknown_study_id_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaises(ControlPlaneError):
+                DemandCatalog(root).create_demand_profile(
+                    company="Acme Corp", problem_statement="x", study_id="does-not-exist"
+                )
 
 
 if __name__ == "__main__":

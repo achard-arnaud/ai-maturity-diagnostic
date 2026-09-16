@@ -100,6 +100,80 @@ class ReachMatchmakerTests(unittest.TestCase):
             with self.assertRaises(ControlPlaneError):
                 ReachMatchmaker(root).preview("acme-1")
 
+    def test_for_workspace_default_matches_legacy_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(ReachMatchmaker.for_workspace("default", repo_root=root).root, root.resolve())
+
+    def test_prepare_request_writes_schema_conformant_strategy_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.seed(root)
+            prepared = ReachMatchmaker(root).prepare_request({"study_id": "acme-1"})
+            self.assertTrue(prepared["written"])
+            artifact_path = root / prepared["artifact_path"]
+            self.assertTrue(artifact_path.is_file())
+            written = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))
+            for field in ("schema_version", "study_id", "company_id", "offer_id", "fit_decision", "stakeholders", "blockers"):
+                self.assertIn(field, written)
+            self.assertEqual("0.7", written["schema_version"])
+            self.assertEqual("acme-1", written["study_id"])
+            self.assertEqual("validate", written["fit_decision"])
+            self.assertTrue(written["stakeholders"])
+            for stakeholder in written["stakeholders"]:
+                for field in ("person_id", "stakeholder_roles", "wave", "status", "evidence_basis", "required_validations", "cta"):
+                    self.assertIn(field, stakeholder)
+
+    def test_prepare_request_never_fabricates_evidence_beyond_preview(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.seed(root)
+            matchmaker = ReachMatchmaker(root)
+            preview = matchmaker.preview("acme-1")
+            prepared = matchmaker.prepare_request({"study_id": "acme-1"})
+            written = prepared["strategy"]
+            self.assertEqual(preview["stakeholders"], written["stakeholders"])
+            self.assertEqual(preview["blockers"], written["blockers"])
+            self.assertEqual(preview["newsflow_triggers"], written["newsflow_triggers"])
+
+    def test_rerunning_prepare_request_overwrites_the_previous_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); study = self.seed(root)
+            matchmaker = ReachMatchmaker(root)
+            matchmaker.prepare_request({"study_id": "acme-1"})
+            artifact_path = study / "06c_reach_strategy.yaml"
+            first_generated_at = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))["generated_at"]
+
+            # Contact targets change (e.g. new target added) -- a second
+            # "Préparer" click should refresh the artifact, not reject it.
+            dump(study / "06b_contact_targets.yaml", {
+                "study_id": "acme-1", "company_id": "C1", "offer_id": "OFFER-1", "fit_decision": "validate",
+                "targets": [
+                    {"person_id": "P1", "target_id": "T1", "role_hypotheses": ["economic_sponsor"], "persona_matches": ["CIO"], "target_score": 90, "current_role_status": "current", "required_validations": ["Confirm mandate"]},
+                ],
+            })
+            second = matchmaker.prepare_request({"study_id": "acme-1"})
+            self.assertTrue(second["written"])
+            written = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))
+            self.assertEqual(1, len(written["stakeholders"]))
+            self.assertIn("generated_at", written)
+            self.assertGreaterEqual(written["generated_at"], first_generated_at)
+
+    def test_list_ready_reports_completed_once_strategy_is_written(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.seed(root)
+            matchmaker = ReachMatchmaker(root)
+            before = next(row for row in matchmaker.list_ready() if row["study_id"] == "acme-1")
+            self.assertNotEqual("completed", before["status"])
+            matchmaker.prepare_request({"study_id": "acme-1"})
+            after = next(row for row in matchmaker.list_ready() if row["study_id"] == "acme-1")
+            self.assertEqual("completed", after["status"])
+            self.assertEqual("studies/acme/06c_reach_strategy.yaml", after["reach_artifact"])
+
+    def test_for_workspace_named_resolves_under_workspaces_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            matchmaker = ReachMatchmaker.for_workspace("acme", repo_root=root)
+            self.assertEqual(matchmaker.root, (root / "workspaces" / "acme").resolve())
+
 
 if __name__ == "__main__":
     unittest.main()

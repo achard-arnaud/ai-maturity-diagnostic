@@ -1,0 +1,13 @@
+{
+  "name": "ai-maturity-diagnostic-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Playwright E2E functional-spec tests for the AI Maturity Diagnostic control plane frontend. Test-only scope; the app itself is Python/FastAPI (see app/server.py).",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

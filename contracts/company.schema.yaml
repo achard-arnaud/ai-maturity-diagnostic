@@ -14,6 +14,21 @@ contract:
   network_screening: mapping_or_null
   study: mapping_or_null
   source_batch_ids: list
+  # Optional workspace scoping (product-line ownership). A company belongs to
+  # exactly one workspace (1:1, not many-to-many). Nullable/optional and
+  # additive: existing records with no workspace_id are NOT migrated, and are
+  # treated as belonging to the "default" workspace by readers (see
+  # app/network_index.py rebuild()). A person has no workspace_id of their
+  # own -- it is always derived transitively through seed_company_id -> this
+  # field. Confirmed by reading scripts/migrate_person_identity_v0_3.py and
+  # scripts/import_contacts.py: person_id is recomputed as
+  # stable_id("PERS", name, company) on every import, so a person appearing
+  # at a new company naturally gets a new person_id under that company's
+  # workspace while the old person_id is simply absent from the new batch
+  # (orphaned, not actively deleted). No script today runs an explicit
+  # "stale/orphaned person cleanup" pass -- that recompute-on-import behavior
+  # is the only mechanism that exists; a cleanup pass would be new work.
+  workspace_id: string_or_null
   status:
     enum: [seeded, active, refresh_due]
   last_updated: date
