@@ -1,0 +1,63 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalRelationshipV1
+type: object
+required:
+  - relationship_entity_id
+  - legacy_ids
+  - person_entity_id
+  - company_entity_id
+  - job_title
+  - relationship_type
+  - valid_from
+  - current_status
+  - provenance
+properties:
+  relationship_entity_id: {type: string}
+  legacy_ids:
+    type: array
+    items: {type: string}
+    minItems: 1
+  person_entity_id:
+    type: string
+    description: References CanonicalPersonV1.entity_id, never a legacy person_id.
+  company_entity_id:
+    type: string
+    description: References CanonicalCompanyV1.entity_id, never a legacy company_id.
+  job_title: {type: string}
+  country: {type: string}
+  relationship_type:
+    const: employment
+  current_status:
+    enum: [unverified, current, former, invalidated]
+  valid_from:
+    type: string
+    format: date
+    description: >
+      Start of this employment's validity interval. Replaces the legacy
+      contract's single-point observed_at with a real interval — this is
+      Epic 02 Sprint 1's core temporal-validity addition.
+  valid_to:
+    type: [string, "null"]
+    format: date
+  role_hypotheses:
+    type: array
+    items: {type: object}
+  provenance:
+    type: object
+    required: [source_refs, epistemic_status, evidence_grade]
+    properties:
+      source_refs:
+        type: array
+        items: {type: string}
+      epistemic_status:
+        enum: [fact, inference, hypothesis, unknown]
+      evidence_grade:
+        enum: [P1, P2, U1, W1, N0]
+    additionalProperties: false
+  requires_validation: {type: boolean}
+additionalProperties: false
+x-rules:
+  - "A relationship with valid_to set in the past is not current regardless of current_status; currentness is derived from both fields together (see app/network_temporal.py)."
+  - "Import date is not evidence that an employment relationship is current (carried over from the legacy contract's rule)."
+  - "A title is not proof of budget, authority, or influence (carried over from the legacy contract's rule)."
