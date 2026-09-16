@@ -66,7 +66,20 @@ button {
 button:hover:not(:disabled) { border-color: #7f8c98; transform: scale(1.02); }
 button:active:not(:disabled) { transform: scale(.98); }
 button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid #2457c5;
+  outline-offset: 3px;
+}
 button.active { background: #16202a; color: white; border-color: #16202a; }
+
+@media (max-width: 720px) {
+  header { padding: 20px 16px 12px; align-items: flex-start; flex-direction: column; }
+  nav { padding: 0 16px 12px; position: sticky; top: 0; background: var(--bg-main); z-index: 5; }
+  nav button { min-height: 44px; white-space: nowrap; }
+  main { padding-inline: 16px; }
+  .grid, .split, .form { grid-template-columns: 1fr !important; }
+  .drawer { width: 100%; max-width: 100%; }
+}
 /* .primary/.secondary/.outline/.ghost also apply to non-<button> elements
    (e.g. the login page's <a class="primary">) styled like a button. */
 .primary {

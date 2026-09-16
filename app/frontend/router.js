@@ -14,9 +14,14 @@
   }
   function navigate(space, objectId = null, replace = false) {
     window.history[replace ? "replaceState" : "pushState"]({}, "", path(space, objectId));
+    window.dispatchEvent(new CustomEvent("gtm:navigation", { detail: { workspace: workspaceId, space, objectId } }));
     if (onNavigate) onNavigate({ workspace: workspaceId, space, objectId });
   }
   function start(authoritativeWorkspaceId, callback) {
+    if (new URLSearchParams(window.location.search).get("legacy") === "1") {
+      callback({ workspace: authoritativeWorkspaceId, space: "legacy", objectId: null });
+      return;
+    }
     workspaceId = authoritativeWorkspaceId;
     onNavigate = callback;
     const current = parse();

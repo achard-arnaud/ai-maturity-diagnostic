@@ -18,7 +18,16 @@ function esc(value) {
 
 function showPanel(id, activeSpace = id) {
   document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === id));
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.space === activeSpace));
+  document.querySelectorAll("nav button").forEach(b => {
+    const active = b.dataset.space === activeSpace;
+    b.classList.toggle("active", active);
+    if (active) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  const heading = document.querySelector(`#${id} h2`);
+  if (heading) {
+    heading.setAttribute("tabindex", "-1");
+    heading.focus({ preventScroll: true });
+  }
 }
 
 function statusClass(status) {
@@ -801,6 +810,10 @@ async function boot() {
   state.user = user;
   renderUserBar(user);
   window.GtmRouter.start(user.workspace_id, route => {
+    if (route.space === "legacy") {
+      showPanel("demand", "legacy");
+      return;
+    }
     const button = document.querySelector(`nav button[data-space="${route.space}"]`);
     showPanel(button ? button.dataset.target : "gtmSpace", route.space);
     window.GtmSpaces.render(route, api);
