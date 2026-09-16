@@ -1,0 +1,34 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalProductV1
+type: object
+required:
+  - product_id
+  - owner_scope
+  - name
+  - status
+  - created_at
+properties:
+  product_id: {type: string}
+  owner_scope:
+    type: object
+    required: [kind]
+    properties:
+      kind:
+        enum: [shared, workspace]
+      workspace_id:
+        type: [string, "null"]
+        default: null
+    additionalProperties: false
+    description: >
+      Per ADR-008: a Product is either shared-core (kind=shared,
+      workspace_id=null, published under product_catalog/) or a
+      workspace-owned overlay (kind=workspace, workspace_id set, under
+      workspaces/{workspace_id}/product_catalog/). Never both.
+  name: {type: string}
+  status:
+    enum: [active, archived]
+  created_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "Product is the durable identity only -- it carries no content of its own. All content (description, exclusions, hard gates, capabilities) lives on a ProductSnapshot, never on the Product record itself (02_DOMAIN_AND_TRUTH_MODEL.md: 'a snapshot is a projection, never a primary source' generalizes here in reverse: Product is identity, Snapshot is the published truth)."
