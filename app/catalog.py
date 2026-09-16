@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from app.artifact_store import ArtifactStore
+
 from app.core import ControlPlaneError, _read_yaml
 
 _SLUG = re.compile(r"[^a-z0-9]+")
@@ -105,7 +107,7 @@ class CatalogHarvester:
             directory = self.root / "data" / "private" / "catalog_harvest" / _slug(company)
             directory.mkdir(parents=True, exist_ok=True)
             target = directory / f"{document['harvest_id']}.yaml"
-            target.write_text(yaml.safe_dump(document, sort_keys=False, allow_unicode=True), encoding="utf-8")
+            ArtifactStore(self.root).write_yaml(target, document)
             relative_path = target.relative_to(self.root).as_posix()
 
         return {

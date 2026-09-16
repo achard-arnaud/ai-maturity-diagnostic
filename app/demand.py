@@ -8,6 +8,8 @@ from typing import Any
 
 import yaml
 
+from app.artifact_store import ArtifactStore
+
 from app.core import ControlPlaneError, _read_yaml
 from scripts.init_study import slugify
 from scripts.network_common import utc_now
@@ -154,9 +156,7 @@ class DemandCatalog:
                 }
             )
             study_dir.mkdir(parents=True)
-            (study_dir / "00_manifest.yaml").write_text(
-                yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True), encoding="utf-8"
-            )
+            ArtifactStore(self.root).write_yaml(study_dir / "00_manifest.yaml", manifest)
 
         unknowns = [
             "Strategic priorities are unknown -- not captured by this intake form yet.",
@@ -200,7 +200,7 @@ class DemandCatalog:
             profile["sector_code"] = str(sector_code).strip()
 
         profile_path = study_dir / "05_enterprise_demand_profile.yaml"
-        profile_path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        ArtifactStore(self.root).write_yaml(profile_path, profile)
         return {
             "study_id": resolved_study_id,
             "study_path": study_dir.relative_to(self.root).as_posix(),

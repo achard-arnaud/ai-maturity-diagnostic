@@ -17,6 +17,12 @@ changes the underlying contract or test.
 | PRD/ADR supersession is explicit, not implicit | Audit gap G01 | `docs/governance/SUPERSESSION_REGISTRY.md` | Manual review; kept current whenever a PRD/ADR is added or a branch is dispositioned |
 | Legacy `/api/*` routes are a known, temporary compatibility surface, not the target shape | `06_ROUTE_CONTEXT_AND_API_MODEL.md` | `docs/governance/baseline/E00-S01_baseline.yaml` (`tests_and_routes_inventory`) | Re-run the baseline's route inventory before Epic 12 (replatform) to check for drift |
 | A minted dev session actually authenticates against a freshly started app | Needed for S04's E2E gate to run at all | `scripts/dev_login.py` (`--db` default) | `scripts/run_e2e_gate.py`'s own successful auth step (its `mint_storage_state()` + a passing non-GAP authenticated test is proof) |
+| Catalog ownership is shared-core plus explicit workspace overlays | E01-S01, ADR-008 | `contracts/catalog_ownership.schema.yaml` | `tests/test_catalog_ownership_policy.py` |
+| Canonical file mutations are atomic, root-scoped and version-aware | E01-S02 | `app/artifact_store.py` | `tests/test_artifact_store.py` plus legacy writer suites |
+| Platform events are append-only, hash-chained, correlated and idempotent | E01-S03 | `app/event_journal.py`, `app/execution_context.py` | `tests/test_event_journal.py` |
+| Runs can checkpoint, fail, resume or cancel without fabricating completion | E01-S04 | `app/run_manager.py` | `tests/test_run_manager.py` |
+| AI/tool execution respects explicit budgets, cache identity and bounded retry | E01-S05 | `app/execution_policy.py` | `tests/test_execution_policy.py` |
+| Legacy workspace migration is dry-run-first, hash-verified and reversible | E01-S06 | `app/workspace_migrator.py`, `scripts/migrate_workspace.py` | `tests/test_workspace_migrator.py` |
 
 ## Epic 00 acceptance checklist
 

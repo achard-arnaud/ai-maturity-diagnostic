@@ -40,6 +40,8 @@ from typing import Any
 
 import yaml
 
+from app.artifact_store import ArtifactStore
+
 from app.core import ControlPlaneError, RepoControlPlane, _read_yaml
 
 _CANDIDATE_HARVEST_DIR = ("data", "private", "catalog_harvest")
@@ -238,14 +240,15 @@ def promote_candidate(
 
     offer_path = root / "product_catalog" / file_name
     offer_path.parent.mkdir(parents=True, exist_ok=True)
-    offer_path.write_text(yaml.safe_dump(profile, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    store = ArtifactStore(root)
+    store.write_yaml(offer_path, profile)
 
     index_path = root / "product_catalog" / "index.yaml"
     index = _read_yaml(index_path) if index_path.is_file() else {"schema_version": "0.2", "offers": []}
     offers = index.get("offers") or []
     offers.append({"offer_id": offer_id, "file": file_name, "name": name, "status": "draft"})
     index["offers"] = offers
-    index_path.write_text(yaml.safe_dump(index, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    store.write_yaml(index_path, index)
 
     return profile["offer"]
 
@@ -303,5 +306,5 @@ def update_offer_sheet(
         offer[field] = value
     document["offer"] = offer
 
-    offer_path.write_text(yaml.safe_dump(document, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    ArtifactStore(root).write_yaml(offer_path, document)
     return offer
