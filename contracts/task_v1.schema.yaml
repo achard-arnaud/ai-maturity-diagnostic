@@ -1,0 +1,23 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalTaskV1
+type: object
+required:
+  - task_id
+  - sequence_id
+  - step_id
+  - assignee
+  - status
+  - created_at
+properties:
+  task_id: {type: string}
+  sequence_id: {type: string}
+  step_id: {type: string}
+  assignee: {type: string}
+  due_at: {type: [string, "null"], format: date-time, default: null}
+  status:
+    enum: [open, done, skipped]
+  created_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "A Task is the human-facing unit of work (e.g. 'send this email', 'make this call') -- it is never itself a send; completing a Task for a manual-channel Step still requires a separate, explicit Touchpoint record proving what was actually sent."

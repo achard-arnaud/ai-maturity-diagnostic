@@ -1,0 +1,25 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalStepV1
+type: object
+required:
+  - step_id
+  - sequence_id
+  - order
+  - channel
+  - status
+properties:
+  step_id: {type: string}
+  sequence_id: {type: string}
+  order:
+    type: integer
+    minimum: 1
+  channel:
+    enum: [email, linkedin, phone, manual]
+  status:
+    enum: [pending, scheduled, sent, skipped, cancelled]
+    default: pending
+additionalProperties: false
+x-rules:
+  - "A Step is always created with status=pending -- see app.reach_channel_policy.assert_no_implicit_creation_as_sent. Only an explicit send action (S03) may ever move it to 'sent'."
+  - "channel=linkedin steps can never reach status=sent via automated write -- LinkedIn write access is forbidden without a dedicated ADR (this Epic's own deferred-work line); see app.reach_channel_policy.can_send_via_channel."

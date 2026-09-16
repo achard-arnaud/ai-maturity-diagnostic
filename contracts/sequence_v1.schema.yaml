@@ -1,0 +1,23 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalSequenceV1
+type: object
+required:
+  - sequence_id
+  - workspace_id
+  - target_plan_id
+  - stakeholder_role_id
+  - status
+  - created_at
+properties:
+  sequence_id: {type: string}
+  workspace_id: {type: string}
+  target_plan_id: {type: string}
+  stakeholder_role_id: {type: string}
+  status:
+    enum: [draft, approved, active, paused, completed, cancelled]
+  created_at: {type: string, format: date-time}
+  updated_at: {type: [string, "null"], format: date-time, default: null}
+additionalProperties: false
+x-rules:
+  - "A Sequence never sends anything itself -- it only orders Steps. Preparation (draft/approved) and execution (active/paused/completed) are separate phases; see this Epic's own invariant ('préparation et envoi sont séparés')."
