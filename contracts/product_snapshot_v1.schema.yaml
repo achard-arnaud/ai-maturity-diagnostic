@@ -1,0 +1,59 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalProductSnapshotV1
+type: object
+required:
+  - snapshot_id
+  - product_id
+  - product_version_id
+  - owner_scope
+  - content
+  - content_hash
+  - published_at
+  - evidence_ids
+properties:
+  snapshot_id: {type: string}
+  product_id: {type: string}
+  product_version_id: {type: string}
+  owner_scope:
+    type: object
+    required: [kind]
+    properties:
+      kind: {enum: [shared, workspace]}
+      workspace_id: {type: [string, "null"], default: null}
+    additionalProperties: false
+  content:
+    type: object
+    required: [name, description, exclusions, hard_gates]
+    properties:
+      name: {type: string}
+      description: {type: string}
+      exclusions:
+        type: array
+        items: {type: string}
+        description: What this product explicitly does NOT do -- never inferred, always stated.
+      hard_gates:
+        type: array
+        items: {type: string}
+        description: Non-negotiable requirements a fit must satisfy (compliance, technical, contractual).
+      capabilities:
+        type: array
+        items: {type: string}
+        default: []
+    additionalProperties: false
+  content_hash:
+    type: string
+    description: sha256 of the canonical (sorted-key) JSON serialization of `content`. Recomputing it from `content` must always match -- proof the snapshot was never edited in place.
+  published_at: {type: string, format: date-time}
+  evidence_ids:
+    type: array
+    items: {type: string}
+    description: Epic 04 CanonicalEvidenceV1 ids grounding this snapshot's exclusions/hard_gates/capabilities claims.
+  supersedes_snapshot_id:
+    type: [string, "null"]
+    default: null
+additionalProperties: false
+x-rules:
+  - "A published ProductSnapshot is immutable forever: correcting anything requires publishing a new ProductVersion, which produces a new Snapshot with supersedes_snapshot_id pointing at this one. The old snapshot's content and content_hash never change (02_DOMAIN_AND_TRUTH_MODEL.md: 'a published snapshot is immutable; any correction creates a version/supersession')."
+  - "No fit/score/recommendation field exists here -- a snapshot is product truth only; Fit (Epic 07) references a snapshot_id, never the reverse."
+  - "No evidence counts toward product truth on its own -- evidence_ids only ground already-stated exclusions/hard_gates/capabilities; this Epic's own invariant ('aucune preuve ne compte dans la vérité produit')."

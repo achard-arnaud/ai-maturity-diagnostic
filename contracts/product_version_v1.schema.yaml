@@ -1,0 +1,32 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalProductVersionV1
+type: object
+required:
+  - product_version_id
+  - product_id
+  - version_number
+  - status
+  - created_at
+  - created_by
+properties:
+  product_version_id: {type: string}
+  product_id: {type: string}
+  version_number:
+    type: integer
+    minimum: 1
+  status:
+    enum: [draft, in_review, published, superseded, archived]
+  created_at: {type: string, format: date-time}
+  created_by: {type: string}
+  published_snapshot_id:
+    type: [string, "null"]
+    default: null
+    description: >
+      Set only once this version is published -- points at the exactly
+      one CanonicalProductSnapshotV1 this version ever produces. Null
+      while draft/in_review.
+additionalProperties: false
+x-rules:
+  - "A ProductVersion is mutable while draft/in_review -- its own content lives in a separate draft record this Sprint does not define (out of scope: draft editing is UI/workflow, S02). Once published, a version is frozen: it produces exactly one ProductSnapshot and moves to status=published, never edited again."
+  - "version_number is monotonically increasing per product_id, assigned at creation, never reused even if a version is later archived."
