@@ -1,0 +1,28 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalTouchpointV1
+type: object
+required:
+  - touchpoint_id
+  - step_id
+  - channel
+  - status
+  - prepared_at
+properties:
+  touchpoint_id: {type: string}
+  step_id: {type: string}
+  channel:
+    enum: [email, linkedin, phone, manual]
+  content_ref:
+    type: [string, "null"]
+    default: null
+    description: Reference to the prepared message content (Epic 09 S02's evidence-bound templates); null until content has been generated.
+  status:
+    enum: [prepared, sent, failed]
+  prepared_at: {type: string, format: date-time}
+  sent_at: {type: [string, "null"], format: date-time, default: null}
+  sent_by: {type: [string, "null"], default: null}
+additionalProperties: false
+x-rules:
+  - "A Touchpoint is always created with status=prepared and sent_at=null -- see app.reach_channel_policy.assert_no_implicit_creation_as_sent. Moving to status=sent always requires an explicit, separately-audited send action (S03) with a real sent_by actor; there is no path that creates a Touchpoint already marked sent."
+  - "A touchpoint is not an engagement (10_ENGAGEMENT... invariant, generalized here for this Epic's own scope): sending one proves outreach happened, never that the recipient responded."

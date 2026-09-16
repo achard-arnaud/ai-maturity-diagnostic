@@ -46,6 +46,7 @@ from app.demand_routes import create_v1_demand_router
 from app.product_routes import create_v1_product_router
 from app.fit_routes import create_v1_fit_router
 from app.target_plan_routes import create_v1_target_plan_router
+from app.reach_routes import create_v1_reach_router
 from app.nudging import UseCaseNudger
 from app.qualification import QualificationCockpit
 from app.reach import ReachMatchmaker
@@ -188,6 +189,7 @@ def build_app(
     app.include_router(create_v1_product_router(ROOT))
     app.include_router(create_v1_fit_router(ROOT))
     app.include_router(create_v1_target_plan_router(ROOT))
+    app.include_router(create_v1_reach_router(ROOT))
 
     # ------------------------------------------------------------------
     # Error handling parity with the old stdlib Handler (ADR-004/S1).
