@@ -26,6 +26,15 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn("runPeopleSearch", self.js)
         self.assertIn("runCompaniesSearch", self.js)
 
+    def test_people_search_renders_role_hypotheses_as_role_names_not_objects(self) -> None:
+        # POST /api/network/people accepts role_hypotheses as a list of
+        # {"role": ..., "evidence_status": ...} objects (app/server.py's
+        # create_person), so the Réseau results list must pull out `.role`
+        # per entry rather than stringifying the whole object -- otherwise
+        # every role badge renders the literal text "[object Object]".
+        self.assertIn('r.role', self.js)
+        self.assertNotIn('esc(r)}</span>', self.js)
+
     def test_structured_contact_and_company_creation_forms_exist(self) -> None:
         self.assertIn('id="createPersonForm"', self.html)
         self.assertIn('id="createCompanyForm"', self.html)

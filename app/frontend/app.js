@@ -641,7 +641,7 @@ async function runPeopleSearch() {
   container.innerHTML = "<div class='empty-state'>Recherche…</div>";
   try {
     const people = await api(`/api/network/people?${params.toString()}`);
-    container.innerHTML = people.map(p => `<article class="card"><p class="eyebrow">${esc(p.seed_company_id || "")}</p><h3>${esc(p.display_name)}</h3><div class="meta"><span class="badge">${esc(p.status || "")}</span>${(p.role_hypotheses || []).map(r => `<span class="badge">${esc(r)}</span>`).join("")}</div></article>`).join("") || "<div class='empty-state'>Aucune personne trouvée.</div>";
+    container.innerHTML = people.map(p => `<article class="card"><p class="eyebrow">${esc(p.seed_company_id || "")}</p><h3>${esc(p.display_name)}</h3><div class="meta"><span class="badge">${esc(p.status || "")}</span>${(p.role_hypotheses || []).map(r => `<span class="badge">${esc(typeof r === "string" ? r : r.role || "")}</span>`).join("")}</div></article>`).join("") || "<div class='empty-state'>Aucune personne trouvée.</div>";
   } catch (error) { container.innerHTML = `<div class="error">${esc(error.message)}</div>`; }
 }
 

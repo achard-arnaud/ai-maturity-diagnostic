@@ -35,8 +35,11 @@ def main() -> None:
     parser.add_argument("--hours", type=int, default=24 * 30)
     parser.add_argument(
         "--db",
-        default="data/control/auth.sqlite3",
-        help="Path to the control-plane SQLite file (default matches the app's own default).",
+        default="data/control/control.sqlite3",
+        help=(
+            "Path to the control-plane SQLite file (default matches the app's own "
+            "default -- see app/authruntime/app.py's ControlStore(...) construction)."
+        ),
     )
     args = parser.parse_args()
 
