@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
 // These tests are a functional spec of 3 end-to-end journeys through the
@@ -10,10 +11,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:8080";
 
-// Playwright + Chromium are pre-installed in this environment at a fixed
-// path rather than the default cache location, so we point executablePath
-// there explicitly instead of relying on `playwright install`.
-const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || "/opt/pw-browsers/chromium";
+// Some sandboxes pre-install Playwright + Chromium at a fixed path instead
+// of the default cache location; only point executablePath there when that
+// path is actually present (or explicitly overridden), otherwise fall back
+// to Playwright's own auto-installed browser (e.g. `npx playwright install
+// chromium` in CI) — hardcoding a sandbox-only path here made every test
+// fail instantly at browser launch on any other runner.
+const sandboxChromiumPath = "/opt/pw-browsers/chromium";
+const chromiumExecutablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_PATH ||
+  (existsSync(sandboxChromiumPath) ? sandboxChromiumPath : undefined);
 
 export default defineConfig({
   testDir: "./tests/e2e",
