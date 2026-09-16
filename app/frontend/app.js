@@ -16,9 +16,9 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
 }
 
-function showPanel(id) {
+function showPanel(id, activeSpace = id) {
   document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === id));
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.target === id));
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.space === activeSpace));
 }
 
 function statusClass(status) {
@@ -800,6 +800,10 @@ async function boot() {
   if (!user) return; // checkAuth already redirected to /login.html on 401
   state.user = user;
   renderUserBar(user);
+  window.GtmRouter.start(user.workspace_id, route => {
+    const button = document.querySelector(`nav button[data-space="${route.space}"]`);
+    showPanel(button ? button.dataset.target : "backlog", route.space);
+  });
   try {
     const [health, skills, offers, shelves, demand, inventories, qualification, nudgeInventories, backlog, followUp, valueChain] = await Promise.all([
       api("/api/health"), api("/api/skills"), api("/api/offers"), api("/api/shelves"), api("/api/demand"), api("/api/demand/inventories"), api("/api/qualification"), api("/api/nudging/inventories"), api("/api/backlog"), api("/api/follow-up"), api("/api/value-chain")
@@ -815,7 +819,7 @@ async function boot() {
   }
 }
 
-document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => showPanel(button.dataset.target)));
+document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => window.GtmRouter.navigate(button.dataset.space)));
 document.querySelector("#sectorFilter").addEventListener("input", event => renderDemand(event.target.value));
 document.querySelector("#skillFilter").addEventListener("input", event => renderSkills(event.target.value));
 document.querySelector("#globalAddContact").addEventListener("click", () => openInvoke("network-contact-intake", "Ajoute et normalise une nouvelle source de contacts/entreprises. Ne déduis ni ICB, ni demande, ni fit depuis les titres."));

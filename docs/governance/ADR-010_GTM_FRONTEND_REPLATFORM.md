@@ -13,6 +13,11 @@ client-side server state or offline operation.
 
 ## Measured spike
 
+Baseline measured on 2026-09-17: `app.js` is 885 lines / 72,452 bytes,
+`index.html` is 342 lines / 20,502 bytes and `styles.css` is 298 lines /
+18,374 bytes. The shell has eight DOM-switched panels but no URL router,
+History API handling or authoritative workspace context.
+
 | Criterion | Existing vanilla SPA | New framework + build pipeline |
 | --- | --- | --- |
 | Production build artifacts | 0 | new runtime/toolchain required |
@@ -27,6 +32,10 @@ Keep the existing dependency-free SPA for E12. Add a small, tested routing
 and workspace-context layer in vanilla JavaScript, CSS design tokens and
 feature-flagged shell components. Do not introduce React, a bundler or a
 second client state store in this Epic.
+
+The decision is conditional: navigation and workspace logic must be extracted
+from `app.js`; new navigation behavior may not grow that monolith. Failure to
+hold that boundary triggers a successor ADR before E12 release.
 
 ## Consequences
 

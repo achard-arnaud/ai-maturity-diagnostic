@@ -12,8 +12,8 @@ class V07FrontendContractTests(unittest.TestCase):
         self.js = (ROOT / "app/frontend/app.js").read_text(encoding="utf-8")
         self.css = (ROOT / "app/frontend/styles.css").read_text(encoding="utf-8")
 
-    def test_primary_navigation_stays_compact(self) -> None:
-        for label in ("Demande", "Offres", "Qualification", "Nudging", "Suivi", "Skills"):
+    def test_primary_navigation_is_superseded_by_e12_job_spaces(self) -> None:
+        for label in ("Home", "Discover", "Research", "Fit", "Targets", "Reach", "Engagement", "Pipeline", "Insights"):
             self.assertIn(f">{label}<", self.html)
         self.assertNotIn('data-target="reach"', self.html)
 
