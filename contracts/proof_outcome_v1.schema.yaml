@@ -1,0 +1,32 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalProofOutcomeV1
+type: object
+required: [proof_outcome_id, workspace_id, proof_id, success_metrics, falsifier, status, recorded_at]
+properties:
+  proof_outcome_id: {type: string}
+  workspace_id: {type: string}
+  proof_id: {type: string}
+  success_metrics:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [metric_id, target, actual, unit]
+      properties:
+        metric_id: {type: string}
+        target: {type: number}
+        actual: {type: number}
+        unit: {type: string}
+      additionalProperties: false
+  falsifier: {type: string, minLength: 1, maxLength: 1000}
+  status: {enum: [met, not_met, inconclusive]}
+  evidence_refs:
+    type: array
+    default: []
+    items: {type: string}
+  recorded_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "A Proof outcome may support a client claim only when status is met and evidence_refs is non-empty."
+  - "The falsifier is declared with the outcome design and cannot be supplied after a favourable result."
