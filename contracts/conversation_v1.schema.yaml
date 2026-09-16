@@ -1,0 +1,26 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalConversationV1
+type: object
+required:
+  - conversation_id
+  - workspace_id
+  - target_plan_id
+  - stakeholder_role_id
+  - status
+  - created_at
+properties:
+  conversation_id: {type: string}
+  workspace_id: {type: string}
+  target_plan_id: {type: string}
+  stakeholder_role_id: {type: string}
+  sequence_id:
+    type: [string, "null"]
+    default: null
+    description: The Reach sequence (Epic 09) this conversation originated from, if any -- null for a conversation started outside any sequence.
+  status:
+    enum: [open, closed]
+  created_at: {type: string, format: date-time}
+additionalProperties: false
+x-rules:
+  - "A Conversation groups EngagementEvents for one stakeholder on one TargetPlan; it never itself represents an outbound send -- see engagement_event_v1's own invariant."
