@@ -20,7 +20,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.authruntime.config import AuthConfig
 from app.authruntime.db import ControlStore
-from app.authruntime.deps import RequestContext, get_store, require_role, require_workspace_access
+from app.authruntime.deps import RequestContext, get_current_user, get_store, require_role, require_workspace_access
 from app.authruntime.oidc import GoogleOIDCClient, OIDCClient, OIDCUserInfo
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -71,7 +71,12 @@ def create_app(
         user = control_store.get_or_create_user(userinfo.email, userinfo.name)
         token = control_store.create_session(user["id"], ttl_hours=config.session_ttl_hours)
         control_store.record_audit(actor=user["email"], action="login", target=None, reason=None)
-        response = RedirectResponse(url="/admin/workspaces", status_code=status.HTTP_303_SEE_OTHER)
+        if user["is_admin"]:
+            redirect_url = "/admin/workspaces"
+        else:
+            membership = control_store.get_membership(user["id"])
+            redirect_url = f"/w/{membership['workspace_id']}/home" if membership is not None else "/auth/pending"
+        response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(
             config.session_cookie_name,
             token,
@@ -90,6 +95,16 @@ def create_app(
         response = RedirectResponse(url="/auth/login", status_code=status.HTTP_303_SEE_OTHER)
         response.delete_cookie(config.session_cookie_name)
         return response
+
+    @app.get("/auth/pending", response_class=HTMLResponse)
+    async def pending_access(ctx: RequestContext = Depends(get_current_user)):
+        """Landing page for an authenticated user with no workspace membership.
+
+        Reached from /auth/callback when a non-admin has no membership row
+        yet -- an admin must grant one via /admin/memberships before this
+        user has anywhere else to go.
+        """
+        return HTMLResponse(_render_pending_page(ctx))
 
     # ------------------------------------------------------------------
     # Admin
@@ -207,6 +222,19 @@ def create_app(
         return {"override_id": override_id, "workspace_id": workspace_id, "blocker_id": blocker_id, "reason": reason}
 
     return app
+
+
+def _render_pending_page(ctx: RequestContext) -> str:
+    email = html.escape(ctx.email)
+    return f"""<!doctype html>
+<html><head><title>Accès en attente — AI Maturity Diagnostic</title></head>
+<body>
+<h1>Accès en attente</h1>
+<p>Bonjour {email}, votre compte est authentifié mais n'a pas encore de
+workspace associé. Un administrateur doit vous accorder une adhésion
+depuis la page Admin avant que vous puissiez accéder au produit.</p>
+<form method="post" action="/auth/logout"><button type="submit">Se déconnecter</button></form>
+</body></html>"""
 
 
 def _render_admin_page(store: ControlStore) -> str:
