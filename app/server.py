@@ -146,6 +146,13 @@ def _value_chain_for(ctx: RequestContext) -> ValueChainCatalog:
         return VALUE_CHAIN
     return ValueChainCatalog.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _uc_graph_for(ctx: RequestContext) -> UseCaseGraph:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return UC_GRAPH
+    return UseCaseGraph.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -653,13 +660,13 @@ def build_app(
     async def api_uc_graph_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return UC_GRAPH.company(str(payload.get("study_id") or "").strip())
+        return _uc_graph_for(ctx).company(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/uc-graph/sector")
     async def api_uc_graph_sector(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return UC_GRAPH.sector(str(payload.get("sector_code") or "").strip())
+        return _uc_graph_for(ctx).sector(str(payload.get("sector_code") or "").strip())
 
     @app.post("/api/heritage/company")
     async def api_heritage_company(

@@ -1161,6 +1161,34 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(200, status)
                 self.assertEqual(data, [])
 
+    def test_uc_graph_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_inventory = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1" / "05b_use_case_inventory.yaml"
+            acme_inventory.parent.mkdir(parents=True)
+            acme_inventory.write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "use_cases": [{"use_case_id": "UC1", "name": "X"}]}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("POST", "/api/uc-graph/company", {"study_id": "s1"})
+                self.assertEqual(200, status)
+                self.assertEqual(1, sum(1 for node in data["nodes"] if node["node_type"] == "use_case"))
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("POST", "/api/uc-graph/company", {"study_id": "s1"})
+                self.assertEqual(400, status)
+
     def test_health_route_is_open_without_authentication(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)
         status, health, _ = self.request("GET", "/api/health")
