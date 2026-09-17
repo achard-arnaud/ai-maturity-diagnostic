@@ -53,11 +53,12 @@ class AuthRuntimeAppTests(unittest.TestCase):
         )
         return TestClient(app, base_url="https://testserver")
 
-    def _login_as(self, client: TestClient, email: str, name: str = "Test User") -> None:
+    def _login_as(self, client: TestClient, email: str, name: str = "Test User"):
         stub = _StubOIDCClient(OIDCUserInfo(email=email, name=name, sub=email))
         client.app.state.oidc_client = stub
         response = client.get("/auth/callback", follow_redirects=False)
         self.assertEqual(response.status_code, 303)
+        return response
 
     # -- login/callback -----------------------------------------------------
     def test_login_without_configured_provider_is_503(self) -> None:
@@ -74,6 +75,37 @@ class AuthRuntimeAppTests(unittest.TestCase):
         self.assertNotIn("newuser@example.com", cookie)
         user = self.store.get_or_create_user("newuser@example.com", "Test User")
         self.assertIsNotNone(user)
+
+    def test_callback_redirects_admin_to_admin_workspaces(self) -> None:
+        client = self._client()
+        user = self.store.get_or_create_user("admin@example.com", "Admin")
+        self.store.set_admin(user["id"], True)
+        response = self._login_as(client, "admin@example.com")
+        self.assertEqual("/admin/workspaces", response.headers["location"])
+
+    def test_callback_redirects_member_to_their_workspace_home(self) -> None:
+        client = self._client()
+        self.store.create_workspace("acme", "Acme Corp")
+        user = self.store.get_or_create_user("member@example.com", "Member")
+        self.store.set_membership(user["id"], "acme", "standard_user")
+        response = self._login_as(client, "member@example.com")
+        self.assertEqual("/w/acme/home", response.headers["location"])
+
+    def test_callback_redirects_user_without_membership_to_pending_page(self) -> None:
+        client = self._client()
+        response = self._login_as(client, "nobody@example.com")
+        self.assertEqual("/auth/pending", response.headers["location"])
+
+    def test_pending_page_requires_authentication(self) -> None:
+        client = self._client()
+        response = client.get("/auth/pending")
+        self.assertEqual(401, response.status_code)
+
+    def test_pending_page_renders_for_authenticated_user_without_membership(self) -> None:
+        client = self._client()
+        self._login_as(client, "waiting@example.com")
+        response = client.get("/auth/pending")
+        self.assertEqual(200, response.status_code)
 
     def test_logout_revokes_session(self) -> None:
         client = self._client()
