@@ -281,6 +281,99 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(200, status)
                 self.assertEqual([c["company_id"] for c in companies], ["COMP-1"])
 
+    def test_network_people_and_companies_routes_scope_non_admin_to_own_workspace(self) -> None:
+        # P0 Category A: a non-admin caller must never see another
+        # workspace's people/companies through these legacy /api/* routes,
+        # even without passing workspace_id explicitly (own-workspace
+        # default) and even if they try to ask for a foreign one (404, not
+        # a silently-empty or filtered list -- matches ADR-007 SS1).
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "person_id": "PERS-ACME",
+                            "display_name": "Alice Acme",
+                            "normalized_name": "alice acme",
+                            "seed_company_id": "COMP-ACME",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-OTHER",
+                            "display_name": "Bob Other",
+                            "normalized_name": "bob other",
+                            "seed_company_id": "COMP-OTHER",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "company_id": "COMP-ACME",
+                            "canonical_name": "Acme Corp",
+                            "normalized_name": "acme corp",
+                            "status": "active",
+                            "workspace_id": "acme-ws",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "company_id": "COMP-OTHER",
+                            "canonical_name": "Other Corp",
+                            "normalized_name": "other corp",
+                            "status": "active",
+                            "workspace_id": "other-ws",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                # No workspace_id given -- defaults to caller's own workspace.
+                status, people, _ = self.request("GET", "/api/network/people")
+                self.assertEqual(200, status)
+                self.assertEqual([p["person_id"] for p in people], ["PERS-ACME"])
+
+                status, companies, _ = self.request("GET", "/api/network/companies")
+                self.assertEqual(200, status)
+                self.assertEqual([c["company_id"] for c in companies], ["COMP-ACME"])
+
+                # Explicitly asking for the caller's own workspace still works.
+                status, people, _ = self.request("GET", "/api/network/people?workspace_id=acme-ws")
+                self.assertEqual(200, status)
+                self.assertEqual([p["person_id"] for p in people], ["PERS-ACME"])
+
+                # Explicitly asking for a foreign workspace is a generic 404,
+                # not a filtered/empty 200 -- don't disclose it exists.
+                status, _, _ = self.request("GET", "/api/network/people?workspace_id=other-ws")
+                self.assertEqual(404, status)
+                status, _, _ = self.request("GET", "/api/network/companies?workspace_id=other-ws")
+                self.assertEqual(404, status)
+
     def test_kanban_board_route(self) -> None:
         status, data, _ = self.request("GET", "/api/kanban/board")
         self.assertEqual(200, status)
@@ -299,6 +392,30 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual("AI Leaders", data["name"])
         self.assertEqual(AUTH_CTX.email, data["actor"])
         self.assertEqual(3, data["target_count"])
+
+    def test_campaigns_prospecting_route_scopes_workspace_to_caller(self) -> None:
+        non_admin = RequestContext(
+            user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+        )
+        server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+
+        # criteria.workspace_id is forwarded unchecked into search_people/
+        # search_companies (app/campaigns.py) -- a caller with no workspace_id
+        # in criteria still gets one silently pinned to their own.
+        status, data, _ = self.request(
+            "POST", "/api/campaigns/prospecting", {"name": "AI Leaders", "criteria": {"entity": "people"}}
+        )
+        self.assertEqual(201, status)
+        self.assertEqual("acme-ws", data["criteria"]["workspace_id"])
+
+        # Asking to prospect a foreign workspace is a 404, never silently
+        # honored or downgraded to the caller's own.
+        status, _, _ = self.request(
+            "POST",
+            "/api/campaigns/prospecting",
+            {"name": "AI Leaders", "criteria": {"entity": "people", "workspace_id": "other-ws"}},
+        )
+        self.assertEqual(404, status)
 
     def test_campaigns_cross_sell_route(self) -> None:
         status, data, _ = self.request("POST", "/api/campaigns/cross-sell", {"study_id": "s1"})
@@ -368,6 +485,53 @@ class ServerV07Tests(unittest.TestCase):
                 status, _, _ = self.request("GET", "/api/accounts/UNKNOWN/360")
                 self.assertEqual(404, status)
 
+    def test_account_360_route_404s_for_cross_workspace_company(self) -> None:
+        # P0 Category A: a company from a workspace the caller can't access
+        # must be indistinguishable from an unknown one (generic 404), not a
+        # 403 that confirms it exists.
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "companies.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "company_id": "COMP-ACME",
+                            "canonical_name": "Acme Corp",
+                            "normalized_name": "acme corp",
+                            "status": "active",
+                            "workspace_id": "acme-ws",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "company_id": "COMP-OTHER",
+                            "canonical_name": "Other Corp",
+                            "normalized_name": "other corp",
+                            "status": "active",
+                            "workspace_id": "other-ws",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                status, data, _ = self.request("GET", "/api/accounts/COMP-ACME/360")
+                self.assertEqual(200, status)
+                self.assertEqual(data["company"]["company_id"], "COMP-ACME")
+
+                status, _, _ = self.request("GET", "/api/accounts/COMP-OTHER/360")
+                self.assertEqual(404, status)
+
     def test_network_duplicates_route(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             data_root = Path(tmp) / "network"
@@ -410,6 +574,176 @@ class ServerV07Tests(unittest.TestCase):
                 self.assertEqual(200, status)
                 self.assertEqual(len(data), 1)
                 self.assertEqual(data[0]["normalized_name"], "jean dupont")
+
+    def test_network_duplicates_route_scopes_non_admin_to_own_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp) / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "person_id": "PERS-ACME-1",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-ACME-1",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-ACME-2",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-ACME-2",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-OTHER-1",
+                            "display_name": "Marie Curie",
+                            "normalized_name": "marie curie",
+                            "seed_company_id": "COMP-OTHER-1",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-OTHER-2",
+                            "display_name": "Marie Curie",
+                            "normalized_name": "marie curie",
+                            "seed_company_id": "COMP-OTHER-2",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {"company_id": "COMP-ACME-1", "canonical_name": "Acme One", "workspace_id": "acme-ws"},
+                        {"company_id": "COMP-ACME-2", "canonical_name": "Acme Two", "workspace_id": "acme-ws"},
+                        {"company_id": "COMP-OTHER-1", "canonical_name": "Other One", "workspace_id": "other-ws"},
+                        {"company_id": "COMP-OTHER-2", "canonical_name": "Other Two", "workspace_id": "other-ws"},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            with patch.object(server_module, "NETWORK_INDEX_PATH", index_path):
+                # Admin (workspace_id=None) still sees every group.
+                status, data, _ = self.request("GET", "/api/network/duplicates")
+                self.assertEqual(200, status)
+                self.assertEqual({g["normalized_name"] for g in data}, {"jean dupont", "marie curie"})
+
+                non_admin = RequestContext(
+                    user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+                status, data, _ = self.request("GET", "/api/network/duplicates")
+                self.assertEqual(200, status)
+                self.assertEqual([g["normalized_name"] for g in data], ["jean dupont"])
+
+    def test_network_duplicates_dismiss_cross_workspace_is_404(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_root = root / "data" / "private" / "network"
+            data_root.mkdir(parents=True)
+            (data_root / "people.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {
+                            "person_id": "PERS-ACME-1",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-ACME-1",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-ACME-2",
+                            "display_name": "Jean Dupont",
+                            "normalized_name": "jean dupont",
+                            "seed_company_id": "COMP-ACME-2",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                        {
+                            "person_id": "PERS-OTHER-1",
+                            "display_name": "Marie Curie",
+                            "normalized_name": "marie curie",
+                            "seed_company_id": "COMP-OTHER-1",
+                            "identity_confidence": "high",
+                            "role_hypotheses": [],
+                            "status": "active",
+                            "last_updated": "2026-08-01",
+                            "stale_after_months": 6,
+                        },
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (data_root / "companies.jsonl").write_text(
+                "".join(
+                    json.dumps(item) + "\n"
+                    for item in [
+                        {"company_id": "COMP-ACME-1", "canonical_name": "Acme One", "workspace_id": "acme-ws"},
+                        {"company_id": "COMP-ACME-2", "canonical_name": "Acme Two", "workspace_id": "acme-ws"},
+                        {"company_id": "COMP-OTHER-1", "canonical_name": "Other One", "workspace_id": "other-ws"},
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            index_path = data_root / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
+                # A person in a foreign workspace mixed into the payload -- 404,
+                # never a silent partial-dismiss or a 403 confirming it exists.
+                status, _, _ = self.request(
+                    "POST",
+                    "/api/network/duplicates/dismiss",
+                    {"person_ids": ["PERS-ACME-1", "PERS-OTHER-1"]},
+                )
+                self.assertEqual(404, status)
+
+                # Own-workspace group dismisses normally.
+                status, data, _ = self.request(
+                    "POST",
+                    "/api/network/duplicates/dismiss",
+                    {"person_ids": ["PERS-ACME-1", "PERS-ACME-2"]},
+                )
+                self.assertEqual(200, status)
+                self.assertEqual(sorted(data["person_ids"]), ["PERS-ACME-1", "PERS-ACME-2"])
 
     def test_reassign_company_route_requires_admin(self) -> None:
         non_admin = RequestContext(user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="ws1")
@@ -557,6 +891,67 @@ class ServerV07Tests(unittest.TestCase):
         )
         self.assertEqual(401, status)
 
+    def test_demand_route_scopes_non_default_workspace_and_shares_taxonomy(self) -> None:
+        # P0 Category B: a caller whose membership is a real, non-"default"
+        # workspace must be served DemandCatalog.for_workspace(...) --
+        # isolated tenant data, but still the shared ICB taxonomy -- instead
+        # of always silently reading the "default"/mono-root singleton's
+        # data regardless of who is asking.
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            (repo_root / "data" / "taxonomies").mkdir(parents=True)
+            (repo_root / "data" / "taxonomies" / "icb_v5_2026.yaml").write_text(
+                _yaml.safe_dump(
+                    {
+                        "industries": [
+                            {
+                                "code": "30",
+                                "name": "Financials",
+                                "supersectors": [
+                                    {"code": "3010", "name": "Banks", "sectors": [{"code": "301010", "name": "Banks"}]}
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            acme_network = repo_root / "workspaces" / "acme-ws" / "data" / "private" / "network"
+            acme_network.mkdir(parents=True)
+            (acme_network / "companies.jsonl").write_text(
+                json.dumps({"company_id": "C1", "canonical_name": "Acme Bank"}) + "\n", encoding="utf-8"
+            )
+            (acme_network / "company_icb_mappings.jsonl").write_text(
+                json.dumps(
+                    {"company_id": "C1", "mapping_status": "validated", "confidence": "high", "sector": {"code": "301010"}}
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/demand")
+                self.assertEqual(200, status)
+                self.assertEqual({s["sector_code"] for s in data["sectors"]}, {"301010"})
+                self.assertEqual(data["sectors"][0]["mapped_company_count"], 1)
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/demand")
+                self.assertEqual(200, status)
+                # Same shared taxonomy, but zero mapped companies -- other-ws
+                # never sees acme-ws's tenant data.
+                self.assertEqual({s["sector_code"] for s in data["sectors"]}, {"301010"})
+                self.assertEqual(data["sectors"][0]["mapped_company_count"], 0)
+
     def test_blocker_actions_route_returns_list_and_requires_auth(self) -> None:
         status, data, _ = self.request("GET", "/api/blocker-actions")
         self.assertEqual(200, status)
@@ -586,6 +981,213 @@ class ServerV07Tests(unittest.TestCase):
         status, data, _ = self.request("GET", "/api/blocker-actions?company_id=unknown")
         self.assertEqual(200, status)
         self.assertEqual([], data)
+
+    def test_qualification_route_scopes_to_caller_workspace(self) -> None:
+        # P0 Category B: /api/qualification (and /api/blocker-actions'
+        # company_id->study_id lookup, which shares the same cockpit) must
+        # read the caller's own workspace's studies, not always the
+        # "default"/mono-root singleton's.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_studies = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-study"
+            acme_studies.mkdir(parents=True)
+            (acme_studies / "00_manifest.yaml").write_text(
+                json.dumps({"study_id": "acme-study", "company_id": "C-ACME", "company": "Acme"}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/qualification")
+                self.assertEqual(200, status)
+                self.assertEqual([row["study_id"] for row in data], ["acme-study"])
+
+                status, data, _ = self.request("GET", "/api/blocker-actions?company_id=C-ACME")
+                self.assertEqual(200, status)
+                self.assertEqual("acme-study", data[0]["study_id"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/qualification")
+                self.assertEqual(200, status)
+                self.assertEqual(data, [])
+
+    def test_follow_up_route_scopes_tenant_data_but_shares_backlog(self) -> None:
+        # P0 Category B: /api/follow-up must read the caller's own
+        # workspace's studies for qualification/value-chain/sector items,
+        # while still surfacing the shared project backlog (artifacts/
+        # TODO_*.yaml -- not tenant data) via FollowUpDashboard's
+        # shared-root fallback (see app/dashboard.py's _shared_root).
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            (repo_root / "artifacts").mkdir(parents=True)
+            (repo_root / "artifacts" / "TODO_release_v0_3.yaml").write_text(
+                _yaml.safe_dump(
+                    {"updated_at": "2026-08-01", "items": [{"id": "T1", "status": "open", "priority": "P1", "area": "backend", "task": "Ship it"}]}
+                ),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/follow-up")
+                self.assertEqual(200, status)
+                self.assertIn("TODO:T1", {item["id"] for item in data})
+
+    def test_heritage_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_inventory = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1" / "05b_use_case_inventory.yaml"
+            acme_inventory.parent.mkdir(parents=True)
+            acme_inventory.write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "use_cases": [{"use_case_id": "UC1", "name": "X"}]}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("POST", "/api/heritage/company", {"study_id": "s1"})
+                self.assertEqual(200, status)
+                self.assertEqual(1, data["use_case_count"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("POST", "/api/heritage/company", {"study_id": "s1"})
+                self.assertEqual(400, status)
+
+    def test_reach_preview_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_study = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1"
+            acme_study.mkdir(parents=True)
+            (acme_study / "00_manifest.yaml").write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "company_id": "C1"}), encoding="utf-8"
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                # The study is found (a different ControlPlaneError than
+                # "unknown study" -- it has no fit matrix yet).
+                status, data, _ = self.request("POST", "/api/reach/preview", {"study_id": "s1"})
+                self.assertEqual(400, status)
+                self.assertNotIn("unknown study", data["error"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                # other-ws has no such study at all -- generic "unknown study".
+                status, data, _ = self.request("POST", "/api/reach/preview", {"study_id": "s1"})
+                self.assertEqual(400, status)
+                self.assertIn("unknown study", data["error"])
+
+    def test_nudging_inventories_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_inventory = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1" / "05b_use_case_inventory.yaml"
+            acme_inventory.parent.mkdir(parents=True)
+            acme_inventory.write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "use_cases": [{"use_case_id": "UC1"}]}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/nudging/inventories")
+                self.assertEqual(200, status)
+                self.assertEqual([row["study_id"] for row in data], ["s1"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/nudging/inventories")
+                self.assertEqual(200, status)
+                self.assertEqual(data, [])
+
+    def test_value_chain_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_inventory = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1" / "05b_use_case_inventory.yaml"
+            acme_inventory.parent.mkdir(parents=True)
+            acme_inventory.write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "use_cases": [{"use_case_id": "UC1"}]}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/value-chain")
+                self.assertEqual(200, status)
+                self.assertEqual([row["study_id"] for row in data], ["s1"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/value-chain")
+                self.assertEqual(200, status)
+                self.assertEqual(data, [])
+
+    def test_uc_graph_route_scopes_non_default_workspace(self) -> None:
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_inventory = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-1" / "05b_use_case_inventory.yaml"
+            acme_inventory.parent.mkdir(parents=True)
+            acme_inventory.write_text(
+                _yaml.safe_dump({"study_id": "s1", "company": "Acme", "use_cases": [{"use_case_id": "UC1", "name": "X"}]}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("POST", "/api/uc-graph/company", {"study_id": "s1"})
+                self.assertEqual(200, status)
+                self.assertEqual(1, sum(1 for node in data["nodes"] if node["node_type"] == "use_case"))
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("POST", "/api/uc-graph/company", {"study_id": "s1"})
+                self.assertEqual(400, status)
 
     def test_health_route_is_open_without_authentication(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)
@@ -701,6 +1303,78 @@ class ServerV07Tests(unittest.TestCase):
                 )
                 self.assertEqual(400, status)
                 self.assertEqual("error", data["status"])
+
+    def test_network_create_person_cross_workspace_seed_company_is_404(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            index_path = data_root / "network" / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
+                # Admin seeds a company that belongs to a foreign workspace.
+                status, other_company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Other Corp", "workspace_id": "other-ws"}
+                )
+                self.assertEqual(201, status)
+
+                non_admin = RequestContext(
+                    user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+
+                # A non-admin cannot seed a person against a company they
+                # cannot access -- 404, not the 400 an unknown id would get,
+                # so existence is never disclosed either way.
+                status, _, _ = self.request(
+                    "POST",
+                    "/api/network/people",
+                    {"display_name": "Jane Doe", "seed_company_id": other_company["company_id"]},
+                )
+                self.assertEqual(404, status)
+
+                # Their own workspace's company works normally.
+                status, own_company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Acme Sub"}
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(own_company["workspace_id"], "acme-ws")
+
+                status, person, _ = self.request(
+                    "POST",
+                    "/api/network/people",
+                    {"display_name": "Jane Doe", "seed_company_id": own_company["company_id"]},
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(person["seed_company_id"], own_company["company_id"])
+
+    def test_network_create_company_scopes_workspace_to_caller(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            index_path = data_root / "network" / "network_index.sqlite"
+            with patch.object(server_module, "NETWORK_DATA_ROOT", data_root), patch.object(
+                server_module, "NETWORK_INDEX_PATH", index_path
+            ):
+                non_admin = RequestContext(
+                    user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+
+                # No workspace_id given -- silently scoped to the caller's own.
+                status, company, _ = self.request(
+                    "POST", "/api/network/companies", {"canonical_name": "Acme Sub"}
+                )
+                self.assertEqual(201, status)
+                self.assertEqual(company["workspace_id"], "acme-ws")
+
+                # Trying to plant a company in a workspace the caller can't
+                # access is a 404, not a silent override or a 201 that leaks
+                # a foreign workspace_id into the written record.
+                status, _, _ = self.request(
+                    "POST",
+                    "/api/network/companies",
+                    {"canonical_name": "Sneaky Corp", "workspace_id": "other-ws"},
+                )
+                self.assertEqual(404, status)
 
     def test_catalog_promote_and_update_offer_routes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

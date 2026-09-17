@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from app.authruntime.app import create_app
@@ -37,7 +37,13 @@ from app import kanban
 from app import network_index
 from app.duplicate_dismissals import dismiss_duplicate_group
 from app.execution_context import correlation_scope
-from app.network_index import find_potential_duplicates, search_companies, search_people
+from app.network_index import (
+    find_potential_duplicates,
+    get_company,
+    get_person,
+    search_companies,
+    search_people,
+)
 from app.network_v1_routes import create_v1_network_router
 from app.network_writer import create_company, create_person, reassign_company_workspace
 from app.signal_routes import create_v1_signal_router
@@ -56,6 +62,7 @@ from app.reach import ReachMatchmaker
 from app.uc_graph import UseCaseGraph
 from app.value_chain import ValueChainCatalog
 from app.workflows import WorkflowPlanner
+from app.workspace_paths import DEFAULT_WORKSPACE_ID
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "app" / "frontend"
@@ -78,6 +85,74 @@ BLOCKER_ACTIONS = BlockerActionLog(ROOT)
 NETWORK_INDEX_PATH = ROOT / "data" / "private" / "network" / "network_index.sqlite"
 NETWORK_DATA_ROOT = ROOT / "data" / "private"
 
+
+def _workspace_id_for(ctx: RequestContext) -> str:
+    """Concrete workspace_id a Category B domain module (ADR-007 §5) should
+    be constructed against for this request. A context with no fixed
+    membership (ctx.workspace_id is None -- an admin/global caller) resolves
+    to the "default" workspace: WorkspacePaths.root()'s own definition of
+    today's legacy mono-root, so this is byte-identical to the hardcoded
+    Class(ROOT) singletons below for every caller until a route actually
+    switches over to a per-request-scoped instance.
+    See docs/governance/P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md §3."""
+    return ctx.workspace_id or DEFAULT_WORKSPACE_ID
+
+
+def _demand_for(ctx: RequestContext) -> DemandCatalog:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return DEMAND
+    return DemandCatalog.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _qualification_for(ctx: RequestContext) -> QualificationCockpit:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return QUALIFICATION
+    return QualificationCockpit.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _followup_for(ctx: RequestContext) -> FollowUpDashboard:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return FOLLOWUP
+    return FollowUpDashboard.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _heritage_for(ctx: RequestContext) -> UseCaseHeritage:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return HERITAGE
+    return UseCaseHeritage.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _reach_for(ctx: RequestContext) -> ReachMatchmaker:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return REACH
+    return ReachMatchmaker.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _nudging_for(ctx: RequestContext) -> UseCaseNudger:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return NUDGING
+    return UseCaseNudger.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _value_chain_for(ctx: RequestContext) -> ValueChainCatalog:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return VALUE_CHAIN
+    return ValueChainCatalog.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _uc_graph_for(ctx: RequestContext) -> UseCaseGraph:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return UC_GRAPH
+    return UseCaseGraph.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -93,6 +168,29 @@ _STATIC_FILES = {
     "/login.html": "login.html",
     "/vendor/mermaid.min.js": "vendor/mermaid.min.js",
 }
+
+
+def _effective_workspace_id(ctx: RequestContext, requested: str | None) -> str | None:
+    """Resolve the workspace a legacy `/api/*` route should actually query.
+
+    These routes predate the /api/v1/workspaces/{workspace_id}/... path
+    convention and instead take an optional workspace_id query/body field.
+    Never trust that field at face value: default to the caller's own
+    membership, and only honor an explicit different value if the caller
+    can access it (always true for admins) -- mirrors
+    require_workspace_access()'s invariant for a route shape that doesn't
+    put workspace_id in the path. See
+    docs/governance/P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md.
+
+    Raises 404 (never 403) on a denied explicit request, matching ADR-007
+    §1's "don't disclose another workspace's data exists" rule already
+    used by every v1 route.
+    """
+    if not requested:
+        return ctx.workspace_id
+    if not ctx.can_access_workspace(requested):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    return requested
 
 
 async def _json_body(request: Request) -> dict[str, Any]:
@@ -261,7 +359,7 @@ def build_app(
         resolved_study_id = study_id.strip()
         company_id = company_id.strip()
         if company_id and not resolved_study_id:
-            for study_row in QUALIFICATION.list_studies():
+            for study_row in _qualification_for(ctx).list_studies():
                 if study_row.get("company_id") == company_id:
                     resolved_study_id = str(study_row.get("study_id") or "")
                     break
@@ -293,11 +391,11 @@ def build_app(
 
     @app.get("/api/demand")
     async def api_demand(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return DEMAND.snapshot()
+        return _demand_for(ctx).snapshot()
 
     @app.get("/api/demand/inventories")
     async def api_demand_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return DEMAND.inventories()
+        return _demand_for(ctx).inventories()
 
     # Demand-profile intake (M2): writes a schema-conformant
     # 05_enterprise_demand_profile.yaml from the minimum a human can type,
@@ -308,7 +406,7 @@ def build_app(
     async def api_demand_intake(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        result = DEMAND.create_demand_profile(
+        result = _demand_for(ctx).create_demand_profile(
             company=str(payload.get("company") or ""),
             problem_statement=str(payload.get("problem_statement") or ""),
             company_id=payload.get("company_id"),
@@ -320,23 +418,23 @@ def build_app(
 
     @app.get("/api/qualification")
     async def api_qualification(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return QUALIFICATION.list_studies()
+        return _qualification_for(ctx).list_studies()
 
     @app.get("/api/nudging/inventories")
     async def api_nudging_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return NUDGING.list_inventories()
+        return _nudging_for(ctx).list_inventories()
 
     @app.get("/api/value-chain")
     async def api_value_chain(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return VALUE_CHAIN.list_studies()
+        return _value_chain_for(ctx).list_studies()
 
     @app.get("/api/reach")
     async def api_reach(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return REACH.list_ready()
+        return _reach_for(ctx).list_ready()
 
     @app.get("/api/follow-up")
     async def api_follow_up(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return FOLLOWUP.items()
+        return _followup_for(ctx).items()
 
     @app.get("/api/catalog/search")
     async def api_catalog_search(
@@ -361,7 +459,7 @@ def build_app(
             company_id=company_id.strip() or None,
             role=role.strip() or None,
             stale_only=stale,
-            workspace_id=workspace_id.strip() or None,
+            workspace_id=_effective_workspace_id(ctx, workspace_id.strip() or None),
         )
 
     @app.get("/api/accounts/{company_id}/360")
@@ -370,9 +468,13 @@ def build_app(
     ) -> Any:
         result = get_account_360(ROOT, company_id.strip(), index_path=NETWORK_INDEX_PATH)
         if result is None:
-            from fastapi import HTTPException
-
-            raise HTTPException(status_code=404, detail="unknown company_id")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown company_id")
+        # Same generic-404 IDOR rule as /api/v1/...: a company from a
+        # workspace the caller can't access is indistinguishable from an
+        # unknown one, per ADR-007 §1 and docs/governance/
+        # P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md.
+        if not ctx.can_access_workspace(result["company"].get("workspace_id")):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown company_id")
         return result
 
     @app.get("/api/network/companies")
@@ -386,22 +488,38 @@ def build_app(
             NETWORK_INDEX_PATH,
             text=text.strip() or None,
             sector=sector.strip() or None,
-            workspace_id=workspace_id.strip() or None,
+            workspace_id=_effective_workspace_id(ctx, workspace_id.strip() or None),
         )
 
     @app.get("/api/network/duplicates")
     async def api_network_duplicates(
         include_dismissed: bool = False, ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return find_potential_duplicates(NETWORK_INDEX_PATH, root=ROOT, include_dismissed=include_dismissed)
+        return find_potential_duplicates(
+            NETWORK_INDEX_PATH,
+            root=ROOT,
+            include_dismissed=include_dismissed,
+            workspace_id=_effective_workspace_id(ctx, None),
+        )
 
     @app.post("/api/network/duplicates/dismiss")
     async def api_network_duplicates_dismiss(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = dismiss_duplicate_group(
-            ROOT, payload.get("person_ids") or [], actor=ctx.email, reason=payload.get("reason")
-        )
+        person_ids = payload.get("person_ids") or []
+        # Every named person must resolve, via their seed company, to a
+        # workspace this caller can access -- otherwise this write would let
+        # a caller confirm cross-workspace person_ids exist and mutate
+        # dismissal state for a workspace they cannot see (ADR-007 SS1).
+        for person_id in person_ids:
+            person = get_person(NETWORK_INDEX_PATH, str(person_id))
+            if person is None:
+                continue
+            company = get_company(NETWORK_INDEX_PATH, str(person.get("seed_company_id") or ""))
+            company_workspace = company.get("workspace_id") if company else None
+            if not ctx.can_access_workspace(company_workspace):
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+        record = dismiss_duplicate_group(ROOT, person_ids, actor=ctx.email, reason=payload.get("reason"))
         return JSONResponse(status_code=200, content=record)
 
     # ------------------------------------------------------------------
@@ -494,13 +612,13 @@ def build_app(
     async def api_nudging_generate(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return NUDGING.generate_request(payload)
+        return _nudging_for(ctx).generate_request(payload)
 
     @app.post("/api/nudges/{nudge_id}/accept")
     async def api_nudges_accept(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.accept_nudge(
+        record = _nudging_for(ctx).accept_nudge(
             str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
         )
         return JSONResponse(status_code=200, content=record)
@@ -509,7 +627,7 @@ def build_app(
     async def api_nudges_reject(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.reject_nudge(
+        record = _nudging_for(ctx).reject_nudge(
             str(payload.get("study_id") or "").strip(),
             nudge_id.strip(),
             actor=ctx.email,
@@ -521,7 +639,7 @@ def build_app(
     async def api_nudges_ack_falsifier(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.acknowledge_falsifier(
+        record = _nudging_for(ctx).acknowledge_falsifier(
             str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
         )
         return JSONResponse(status_code=200, content=record)
@@ -530,49 +648,49 @@ def build_app(
     async def api_value_chain_study(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return VALUE_CHAIN.study(str(payload.get("study_id") or "").strip())
+        return _value_chain_for(ctx).study(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/value-chain/prepare")
     async def api_value_chain_prepare(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return VALUE_CHAIN.prepare_request(payload)
+        return _value_chain_for(ctx).prepare_request(payload)
 
     @app.post("/api/uc-graph/company")
     async def api_uc_graph_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return UC_GRAPH.company(str(payload.get("study_id") or "").strip())
+        return _uc_graph_for(ctx).company(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/uc-graph/sector")
     async def api_uc_graph_sector(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return UC_GRAPH.sector(str(payload.get("sector_code") or "").strip())
+        return _uc_graph_for(ctx).sector(str(payload.get("sector_code") or "").strip())
 
     @app.post("/api/heritage/company")
     async def api_heritage_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return HERITAGE.company(str(payload.get("study_id") or "").strip())
+        return _heritage_for(ctx).company(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/heritage/sector")
     async def api_heritage_sector(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return HERITAGE.sector(str(payload.get("sector_code") or "").strip())
+        return _heritage_for(ctx).sector(str(payload.get("sector_code") or "").strip())
 
     @app.post("/api/reach/preview")
     async def api_reach_preview(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return REACH.preview(str(payload.get("study_id") or "").strip())
+        return _reach_for(ctx).preview(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/reach/prepare")
     async def api_reach_prepare(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return REACH.prepare_request(payload)
+        return _reach_for(ctx).prepare_request(payload)
 
     @app.post("/api/workflows/plan")
     async def api_workflows_plan(
@@ -624,10 +742,22 @@ def build_app(
     async def api_network_create_person(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        seed_company_id = str(payload.get("seed_company_id") or "")
+        # A person's workspace is implicit via their seed company (create_person
+        # takes no workspace_id of its own -- see app/network_writer.py's
+        # docstring); an unknown company_id still 400s below via create_person's
+        # own ControlPlaneError, so only a *known-but-foreign* company is
+        # rejected here, and with a 404 to match the "don't disclose another
+        # workspace's data exists" rule used by every other Category A route.
+        existing_company = get_company(NETWORK_INDEX_PATH, seed_company_id)
+        if existing_company is not None and not ctx.can_access_workspace(
+            existing_company.get("workspace_id")
+        ):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown seed_company_id")
         person = create_person(
             NETWORK_DATA_ROOT,
             display_name=str(payload.get("display_name") or ""),
-            seed_company_id=str(payload.get("seed_company_id") or ""),
+            seed_company_id=seed_company_id,
             role_hypotheses=payload.get("role_hypotheses"),
             source=str(payload.get("source") or "manual_entry"),
         )
@@ -638,11 +768,15 @@ def build_app(
     async def api_network_create_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        requested_workspace_id = payload.get("workspace_id")
+        workspace_id = _effective_workspace_id(
+            ctx, str(requested_workspace_id).strip() if requested_workspace_id else None
+        )
         company = create_company(
             NETWORK_DATA_ROOT,
             canonical_name=str(payload.get("canonical_name") or ""),
             sector_code=payload.get("sector_code"),
-            workspace_id=payload.get("workspace_id"),
+            workspace_id=workspace_id,
         )
         network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
         return JSONResponse(status_code=201, content=company)
@@ -691,10 +825,19 @@ def build_app(
     async def api_campaigns_prospecting(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        criteria = dict(payload.get("criteria") or {})
+        # launch_prospecting_campaign forwards criteria unchecked into
+        # search_people/search_companies (app/campaigns.py's _CRITERIA_FIELDS
+        # includes workspace_id) -- sanitize it the same way every other
+        # Category A route resolves a client-supplied workspace_id.
+        raw_workspace_id = criteria.get("workspace_id")
+        criteria["workspace_id"] = _effective_workspace_id(
+            ctx, str(raw_workspace_id).strip() if raw_workspace_id else None
+        )
         record = campaigns.launch_prospecting_campaign(
             ROOT,
             name=str(payload.get("name") or "").strip(),
-            criteria=payload.get("criteria") or {},
+            criteria=criteria,
             actor=ctx.email,
         )
         return JSONResponse(status_code=201, content=record)

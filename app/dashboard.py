@@ -52,13 +52,27 @@ class FollowUpDashboard:
     # applied here as a single dashboard-wide default (see TODO(red-team-spec)
     # below for why this is flat rather than per-kind for now).
     stale_after_months: int = 1
+    # The un-scoped repo root, for shared-reference reads only (see
+    # _shared_root below) -- same convention as app.demand.DemandCatalog.
+    repo_root: Path | None = None
 
     @classmethod
     def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "FollowUpDashboard":
         """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
         from app.workspace_paths import resolve_workspace_root
 
-        return cls(resolve_workspace_root(workspace_id, repo_root))
+        base = repo_root if repo_root is not None else Path(__file__).resolve().parents[1]
+        return cls(resolve_workspace_root(workspace_id, repo_root), repo_root=base)
+
+    def _shared_root(self) -> Path:
+        """Root to read shared, non-tenant data from: the ICB taxonomy (via
+        the nested DemandCatalog) and the project's own dev backlog
+        (artifacts/TODO_*.yaml, via RepoControlPlane) are both repo-level
+        housekeeping data, not per-workspace tenant content -- always the
+        un-scoped repo root, never a per-workspace directory, per ADR-008's
+        shared-core principle (see P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md
+        §3a/§5)."""
+        return self.repo_root if self.repo_root is not None else self.root
 
     def items(self, *, as_of: date | None = None) -> list[dict[str, Any]]:
         effective_date = as_of or date.today()
@@ -108,7 +122,7 @@ class FollowUpDashboard:
                 }
             )
 
-        demand = DemandCatalog(self.root).snapshot()
+        demand = DemandCatalog(self.root, repo_root=self._shared_root()).snapshot()
         for sector in demand["sectors"]:
             if sector["benchmark_state"] == "benchmark_edge":
                 resolution = blocker(
@@ -160,7 +174,7 @@ class FollowUpDashboard:
                     }
                 )
 
-        for todo in RepoControlPlane(self.root).backlog():
+        for todo in RepoControlPlane(self._shared_root()).backlog():
             if todo.get("status") == "completed":
                 continue
             items.append(

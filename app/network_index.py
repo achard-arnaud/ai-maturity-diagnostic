@@ -305,8 +305,29 @@ def get_company(index_path: Path, company_id: str) -> dict[str, Any] | None:
         connection.close()
 
 
+def get_person(index_path: Path, person_id: str) -> dict[str, Any] | None:
+    """Single-record lookup by exact person_id. Returns None if the index
+    has not been built yet, or no person with that id is indexed (never
+    raises for either case, matching get_company)."""
+    if not Path(index_path).is_file():
+        return None
+    connection = sqlite3.connect(str(index_path))
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            "SELECT record_json FROM people WHERE person_id = ?", (person_id,)
+        ).fetchone()
+        return _row_record(row) if row is not None else None
+    finally:
+        connection.close()
+
+
 def find_potential_duplicates(
-    index_path: Path, *, root: Path | None = None, include_dismissed: bool = False
+    index_path: Path,
+    *,
+    root: Path | None = None,
+    include_dismissed: bool = False,
+    workspace_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Detection-only duplicate-person finder (CRM-audit gap #3).
 
@@ -336,20 +357,32 @@ def find_potential_duplicates(
     group reappear forever; pass `include_dismissed=True` to see everything,
     dismissed or not. `root` is optional (and ignored when absent) so
     existing callers that only care about raw detection are unaffected.
+
+    `workspace_id`, when given, restricts groups to people whose company
+    resolves (via the same COALESCE-over-seed_company_id lookup used by
+    search_people) to that workspace. A person changing employer across
+    workspaces is out of scope for this detector -- both rows must share
+    a workspace to be flagged.
     """
     if not Path(index_path).is_file():
         return []
     connection = sqlite3.connect(str(index_path))
     connection.row_factory = sqlite3.Row
     try:
-        rows = connection.execute(
-            """
-            SELECT normalized_name, person_id, seed_company_id, status, record_json
-            FROM people
-            WHERE normalized_name IS NOT NULL AND normalized_name != ''
-            ORDER BY normalized_name, person_id
-            """
-        ).fetchall()
+        clauses = ["normalized_name IS NOT NULL", "normalized_name != ''"]
+        params: list[Any] = []
+        if workspace_id:
+            clauses.append(
+                "COALESCE("
+                "(SELECT c.workspace_id FROM companies c WHERE c.company_id = people.seed_company_id),"
+                f" '{DEFAULT_WORKSPACE_ID}') = ?"
+            )
+            params.append(workspace_id)
+        query = (
+            "SELECT normalized_name, person_id, seed_company_id, status, record_json "
+            "FROM people WHERE " + " AND ".join(clauses) + " ORDER BY normalized_name, person_id"
+        )
+        rows = connection.execute(query, params).fetchall()
     finally:
         connection.close()
 

@@ -47,13 +47,30 @@ def _iso_date(value: Any) -> date | None:
 class DemandCatalog:
     root: Path
     stale_after_days: int = 180
+    # The un-scoped repo root, for shared-reference reads only (see
+    # _shared_root/_taxonomy_sectors below). None on a plain Class(root)
+    # call site (legacy mono-root usage predating for_workspace, and every
+    # other method's own tenant-path reads) -- falls back to `root` itself,
+    # which is byte-identical to today's behavior for the "default"
+    # workspace. Only for_workspace() for a *non-default* workspace sets
+    # this to something different from `root` (ADR-007 §5 / ADR-008
+    # shared-core-plus-overlay principle, see P0_LEGACY_WORKSPACE_IDOR_
+    # INVENTORY.md §5).
+    repo_root: Path | None = None
 
     @classmethod
     def for_workspace(cls, workspace_id: str, repo_root: Path | None = None) -> "DemandCatalog":
         """Instantiate against a specific workspace (ADR-007 §5 step 1)."""
         from app.workspace_paths import resolve_workspace_root
 
-        return cls(resolve_workspace_root(workspace_id, repo_root))
+        base = repo_root if repo_root is not None else Path(__file__).resolve().parents[1]
+        return cls(resolve_workspace_root(workspace_id, repo_root), repo_root=base)
+
+    def _shared_root(self) -> Path:
+        """Root to read shared, non-tenant reference data from (currently
+        only the ICB taxonomy) -- always the un-scoped repo root, never a
+        per-workspace directory, per ADR-008's shared-core principle."""
+        return self.repo_root if self.repo_root is not None else self.root
 
     def _find_study_dir(self, study_id: str) -> Path:
         studies_root = self.root / "studies"
@@ -209,7 +226,7 @@ class DemandCatalog:
         }
 
     def _taxonomy_sectors(self) -> dict[str, dict[str, Any]]:
-        path = self.root / "data" / "taxonomies" / "icb_v5_2026.yaml"
+        path = self._shared_root() / "data" / "taxonomies" / "icb_v5_2026.yaml"
         if not path.is_file():
             return {}
         doc = _read_yaml(path)
