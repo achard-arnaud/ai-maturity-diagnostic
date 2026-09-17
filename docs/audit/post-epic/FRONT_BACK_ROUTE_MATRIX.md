@@ -46,7 +46,7 @@ dedicated rendering functions — matching E12/E13's own stated scope
 metric tiles and a privacy-suppression state that a generic card cannot
 express).
 
-## Confirmed defect: Research space calls a route that does not exist
+## Confirmed defect: Research space calls a route that does not exist (FIXED — see note at end of this section)
 
 `app/frontend/gtm-spaces.js` wires the Research space to
 `GET /api/v1/workspaces/{workspace}/research-cases`. No backend route by
@@ -70,3 +70,17 @@ rendered as `<div class="error">`), never real data, regardless of how many
 ResearchCases exist in the workspace. This was not called out in any Epic
 12 or Epic 13 acceptance record and is the most concrete, previously-unknown
 functional defect found in this audit — see the final report.
+
+**Fixed in this same closeout pass** (merged to `main` before this
+document's later commit — anyone relying on this file as current status
+rather than history, check `git log` on `app/research_routes.py`, not just
+this doc): `app/research_routes.py` now exposes
+`GET /research-cases` and `GET /research-cases/{research_case_id}` over
+the already-existing, already-tested `app.research_case_store.list_cases`/
+`get_case`. `tests/test_gtm_upstream_spaces.py` was also strengthened from
+a string-match into a real unauthenticated request per endpoint, asserting
+401/403 (route exists) rather than 404 (route missing) — the exact
+regression class the old test could not catch. The table row above and
+the "Confirmed defect" heading are left as originally written (the
+historical record of what this audit found), not edited to erase the
+finding.
