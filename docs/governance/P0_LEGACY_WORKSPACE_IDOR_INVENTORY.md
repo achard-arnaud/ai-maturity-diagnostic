@@ -191,6 +191,21 @@ workspace root for everything else. No other shared-reference path beyond
 commit's diff for the grep evidence); if implementation surfaces another
 one, it gets the same treatment, not a special case.
 
+**Addendum (P0-S04):** implementation surfaced exactly that. `FollowUpDashboard.items()`
+nests `RepoControlPlane(self.root).backlog()`, which reads
+`artifacts/TODO_*.yaml` -- the project's own development backlog, not
+tenant data (these files track this codebase's release/productization
+TODOs, not any customer's). A fresh `workspaces/<id>/` directory has no
+`artifacts/` of its own, so left unfixed this would have silently dropped
+every backlog item from a non-default workspace's follow-up dashboard
+(a functional regression, not a leak, but still a "preserve functional
+compatibility" violation). Given the same treatment as `icb_v5_2026.yaml`:
+`FollowUpDashboard` gained a `repo_root` field / `_shared_root()` helper
+(mirroring `DemandCatalog`'s), and both `RepoControlPlane(self.root)` and
+the nested `DemandCatalog(self.root)` call inside `items()` now read from
+`self._shared_root()` for their respective shared paths while `self.root`
+stays the tenant-scoped path everywhere else in the module.
+
 ## 6. Sprint plan
 
 - **P0-S01** — Category A (network_index IDOR): own-workspace/cross-

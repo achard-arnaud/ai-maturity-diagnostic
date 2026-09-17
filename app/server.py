@@ -111,6 +111,20 @@ def _qualification_for(ctx: RequestContext) -> QualificationCockpit:
         return QUALIFICATION
     return QualificationCockpit.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _followup_for(ctx: RequestContext) -> FollowUpDashboard:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return FOLLOWUP
+    return FollowUpDashboard.for_workspace(workspace_id, repo_root=ROOT)
+
+
+def _heritage_for(ctx: RequestContext) -> UseCaseHeritage:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return HERITAGE
+    return UseCaseHeritage.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -392,7 +406,7 @@ def build_app(
 
     @app.get("/api/follow-up")
     async def api_follow_up(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return FOLLOWUP.items()
+        return _followup_for(ctx).items()
 
     @app.get("/api/catalog/search")
     async def api_catalog_search(
@@ -630,13 +644,13 @@ def build_app(
     async def api_heritage_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return HERITAGE.company(str(payload.get("study_id") or "").strip())
+        return _heritage_for(ctx).company(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/heritage/sector")
     async def api_heritage_sector(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return HERITAGE.sector(str(payload.get("sector_code") or "").strip())
+        return _heritage_for(ctx).sector(str(payload.get("sector_code") or "").strip())
 
     @app.post("/api/reach/preview")
     async def api_reach_preview(

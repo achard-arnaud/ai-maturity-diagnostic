@@ -119,6 +119,66 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual(FollowUpDashboard.for_workspace("acme", repo_root=root).root, expected)
             self.assertEqual(UseCaseHeritage.for_workspace("acme", repo_root=root).root, expected)
 
+    def test_non_default_workspace_still_surfaces_shared_backlog_todos(self) -> None:
+        # P0 Category B / §3a: artifacts/TODO_*.yaml (project dev backlog,
+        # not tenant data) only ever exists at the real repo root -- a fresh
+        # workspaces/<id>/ directory has none of its own, so a non-default
+        # workspace's follow-up dashboard must still surface it via the
+        # shared-root fallback rather than silently dropping every TODO.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            dump(
+                repo_root / "artifacts" / "TODO_release_v0_3.yaml",
+                {"updated_at": "2026-08-01", "items": [{"id": "T1", "status": "open", "priority": "P1", "area": "backend", "task": "Ship it"}]},
+            )
+            dashboard = FollowUpDashboard.for_workspace("acme-ws", repo_root=repo_root)
+            self.assertFalse((dashboard.root / "artifacts").exists())
+            items = dashboard.items(as_of=date(2026, 8, 7))
+            self.assertIn("TODO:T1", {item["id"] for item in items})
+
+    def test_non_default_workspace_still_sees_shared_taxonomy_via_demand_sectors(self) -> None:
+        # Same shared-root fallback, exercised through the nested
+        # DemandCatalog(...).snapshot() call -- a workspace with a
+        # benchmark_edge sector must still surface that sector item even
+        # though the ICB taxonomy only exists at the real repo root.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            dump(
+                repo_root / "data" / "taxonomies" / "icb_v5_2026.yaml",
+                {
+                    "industries": [
+                        {
+                            "code": "30",
+                            "name": "Financials",
+                            "supersectors": [
+                                {"code": "3010", "name": "Banks", "sectors": [{"code": "301010", "name": "Banks"}]}
+                            ],
+                        }
+                    ]
+                },
+            )
+            dashboard = FollowUpDashboard.for_workspace("acme-ws", repo_root=repo_root)
+            for index in (1, 2):
+                company_id = f"C{index}"
+                study = dashboard.root / "studies" / f"bank-{index}"
+                dump(study / "00_manifest.yaml", {"study_id": f"study-{index}", "company_id": company_id, "company": f"Bank {index}", "updated_at": "2026-08-01"})
+                dump(study / "05_enterprise_demand_profile.yaml", {"evidence_claims": [{"claim_id": "E1"}], "capability_gaps": [{"claim_id": "G1"}], "confidence": "medium"})
+            jsonl(
+                dashboard.root / "data/private/network/companies.jsonl",
+                [{"company_id": "C1", "canonical_name": "Bank 1"}, {"company_id": "C2", "canonical_name": "Bank 2"}],
+            )
+            jsonl(
+                dashboard.root / "data/private/network/company_icb_mappings.jsonl",
+                [
+                    {"company_id": "C1", "mapping_status": "validated", "confidence": "high", "sector": {"code": "301010"}},
+                    {"company_id": "C2", "mapping_status": "validated", "confidence": "high", "sector": {"code": "301010"}},
+                ],
+            )
+            items = dashboard.items(as_of=date(2026, 8, 7))
+            sector_items = [item for item in items if item["kind"] == "sector"]
+            self.assertEqual(len(sector_items), 1)
+            self.assertEqual(sector_items[0]["state"], "benchmark_edge")
+
 
 if __name__ == "__main__":
     unittest.main()
