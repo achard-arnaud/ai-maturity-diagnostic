@@ -1,3 +1,4 @@
+import os
 import tempfile
 import threading
 import unittest
@@ -8,6 +9,17 @@ from app.artifact_store import ArtifactPathError, ArtifactStore, ArtifactVersion
 
 
 class ArtifactStoreTests(unittest.TestCase):
+    def test_windows_extended_path_spelling_uses_same_lock_key(self) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows path normalization contract")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = ArtifactStore(root)
+            normal = root / "events.jsonl"
+            extended = Path("\\\\?\\" + str(normal))
+            self.assertEqual(store._path(normal), store._path(extended))
+            self.assertEqual(store._lock_path(store._path(normal)), store._lock_path(store._path(extended)))
+
     def test_atomic_write_and_optimistic_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             store = ArtifactStore(Path(tmp))
