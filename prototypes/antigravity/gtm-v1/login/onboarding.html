@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bienvenue — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .gtm-shell.login-mode .gtm-header,
+  .gtm-shell.login-mode .gtm-sidebar,
+  .gtm-shell.login-mode .gtm-sidebar__separator { display: none; }
+  .gtm-shell.login-mode { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .gtm-shell.login-mode .gtm-main { grid-column: 1; grid-row: 1; display: flex; align-items: center; justify-content: center; padding: var(--gtm-space-5); }
+  .onboard-card { width: 100%; max-width: 460px; background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-5); }
+  .onboard-card ol { padding-left: 20px; }
+  .onboard-card li { margin-bottom: var(--gtm-space-2); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("home", {});
+  document.getElementById("gtmShell").classList.add("login-mode");
+  var main = document.getElementById("gtmMain");
+  main.innerHTML =
+    '<div class="onboard-card">' +
+    '<p class="eyebrow">Premier accès</p>' +
+    '<h1>Bienvenue sur Acme Workspace</h1>' +
+    '<p class="lede">Votre compte est authentifié et rattaché à ce workspace. Voici par où commencer :</p>' +
+    '<ol>' +
+    '<li><strong>Discover</strong> — voir les comptes et signaux prioritaires</li>' +
+    '<li><strong>Home / My Day</strong> — votre file de travail du jour</li>' +
+    '<li><strong>Insights</strong> — comprendre les métriques du moteur GTM</li>' +
+    '</ol>' +
+    '<button type="button" onclick="location.href=\'../home/index.html\'">Commencer →</button>' +
+    '<p style="margin-top:var(--gtm-space-4);font-size:12px;color:var(--gtm-text-muted);"><a href="index.html">&larr; Retour connexion</a> · <a href="states.html">Tous les états</a></p>' +
+    '</div>';
+</script>
+</body>
+</html>

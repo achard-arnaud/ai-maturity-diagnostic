@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sélection de workspace — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .gtm-shell.login-mode .gtm-header,
+  .gtm-shell.login-mode .gtm-sidebar,
+  .gtm-shell.login-mode .gtm-sidebar__separator { display: none; }
+  .gtm-shell.login-mode { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .gtm-shell.login-mode .gtm-main { grid-column: 1; grid-row: 1; display: flex; align-items: center; justify-content: center; padding: var(--gtm-space-5); }
+  .ws-card { width: 100%; max-width: 420px; background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-5); }
+  .ws-list { list-style: none; margin: var(--gtm-space-3) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--gtm-space-2); }
+  .ws-list button { width: 100%; text-align: left; padding: var(--gtm-space-2) var(--gtm-space-3); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-bg); cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("home", {});
+  document.getElementById("gtmShell").classList.add("login-mode");
+  var main = document.getElementById("gtmMain");
+  main.innerHTML =
+    '<div class="ws-card">' +
+    '<p class="eyebrow">Illustratif — voir DECISION_REQUIRED #2</p>' +
+    '<h1>Choisir un workspace</h1>' +
+    '<p class="lede">Le produit réel n’a aujourd’hui qu’un workspace par utilisateur non-admin — cet écran illustre le concept pour un futur multi-workspace, non actif côté produit.</p>' +
+    '<ul class="ws-list">' +
+    '<li><button type="button" onclick="location.href=\'../home/index.html\'">Acme Workspace <span style="color:var(--gtm-text-muted);font-size:12px;">— membre</span></button></li>' +
+    '<li><button type="button" disabled title="Illustratif uniquement — le modèle de données actuel n’autorise pas plusieurs memberships pour un utilisateur non-admin">Verdal Workspace <span style="font-size:12px;">— exemple (non actif)</span></button></li>' +
+    '</ul>' +
+    '<p class="login-foot" style="margin-top:var(--gtm-space-4);font-size:12px;color:var(--gtm-text-muted);"><a href="index.html">&larr; Retour connexion</a> · <a href="states.html">Tous les états</a></p>' +
+    '</div>';
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin / Automation — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .group-card .status-line { font-size: 12px; color: var(--gtm-text-muted); margin-top: var(--gtm-space-2); }
+  .group-card ul { margin: var(--gtm-space-2) 0 0; padding-left: 18px; font-size: 13px; }
+  .group-card a.real-link { display: inline-block; margin-top: var(--gtm-space-2); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("admin", { rail: false });
+  var main = document.getElementById("gtmMain");
+
+  // Every "exists" claim below is sourced from
+  // docs/research/next-wave/USE_CASE_PLATFORM_GAP_MATRIX.md and
+  // OPERATIONS_OBSERVABILITY_GAP.md — never invented. Real links point at
+  // the actual server-rendered admin pages instead of duplicating them.
+  var groups = [
+    {
+      title: "Workflows",
+      desc: "Orchestration des runs (RunManager) et handoffs entre espaces.",
+      exists: false,
+      note: "Pas de page admin réelle trouvée — RunManager n'est aujourd'hui utilisé que par research_orchestration.py, sans surface admin.",
+    },
+    {
+      title: "Scoring / policies",
+      desc: "Politiques de gating Fit, seuils de confiance, règles de qualification.",
+      exists: false,
+      note: "Aucune page /admin/* dédiée trouvée — la logique vit dans fit_gates.py/fit_scoring.py sans UI d'administration.",
+    },
+    {
+      title: "Enrichment",
+      desc: "Sources et pipelines d'enrichissement (signaux, réseau).",
+      exists: false,
+      note: "Aucune page admin trouvée pour la configuration des sources d'enrichissement.",
+    },
+    {
+      title: "Integrations",
+      desc: "Fournisseurs externes, clés/API tierces.",
+      exists: false,
+      note: "Aucune page admin trouvée — hors scope confirmé de cette exploration (ARCHITECTURAL_AUTHORITY: NONE).",
+    },
+    {
+      title: "Data model (lecture / admin-only)",
+      desc: "Index réseau, réassignation de comptes.",
+      exists: true,
+      links: [
+        { label: "Rebuild network index", href: "/admin/network/rebuild-index" },
+        { label: "Reassign company", href: "/admin/network/companies/{id}/reassign" },
+      ],
+      note: "Existe déjà — app/server.py, gated require_role(\"admin\").",
+    },
+    {
+      title: "Users / workspace",
+      desc: "Workspaces, memberships, comptes utilisateurs.",
+      exists: true,
+      links: [
+        { label: "Workspaces", href: "/admin/workspaces" },
+        { label: "Memberships", href: "/admin/memberships" },
+        { label: "Users", href: "/admin/users" },
+      ],
+      note: "Existe déjà — app/authruntime/app.py, référence RBAC selon AUTH_LOGIN_GAP.md §11.",
+    },
+    {
+      title: "Compliance",
+      desc: "Journal d'audit des actions admin/auth.",
+      exists: true,
+      links: [
+        { label: "Audit log", href: "/admin/audit" },
+        { label: "Overrides à résoudre", href: "/admin/overrides" },
+      ],
+      note: "Existe déjà — fragmenté avec EventJournal côté business (cf. OPERATIONS_OBSERVABILITY_GAP.md §2), non résolu ici.",
+    },
+    {
+      title: "Skills / Assets diagnostics",
+      desc: "Traçabilité des invocations de skills, santé des exécuteurs.",
+      exists: false,
+      note: "AgentTrace confirmé absent (OPERATIONS_OBSERVABILITY_GAP.md §7) — rien à lier, pas de faux diagnostic affiché.",
+    },
+  ];
+
+  function groupCard(g) {
+    var badge = g.exists
+      ? '<span class="badge epi-fact">&#x25CF; existe déjà</span>'
+      : '<span class="badge epi-unknown">? pas encore construit</span>';
+    var linksHtml = g.exists
+      ? g.links.map(function (l) { return '<a class="real-link" href="' + l.href + '">' + l.label + " →</a>"; }).join("<br>")
+      : '<button type="button" disabled title="' + g.note + '">Ouvrir (indisponible)</button>';
+    return (
+      '<article class="card group-card"><h3>' + g.title + "</h3>" +
+      '<p style="color:var(--gtm-text-muted);font-size:14px;">' + g.desc + "</p>" +
+      '<div class="meta">' + badge + "</div>" +
+      "<div>" + linksHtml + "</div>" +
+      '<p class="status-line">' + g.note + "</p></article>"
+    );
+  }
+
+  var groupsHtml = groups.map(groupCard).join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Admin / Automation &amp; Settings</p><h1>Configuration &amp; automatisation</h1>' +
+    '<p class="lede">Point d’entrée structurant vers ce qui existe déjà côté produit réel — jamais une réécriture des pages admin qui fonctionnent.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="drawer-section"><h4>Groupes</h4><div class="grid">' + groupsHtml + "</div></div>" +
+    '<div class="drawer-section"><h4>Artifact / Output Library (placeholder conceptuel)</h4>' +
+    '<p style="color:var(--gtm-text-muted);font-size:14px;max-width:70ch;">Epic pas encore accepté — aucune capacité de stockage/recherche d’artefacts n’existe côté produit réel (confirmé, candidate Epic E15). Exploration V1 uniquement, aucune logique de stockage inventée.</p>' +
+    '<a href="artifact-library.html">Ouvrir la bibliothèque (placeholder) →</a></div>';
+</script>
+</body>
+</html>

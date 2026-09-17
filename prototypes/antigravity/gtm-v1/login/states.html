@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — États — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+
+<!-- Literal, inspectable HTML. States adapted for a pre-auth screen — see
+     SCREEN_CONTRACT.md's "États" mapping table. -->
+<template id="gtmMainContent">
+  <div class="section-head">
+    <div><p class="eyebrow">Login</p><h1>Galerie d&rsquo;états</h1>
+    <p class="lede">Les 8 états requis par SHELL_CONTRACT.md §3, adaptés à l&rsquo;écran de connexion (voir table dans SCREEN_CONTRACT.md).</p></div>
+  </div>
+
+  <div class="state-switcher" role="tablist" aria-label="Choisir un état">
+    <button type="button" data-target="default" aria-pressed="true">default</button>
+    <button type="button" data-target="loading" aria-pressed="false">loading</button>
+    <button type="button" data-target="empty" aria-pressed="false">empty</button>
+    <button type="button" data-target="error" aria-pressed="false">error</button>
+    <button type="button" data-target="blocked" aria-pressed="false">blocked</button>
+    <button type="button" data-target="stale" aria-pressed="false">stale</button>
+    <button type="button" data-target="partial-data" aria-pressed="false">partial-data</button>
+    <button type="button" data-target="success" aria-pressed="false">success</button>
+  </div>
+
+  <section class="state-demo-panel" data-state="default">
+    <h2>Default — écran de sign-in</h2>
+    <div class="card" style="max-width:380px;">
+      <h3>Se connecter</h3>
+      <button type="button">🔐 Se connecter avec Google</button>
+    </div>
+  </section>
+
+  <section class="state-demo-panel" data-state="loading" hidden>
+    <h2>Loading — redirection vers le provider</h2>
+    <div class="state-banner state-banner--loading" role="status">&#x23F3; Redirection vers Google…</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="empty" hidden>
+    <h2>Empty — aucun provider configuré</h2>
+    <div class="empty-state">Aucun fournisseur d&rsquo;authentification n&rsquo;est configuré pour cet environnement. Contactez votre administrateur.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="error" hidden>
+    <h2>Error — échec d&rsquo;authentification</h2>
+    <div class="error-state">La connexion a échoué (consentement annulé ou fournisseur indisponible). <button type="button">Réessayer</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="blocked" hidden>
+    <h2>Blocked — compte sans workspace</h2>
+    <div class="state-banner state-banner--blocked" role="status">&#x26D4; Bloqué — votre compte est authentifié mais n&rsquo;a pas encore de workspace associé. Un administrateur doit vous accorder une adhésion. <button type="button" class="state-banner__resolve">Se déconnecter</button></div>
+    <p style="color:var(--gtm-text-muted);font-size:13px;">Ton et contenu inspirés de la vraie page <code>/auth/pending</code> (<code>app/authruntime/app.py</code>), sans en copier la logique d&rsquo;auth.</p>
+  </section>
+
+  <section class="state-demo-panel" data-state="stale" hidden>
+    <h2>Stale — session expirée</h2>
+    <div class="state-banner state-banner--stale" role="status">&#x21BB; Votre session a expiré (12h). Reconnectez-vous pour continuer.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="partial-data" hidden>
+    <h2>Partial-data — sélection de workspace en attente</h2>
+    <div class="state-banner state-banner--partial-data" role="status">&#x25D0; Authentification réussie — sélection de workspace requise avant d&rsquo;accéder au produit.</div>
+    <p><a href="workspace-select.html">Ouvrir la sélection de workspace →</a></p>
+  </section>
+
+  <section class="state-demo-panel" data-state="success" hidden>
+    <h2>Success — connecté</h2>
+    <div class="grid">
+      <article class="card"><p class="eyebrow">Connexion</p><h3>Bienvenue, Alex Reviewer</h3>
+        <div class="meta"><span class="badge epi-fact">&#x25CF; authentifié</span></div>
+        <div style="margin-top:8px;"><a href="../home/index.html">Aller à Home →</a></div></article>
+    </div>
+  </section>
+</template>
+
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("home", {});
+  document.querySelectorAll(".state-switcher button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".state-switcher button").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      document.querySelectorAll(".state-demo-panel").forEach(function (p) {
+        p.hidden = p.getAttribute("data-state") !== btn.getAttribute("data-target");
+      });
+    });
+  });
+</script>
+</body>
+</html>

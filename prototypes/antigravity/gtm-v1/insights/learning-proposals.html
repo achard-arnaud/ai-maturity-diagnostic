@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insights · Learning Proposals — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("insights", {});
+  var main = document.getElementById("gtmMain");
+
+  // Page-local illustrative data — LearningProposal is not yet part of
+  // shared/mock-data.js's canonical object list (see SCREEN_CONTRACT.md
+  // DECISION_REQUIRED #4). Not persisted, not a new shared fixture.
+  var proposals = [
+    { id: "lp_1", title: "Abaisser le seuil de confiance 'hiring signal → research' de high à med", status: "pending_review", rationale: "12 signaux hiring sur 30j ont mené à une research acceptée, aucun rejet observé", proposed_by: "learning_pipeline" },
+    { id: "lp_2", title: "Ajouter 'promotion interne' comme sous-type de job_change", status: "pending_review", rationale: "3 cas où le sous-type actuel masque un signal fort de sponsor potentiel", proposed_by: "learning_pipeline" },
+    { id: "lp_3", title: "Retirer la source 'Presse' du scoring de fraîcheur par défaut", status: "accepted", rationale: "Décidé lors de la revue du 2026-09-10", proposed_by: "learning_pipeline" },
+  ];
+
+  var statusBadge = { pending_review: "epi-hypothesis", accepted: "epi-fact", rejected: "epi-unknown" };
+
+  var rows = proposals
+    .map(function (p) {
+      var disabled = p.status !== "pending_review" ? "disabled" : "";
+      return (
+        "<tr><td>" + p.title + "</td><td>" + p.rationale + "</td>" +
+        '<td><span class="badge ' + (statusBadge[p.status] || "epi-unknown") + '">' + p.status.replace("_", " ") + "</span></td>" +
+        '<td><span class="human-decision-badge badge">&#x1F464; ' + p.proposed_by + "</span></td>" +
+        '<td><button type="button" ' + disabled + '>Accepter</button> <button type="button" ' + disabled + '>Rejeter</button></td></tr>'
+      );
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Insights</p><h1>Learning Proposals</h1>' +
+    '<p class="lede">Propositions issues du pipeline d’apprentissage — chaque transition de statut est une décision humaine auditée, jamais automatique.</p></div>' +
+    '<div><a href="index.html">&larr; Retour Insights</a></div></div>' +
+    '<table class="data-table"><thead><tr><th>Proposition</th><th>Justification</th><th>Statut</th><th>Proposé par</th><th>Action</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>" +
+    '<p style="margin-top:var(--gtm-space-4);font-size:13px;color:var(--gtm-text-muted);">Accepter/Rejeter est désactivé sur toute proposition déjà tranchée — une transition n’est jamais rejouable silencieusement.</p>';
+</script>
+</body>
+</html>

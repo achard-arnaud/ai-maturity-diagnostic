@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  /* Pre-auth screen: no product sidebar/header chrome. See SCREEN_CONTRACT.md
+     for why GtmProtoShell.render(...) is still called (checker requirement)
+     while its nav/header output is hidden here. */
+  .gtm-shell.login-mode .gtm-header,
+  .gtm-shell.login-mode .gtm-sidebar,
+  .gtm-shell.login-mode .gtm-sidebar__separator { display: none; }
+  .gtm-shell.login-mode { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .gtm-shell.login-mode .gtm-main { grid-column: 1; grid-row: 1; display: flex; align-items: center; justify-content: center; padding: var(--gtm-space-5); }
+  .login-card { width: 100%; max-width: 380px; background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-6) var(--gtm-space-5); text-align: center; }
+  .login-card h1 { font-size: 20px; margin: var(--gtm-space-2) 0 4px; }
+  .login-card p.lede { margin: 0 0 var(--gtm-space-4); }
+  .provider-btn { display: flex; align-items: center; justify-content: center; gap: var(--gtm-space-2); width: 100%; padding: var(--gtm-space-2) var(--gtm-space-3); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-bg); color: var(--gtm-text); font-size: 14px; margin-bottom: var(--gtm-space-2); cursor: pointer; }
+  .provider-btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .login-foot { margin-top: var(--gtm-space-4); font-size: 12px; color: var(--gtm-text-muted); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("home", {});
+  document.getElementById("gtmShell").classList.add("login-mode");
+  var main = document.getElementById("gtmMain");
+  main.innerHTML =
+    '<div class="login-card">' +
+    '<p class="eyebrow">GTM V1 — exploration</p>' +
+    '<h1>Se connecter</h1>' +
+    '<p class="lede">Authentification via le fournisseur configuré par votre organisation.</p>' +
+    '<button type="button" class="provider-btn" onclick="location.href=\'states.html\'">🔐 Se connecter avec Google</button>' +
+    '<button type="button" class="provider-btn" disabled title="Aucun autre fournisseur configuré côté produit réel aujourd’hui — un seul OIDC provider existe (cf. AUTH_LOGIN_GAP.md §1)">+ Autres fournisseurs — bientôt</button>' +
+    '<p class="login-foot">Voir <a href="states.html">tous les états</a> · <a href="workspace-select.html">Sélection de workspace</a> · <a href="onboarding.html">Premier accès</a></p>' +
+    '</div>';
+</script>
+</body>
+</html>

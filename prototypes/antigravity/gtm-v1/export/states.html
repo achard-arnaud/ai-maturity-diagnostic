@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Export — États — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+
+<template id="gtmMainContent">
+  <div class="section-head">
+    <div><p class="eyebrow">Export / Editor</p><h1>Galerie d&rsquo;états</h1>
+    <p class="lede">Les 8 états requis par SHELL_CONTRACT.md §3, adaptés au flux d&rsquo;export (voir table dans SCREEN_CONTRACT.md).</p></div>
+  </div>
+
+  <div class="state-switcher" role="tablist" aria-label="Choisir un état">
+    <button type="button" data-target="default" aria-pressed="true">default</button>
+    <button type="button" data-target="loading" aria-pressed="false">loading</button>
+    <button type="button" data-target="empty" aria-pressed="false">empty</button>
+    <button type="button" data-target="error" aria-pressed="false">error</button>
+    <button type="button" data-target="blocked" aria-pressed="false">blocked</button>
+    <button type="button" data-target="stale" aria-pressed="false">stale</button>
+    <button type="button" data-target="partial-data" aria-pressed="false">partial-data</button>
+    <button type="button" data-target="success" aria-pressed="false">success</button>
+  </div>
+
+  <section class="state-demo-panel" data-state="default">
+    <h2>Default — étape 1, aperçu artefact</h2>
+    <div class="card" style="max-width:420px;"><p class="eyebrow">Research note</p><h3>Acme — Note de recherche v1</h3>
+      <div class="meta"><span class="version-badge badge">v1</span></div></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="loading" hidden>
+    <h2>Loading — génération de l&rsquo;aperçu de rendu</h2>
+    <div class="state-banner state-banner--loading" role="status">&#x23F3; Génération de l&rsquo;aperçu de rendu…</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="empty" hidden>
+    <h2>Empty — aucun artefact sélectionné</h2>
+    <div class="empty-state">Aucun artefact n&rsquo;a été sélectionné pour démarrer un export. Ouvrez-en un depuis la bibliothèque Admin.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="error" hidden>
+    <h2>Error — échec de génération du rendu</h2>
+    <div class="error-state">Le rendu n&rsquo;a pas pu être généré. <button type="button">Réessayer</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="blocked" hidden>
+    <h2>Blocked — revue non approuvée</h2>
+    <div class="state-banner state-banner--blocked" role="status">&#x26D4; Bloqué — la revue n&rsquo;a pas encore été approuvée par un humain, impossible de passer au choix de template. <button type="button" class="state-banner__resolve">Aller à la revue</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="stale" hidden>
+    <h2>Stale — artefact source modifié</h2>
+    <div class="state-banner state-banner--stale" role="status">&#x21BB; L&rsquo;artefact source a été modifié ailleurs depuis le début de cette édition. Vérifiez avant de continuer.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="partial-data" hidden>
+    <h2>Partial data — rendu incomplet</h2>
+    <div class="state-banner state-banner--partial-data" role="status">&#x25D0; Aperçu généré, mais une section (pièce jointe) n&rsquo;a pas pu être rendue.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="success" hidden>
+    <h2>Success — export terminé</h2>
+    <div class="grid">
+      <article class="card"><p class="eyebrow">Export</p><h3>Acme — Note de recherche v1.pdf</h3>
+        <div class="meta"><span class="badge epi-fact">&#x25CF; exporté</span></div></article>
+    </div>
+  </section>
+</template>
+
+<script src="../shared/shell.js"></script>
+<script>
+  // "admin" chosen as activeNav: Export has no nav slot of its own (per
+  // mission) and is reached from admin/artifact-library.html's Export CTA.
+  GtmProtoShell.render("admin", {});
+  document.querySelectorAll(".state-switcher button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".state-switcher button").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      document.querySelectorAll(".state-demo-panel").forEach(function (p) {
+        p.hidden = p.getAttribute("data-state") !== btn.getAttribute("data-target");
+      });
+    });
+  });
+</script>
+</body>
+</html>
