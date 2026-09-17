@@ -99,3 +99,14 @@ def list_stakeholders_for_plan(root: Path, workspace_id: str, target_plan_id: st
     ]
     records.sort(key=lambda r: r["stakeholder_role_id"])
     return records
+
+
+def list_all_stakeholders(root: Path, workspace_id: str) -> list[dict[str, Any]]:
+    """Every stakeholder role in the workspace, regardless of target_plan_id
+    (Epic 15 S03: the artifact index needs a workspace-wide view; the
+    per-plan file is already workspace-scoped, this just skips the
+    target_plan_id filter list_stakeholders_for_plan applies)."""
+    store = ArtifactStore(root)
+    records = _read_all(store, _STAKEHOLDER_PATH.format(workspace_id=workspace_id))
+    records.sort(key=lambda r: r["stakeholder_role_id"])
+    return records

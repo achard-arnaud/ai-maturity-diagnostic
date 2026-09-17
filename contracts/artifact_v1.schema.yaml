@@ -1,0 +1,83 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+schema_version: "1.0"
+title: CanonicalArtifactV1
+description: >
+  A discovery pointer into an existing canonical store (Epic 15 S02) --
+  never a second source of truth. Every field here is either copied
+  verbatim from the object it points to or derived deterministically from
+  it, so the whole record is always exactly reproducible by re-running
+  app.artifact_index's rebuild over the canonical stores it covers.
+  `kind` is intentionally not a closed enum here: the set of indexed
+  object kinds is expected to grow, and app.artifact_policy.KNOWN_KINDS
+  is the single source of truth for which kinds this build of the index
+  actually understands -- this schema only constrains the record shape,
+  not which kinds are currently supported.
+type: object
+required:
+  - artifact_id
+  - kind
+  - title
+  - workspace_id
+  - created_at
+  - created_by
+  - version
+  - status
+  - locator
+properties:
+  artifact_id: {type: string}
+  kind:
+    type: string
+    description: The canonical object kind this artifact points to (e.g. "research_case", "fit_assessment"). See app.artifact_policy.KNOWN_KINDS.
+  title: {type: string, minLength: 1}
+  workspace_id: {type: string}
+  owner:
+    type: [string, "null"]
+    default: null
+    description: The user/actor this object is currently attributed to, if the underlying object has one.
+  related_ids:
+    type: array
+    items: {type: string}
+    default: []
+    description: Other artifact_ids or canonical entity_ids this one is about or derived from (e.g. a Fit's demand_id, a Claim's evidence_ids).
+  run_id:
+    type: [string, "null"]
+    default: null
+    description: The app.run_manager run that produced this object, if any.
+  workflow:
+    type: [string, "null"]
+    default: null
+    description: The workflow/capability name that produced this object (e.g. "harvest.search_social_networks"), if any.
+  created_at: {type: string, format: date-time}
+  created_by: {type: string}
+  created_by_agent:
+    type: [string, "null"]
+    default: null
+    description: Set when an automated process (not a human actor) produced the underlying object.
+  version:
+    type: integer
+    minimum: 1
+    description: The underlying object's own version counter where one exists (e.g. Demand/Fit's expected_version); 1 for an object with no versioning concept of its own.
+  status:
+    enum: [active, archived]
+    description: This artifact record's own visibility in listings only -- see x-rules.
+  locator:
+    type: string
+    description: Where to fetch the full object (a GET route path or store lookup key).
+  supersedes:
+    type: [string, "null"]
+    default: null
+  superseded_by:
+    type: [string, "null"]
+    default: null
+  capabilities:
+    type: object
+    properties:
+      preview: {type: boolean, default: false}
+      export: {type: boolean, default: false}
+    additionalProperties: false
+    default: {}
+additionalProperties: false
+x-rules:
+  - "An Artifact record is a discovery pointer, never business truth -- it must always be exactly reproducible by rebuilding the index from the canonical stores it covers (app.artifact_index); losing or corrupting the index must never lose or alter the underlying object."
+  - "status=archived changes only this record's own visibility in listings. It never mutates, archives, or otherwise touches the canonical object it points to (Epic 15's own 'Don't': never let the library mutate domain truth)."
+  - "This object is never written directly by a route handler outside app.artifact_index -- it is always derived, never hand-authored."
