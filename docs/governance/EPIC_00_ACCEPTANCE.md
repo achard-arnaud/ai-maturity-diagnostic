@@ -14,7 +14,7 @@ Per `13_STOP_GO_RELEASE_PLAYBOOK.md`'s Epic gate.
 
 ## Gate checklist
 
-- [x] All 5 Sprints accepted. One deferred item recorded explicitly (not a Sprint gap): `feat/prospection-principes-todo` stays unmerged — see Supersession Registry.
+- [x] All 5 Sprints accepted. One deferred item recorded explicitly (not a Sprint gap): `feat/prospection-principes-todo` stays unmerged, now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo` rather than a live branch — see Supersession Registry.
 - [x] Full release gate (`scripts/check_release.py`) green on `dev` at `e34187a` (this Epic's final commit before the `main` release): 0 errors, ruff/package/LinkedIn-design/tests/coverage(≥80%)/schema/markdown-links/privacy/DOCX checks all PASS.
 - [x] E2E gate (`scripts/run_e2e_gate.py`) run for real against `dev` at `e34187a`: 16/29 passed, 0 regressions among non-GAP tests. (Also green twice in GitHub Actions CI on the S02-S05 PR, after the two real bugs above were found and fixed — the first CI runs on this Epic were red, correctly, and driven to green rather than worked around.)
 - [x] Audit invariants this Epic touches (evidence-first documentation authority, no business-logic mutation without a stated requirement) re-checked: no `app/` business logic changed except the two concrete bug fixes named above, both required to make the gates this Epic owns actually work.
@@ -24,7 +24,7 @@ Per `13_STOP_GO_RELEASE_PLAYBOOK.md`'s Epic gate.
 
 ## Known limitations (owned by later Epics/Sprints, not blocking this Epic's acceptance)
 
-- `feat/prospection-principes-todo` remains unmerged: fails the package validator (`SKILL.md` >500 lines, missing `agents/openai.yaml`, unsupported frontmatter key `status`). Left for a dedicated skill-authoring sprint.
+- `feat/prospection-principes-todo` remains unmerged, now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo` rather than a live branch: fails the package validator (`SKILL.md` >500 lines, missing `agents/openai.yaml`, unsupported frontmatter key `status`). Left for a dedicated skill-authoring sprint.
 - The GitLab `e2e-gate` mirror job (`.gitlab-ci.yml`) has not been observed running on a live GitLab runner from this environment — only the GitHub Actions job is empirically verified.
 - `docs/gtm-transformation/`'s Epics 01-13 are entirely unstarted; this Epic only establishes the governance baseline (CI, branch hygiene, documentary authority) they build on.
 - Legacy `/api/*` and `/admin/*` routes remain the only API surface (per the S01 baseline's route inventory) — the target `/api/v1/workspaces/{workspace_id}/...` shape from `06_ROUTE_CONTEXT_AND_API_MODEL.md` does not exist yet; that's Epic 01+ work, not Epic 00's.

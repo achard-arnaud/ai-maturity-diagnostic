@@ -47,8 +47,10 @@ All six shipped in one PR to `dev`: [#38](https://github.com/achard-arnaud/ai-ma
 
 ## Known limitations
 
-- `feat/prospection-principes-todo` remains unmerged (carried over from
-  Epic 00's own acceptance record; still fails the package validator;
+- `feat/prospection-principes-todo` remains unmerged, now archived as tag
+  `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`
+  rather than a live branch (carried over from Epic 00's own acceptance
+  record; still fails the package validator;
   still not this Epic's or Epic 00's to fix — a dedicated skill-authoring
   sprint's job).
 - The v1 store (`data/private/network_v1/...`) has **no real production

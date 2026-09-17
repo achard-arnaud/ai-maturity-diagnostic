@@ -75,7 +75,7 @@ All 6 shipped in one PR to `dev`: [#47](https://github.com/achard-arnaud/ai-matu
   `app.evidence_store` for the claim's actual linked evidence is
   follow-on work.
 - Carried over from Epic 00/02/03/04 (not created by this Epic):
-  `feat/prospection-principes-todo` still unmerged; GitLab's `e2e-gate`
+  `feat/prospection-principes-todo` unmerged (now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`, not a live branch); GitLab's `e2e-gate`
   mirror unverified against a live runner; Epic 04's `ResearchCase` has
   no automated `ResearchQueued`-event consumer yet (still follow-on work,
   unrelated to Demand).

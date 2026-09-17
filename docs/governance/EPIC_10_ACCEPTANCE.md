@@ -72,7 +72,7 @@ All 5 shipped in one PR to `dev`: [#62](https://github.com/achard-arnaud/ai-matu
   a store for the proposal itself, wired up yet; accepting a proposal
   into an actual next stage is deferred, narrow follow-on work.
 - Carried over from Epic 00-09 (not created by this Epic):
-  `feat/prospection-principes-todo` still unmerged; GitLab's `e2e-gate`
+  `feat/prospection-principes-todo` unmerged (now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`, not a live branch); GitLab's `e2e-gate`
   mirror unverified against a live runner; Epic 06's product-publish
   route, Epic 07's `dimension_checks`/`gate_checks` evaluation-skill
   wiring, Epic 08's target-plan write route, and Epic 09's reach write

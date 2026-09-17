@@ -37,6 +37,6 @@ Per `docs/gtm-transformation/epics/EPIC_00_GOVERNANCE_BASELINE_AND_DELIVERY.md`:
 
 ## Known limitations carried forward (not blocking Epic 00 acceptance)
 
-- `feat/prospection-principes-todo` remains unmerged (package-validator failures); owned by a future skill-authoring sprint, not Epic 00.
+- `feat/prospection-principes-todo` remains unmerged, now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo` rather than a live branch (package-validator failures); owned by a future skill-authoring sprint, not Epic 00.
 - `docs/gtm-transformation/`'s own Epics 01-13 are unstarted; this Epic only establishes the governance baseline they build on.
 - The GitLab `e2e-gate` mirror job is unverified against a live GitLab runner (no GitLab CI access from this environment) — only the GitHub Actions job has been observed running for real.
