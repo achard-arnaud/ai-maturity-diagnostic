@@ -130,6 +130,25 @@ class DiscoverRoutesTests(unittest.TestCase):
         sources_called = {r["source"] for r in response.json()["source_runs"]}
         self.assertEqual({"hackernews", "arxiv", "github", "web", "x"}, sources_called)
 
+    def test_all_sources_failing_is_a_degraded_200_not_a_500(self) -> None:
+        # Epic 14 S07: degraded states are reported in-band (status:
+        # "failed" in a 200 response the caller can act on), never a raw
+        # 500 that hides what happened.
+        def boom(*args, **kwargs):
+            raise RuntimeError("web_index markup drift")
+
+        with mock.patch.dict(harvest_runner.SEARCHERS, {"hackernews": boom}):
+            response = self.client.post(
+                "/api/v1/workspaces/ws-a/discover/search",
+                json={"query": "acme AI", "sources": ["hackernews"]},
+                cookies=self._cookie(self.alice_token),
+            )
+        self.assertEqual(200, response.status_code)
+        body = response.json()
+        self.assertEqual("failed", body["status"])
+        self.assertEqual([], body["signals"])
+        self.assertEqual("error", body["source_runs"][0]["status"])
+
     def test_linkedin_from_discover_space_is_rejected(self) -> None:
         # ADR-011 S6: linkedin is Targets-space (post-Fit) only.
         response = self.client.post(
