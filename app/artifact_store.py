@@ -41,6 +41,36 @@ def _digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _resolved_path(path: Path) -> Path:
+    """Return one stable spelling for a resolved path on every platform.
+
+    Windows may intermittently return the extended ``\\?\\`` spelling while
+    another thread is replacing the same file.  Without normalization, those
+    spellings produce different lock keys for one artifact.
+    """
+
+    value = str(path.resolve())
+    if os.name == "nt" and value.startswith("\\\\?\\UNC\\"):
+        value = "\\\\" + value[8:]
+    elif os.name == "nt" and value.startswith("\\\\?\\"):
+        value = value[4:]
+    return Path(os.path.normcase(os.path.normpath(value)))
+
+
+def _replace_with_retry(source: Path, target: Path, timeout_seconds: float = 2.0) -> None:
+    """Replace atomically, tolerating transient Windows sharing violations."""
+
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            if os.name != "nt" or time.monotonic() >= deadline:
+                raise
+            time.sleep(0.01)
+
+
 @dataclass(frozen=True)
 class ArtifactWriteResult:
     path: Path
@@ -56,12 +86,12 @@ class ArtifactStore:
     stale_lock_seconds: float = 120.0
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "root", self.root.resolve())
+        object.__setattr__(self, "root", _resolved_path(self.root))
         self.root.mkdir(parents=True, exist_ok=True)
 
     def _path(self, path: Path | str) -> Path:
         candidate = Path(path)
-        target = candidate.resolve() if candidate.is_absolute() else (self.root / candidate).resolve()
+        target = _resolved_path(candidate if candidate.is_absolute() else self.root / candidate)
         try:
             target.relative_to(self.root)
         except ValueError as exc:
@@ -96,7 +126,9 @@ class ArtifactStore:
                 with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
                     handle.write(json.dumps({"pid": os.getpid(), "created_at": time.time()}))
                 break
-            except FileExistsError:
+            except (FileExistsError, PermissionError):
+                # Windows may report a sharing violation as PermissionError
+                # while another thread owns the O_EXCL lock file.
                 try:
                     age = time.time() - lock_path.stat().st_mtime
                     if age > self.stale_lock_seconds:
@@ -134,7 +166,7 @@ class ArtifactStore:
                     handle.write(data)
                     handle.flush()
                     os.fsync(handle.fileno())
-                os.replace(temporary, target)
+                _replace_with_retry(temporary, target)
                 try:
                     directory_fd = os.open(target.parent, os.O_RDONLY)
                     try:
@@ -174,7 +206,7 @@ class ArtifactStore:
                     handle.write(data)
                     handle.flush()
                     os.fsync(handle.fileno())
-                os.replace(temporary, target)
+                _replace_with_retry(temporary, target)
             finally:
                 temporary.unlink(missing_ok=True)
         return ArtifactWriteResult(target, _digest(data), previous, len(data))
