@@ -31,7 +31,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["app", "scripts"]
+packages = ["app", "scripts", "scripts.social_search"]
 
 [tool.ruff]
 line-length = 120
@@ -60,6 +60,14 @@ ignore = [
   # for this hotfix sprint.
   "E401",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts/social_search/ is vendored verbatim from achard-arnaud/
+# search-social-networks (see scripts/social_search/NOTICE.md and
+# docs/ADR-011-evidence-acquisition-search.md) -- __init__.py is a
+# re-export barrel module by design, never hand-edited to add explicit
+# `as` aliases just to satisfy this repo's own linter.
+"scripts/social_search/__init__.py" = ["F401"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
