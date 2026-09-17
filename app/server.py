@@ -104,6 +104,13 @@ def _demand_for(ctx: RequestContext) -> DemandCatalog:
         return DEMAND
     return DemandCatalog.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _qualification_for(ctx: RequestContext) -> QualificationCockpit:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return QUALIFICATION
+    return QualificationCockpit.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -310,7 +317,7 @@ def build_app(
         resolved_study_id = study_id.strip()
         company_id = company_id.strip()
         if company_id and not resolved_study_id:
-            for study_row in QUALIFICATION.list_studies():
+            for study_row in _qualification_for(ctx).list_studies():
                 if study_row.get("company_id") == company_id:
                     resolved_study_id = str(study_row.get("study_id") or "")
                     break
@@ -369,7 +376,7 @@ def build_app(
 
     @app.get("/api/qualification")
     async def api_qualification(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return QUALIFICATION.list_studies()
+        return _qualification_for(ctx).list_studies()
 
     @app.get("/api/nudging/inventories")
     async def api_nudging_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:

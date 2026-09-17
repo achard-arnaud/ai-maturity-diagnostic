@@ -982,6 +982,41 @@ class ServerV07Tests(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual([], data)
 
+    def test_qualification_route_scopes_to_caller_workspace(self) -> None:
+        # P0 Category B: /api/qualification (and /api/blocker-actions'
+        # company_id->study_id lookup, which shares the same cockpit) must
+        # read the caller's own workspace's studies, not always the
+        # "default"/mono-root singleton's.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            acme_studies = repo_root / "workspaces" / "acme-ws" / "studies" / "acme-study"
+            acme_studies.mkdir(parents=True)
+            (acme_studies / "00_manifest.yaml").write_text(
+                json.dumps({"study_id": "acme-study", "company_id": "C-ACME", "company": "Acme"}),
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/qualification")
+                self.assertEqual(200, status)
+                self.assertEqual([row["study_id"] for row in data], ["acme-study"])
+
+                status, data, _ = self.request("GET", "/api/blocker-actions?company_id=C-ACME")
+                self.assertEqual(200, status)
+                self.assertEqual("acme-study", data[0]["study_id"])
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/qualification")
+                self.assertEqual(200, status)
+                self.assertEqual(data, [])
+
     def test_health_route_is_open_without_authentication(self) -> None:
         server_module.APP.dependency_overrides.pop(get_current_user, None)
         status, health, _ = self.request("GET", "/api/health")
