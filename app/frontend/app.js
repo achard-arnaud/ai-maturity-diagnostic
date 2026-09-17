@@ -811,7 +811,9 @@ async function boot() {
   renderUserBar(user);
   window.GtmRouter.start(user.workspace_id, route => {
     if (route.space === "legacy") {
-      showPanel("demand", "legacy");
+      document.querySelector("#gtmNav").classList.add("hidden");
+      document.querySelector("#legacyNav").classList.remove("hidden");
+      showPanel("demand", "demand");
       return;
     }
     const button = document.querySelector(`nav button[data-space="${route.space}"]`);
@@ -833,7 +835,8 @@ async function boot() {
   }
 }
 
-document.querySelectorAll("nav button").forEach(button => button.addEventListener("click", () => window.GtmRouter.navigate(button.dataset.space)));
+document.querySelectorAll("#gtmNav button").forEach(button => button.addEventListener("click", () => window.GtmRouter.navigate(button.dataset.space)));
+document.querySelectorAll("#legacyNav button").forEach(button => button.addEventListener("click", () => showPanel(button.dataset.legacyTarget, button.dataset.legacyTarget)));
 document.querySelector("#sectorFilter").addEventListener("input", event => renderDemand(event.target.value));
 document.querySelector("#skillFilter").addEventListener("input", event => renderSkills(event.target.value));
 document.querySelector("#globalAddContact").addEventListener("click", () => openInvoke("network-contact-intake", "Ajoute et normalise une nouvelle source de contacts/entreprises. Ne déduis ni ICB, ni demande, ni fit depuis les titres."));

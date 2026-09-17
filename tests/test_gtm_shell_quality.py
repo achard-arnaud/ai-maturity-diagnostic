@@ -21,7 +21,10 @@ class GtmShellQualityTests(unittest.TestCase):
     def test_legacy_panels_remain_for_one_release_but_not_in_primary_nav(self) -> None:
         html = (ROOT / "app/frontend/index.html").read_text(encoding="utf-8")
         self.assertIn('id="qualification"', html)
-        self.assertNotIn('>Qualification</button>', html)
+        self.assertIn('id="legacyNav" class="hidden"', html)
+        self.assertIn('data-legacy-target="qualification">Qualification</button>', html)
+        primary_nav = html.split('id="gtmNav"', 1)[1].split("</nav>", 1)[0]
+        self.assertNotIn('>Qualification</button>', primary_nav)
 
 if __name__ == "__main__":
     unittest.main()
