@@ -180,6 +180,17 @@ class ListArtifactsTests(unittest.TestCase):
             self.assertIn("demand", kinds)
             self.assertNotIn("sequence", kinds)  # unrelated to entity_1
 
+    def test_q_filters_by_case_insensitive_title_substring(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            SeededIndex(root)
+            page = list_artifacts(root, "ws-a", q="FIT ASSESSMENT", limit=100)
+            self.assertEqual(1, len(page.items))
+            self.assertEqual("fit_assessment", page.items[0]["kind"])
+
+            no_match = list_artifacts(root, "ws-a", q="no such title anywhere", limit=100)
+            self.assertEqual([], no_match.items)
+
     def test_workspace_isolation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

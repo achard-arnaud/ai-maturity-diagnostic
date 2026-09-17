@@ -319,9 +319,17 @@ def list_artifacts(
     related_to: str | None = None,
     run_id: str | None = None,
     status: str | None = None,
+    q: str | None = None,
     limit: int = 20,
     cursor: str | None = None,
 ) -> ArtifactPage:
+    """Metadata search is a case-insensitive substring match on `title`
+    only (`q`) -- no vector/semantic engine, per this Epic's own "Don't":
+    the title is the one free-text field every kind actually has (many
+    canonical objects, e.g. TargetPlan/Sequence/Opportunity, have no body
+    text of their own to index -- see app.artifact_index's per-kind
+    adapters), so content search beyond title is not offered rather than
+    faked."""
     if limit <= 0:
         raise ArtifactPolicyError("limit must be positive")
     if kind is not None and kind not in _ADAPTERS:
@@ -340,6 +348,9 @@ def list_artifacts(
         artifacts = [a for a in artifacts if a.get("run_id") == run_id]
     if status is not None:
         artifacts = [a for a in artifacts if a["status"] == status]
+    if q is not None and q.strip():
+        needle = q.strip().lower()
+        artifacts = [a for a in artifacts if needle in a["title"].lower()]
 
     artifacts.sort(key=lambda a: a["artifact_id"])
     if cursor is not None:
