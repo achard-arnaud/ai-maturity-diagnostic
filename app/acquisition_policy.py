@@ -16,6 +16,7 @@ inputs build_evidence_candidate() expects.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -144,13 +145,21 @@ class EvidenceCandidate:
     """The mapped, not-yet-promoted shape a source adapter's raw Result
     becomes before it is written as CanonicalEvidenceV1/CanonicalSignalV1
     (ADR-011 S2). Promotion to a canonical record is a separate, explicit
-    step this module does not perform."""
+    step this module does not perform.
+
+    `source_kind` is always "public" -- every search-social-networks
+    source is public-web acquisition (contracts/{evidence,signal}_v1
+    .schema.yaml's `source.kind` enum), matching the same constant
+    app.signal_ingestion.ingest_public already uses. `acquisition_source`
+    is the specific channel (e.g. "hackernews", "linkedin") -- this is
+    the field a caller filters/explains "why matched" by, not source_kind.
+    """
 
     candidate_id: str
     workspace_id: str
     space: str
+    acquisition_source: str
     source_kind: str
-    source_ref: str
     locator: str
     excerpt: str
     observed_at: str
@@ -215,8 +224,8 @@ def build_evidence_candidate(
         candidate_id=candidate_id,
         workspace_id=workspace_id,
         space=space,
-        source_kind=source_name,
-        source_ref=locator,
+        acquisition_source=source_name,
+        source_kind="public",
         locator=locator,
         excerpt=excerpt,
         observed_at=resolved_observed_at,
@@ -227,3 +236,36 @@ def build_evidence_candidate(
         dedup_key=dedup_key,
         metadata=resolved_metadata,
     )
+
+
+def candidate_to_signal(candidate: EvidenceCandidate, *, stale_after_days: int = 14) -> dict[str, Any]:
+    """Map an EvidenceCandidate onto a CanonicalSignalV1-shaped dict
+    (ADR-011 S6: Discover-space candidates become signals, not evidence --
+    a signal has no entity_refs requirement, unlike evidence_v1's
+    minItems: 1, which fits a broad, pre-Fit, not-yet-linked-to-a-company
+    discovery result exactly).
+
+    Reuses the exact source.kind/source.ref convention
+    app.signal_ingestion.ingest_public already established: source.ref is
+    the locator (URL), matching every other signal in this codebase,
+    regardless of which acquisition_source produced it -- the specific
+    channel is preserved in metadata for "why matched" purposes instead.
+    """
+
+    signal: dict[str, Any] = {
+        "signal_id": f"signal_{uuid.uuid4().hex}",
+        "workspace_id": candidate.workspace_id,
+        "source": {"kind": candidate.source_kind, "ref": candidate.locator},
+        "observed_at": candidate.observed_at,
+        "status": "new",
+        "company_entity_id": None,
+        "dedup_key": candidate.dedup_key,
+        "freshness": {"stale_after_days": stale_after_days},
+        "provenance": {
+            "source_refs": [candidate.locator],
+            "epistemic_status": candidate.epistemic_status,
+            "evidence_grade": candidate.evidence_grade,
+        },
+    }
+    assert_no_demand_or_fit_fields(signal)
+    return signal

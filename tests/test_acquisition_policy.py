@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import unittest
 
+from jsonschema import Draft202012Validator
+
 from app.acquisition_policy import (
     AcquisitionPolicyError,
     EvidenceCandidate,
     SearchRequest,
     assert_no_demand_or_fit_fields,
     build_evidence_candidate,
+    candidate_to_signal,
 )
+from app.signal_policy import assert_no_demand_fields, load_signal_schema
 
 
 def make_request(**overrides):
@@ -180,6 +184,36 @@ class BuildEvidenceCandidateTests(unittest.TestCase):
     def test_default_observed_at_is_set_when_omitted(self) -> None:
         candidate = make_candidate()
         self.assertIsNotNone(candidate.observed_at)
+
+    def test_source_kind_is_always_public_regardless_of_acquisition_source(self) -> None:
+        # contracts/evidence_v1.schema.yaml + signal_v1.schema.yaml's
+        # source.kind enum is {public, manual, import} -- never the
+        # specific search-social-networks channel name.
+        candidate = make_candidate(source_name="linkedin", space="targets")
+        self.assertEqual("public", candidate.source_kind)
+        self.assertEqual("linkedin", candidate.acquisition_source)
+
+
+class CandidateToSignalTests(unittest.TestCase):
+    def test_produces_a_schema_shaped_signal_dict(self) -> None:
+        candidate = make_candidate()
+        signal = candidate_to_signal(candidate)
+        self.assertEqual(signal["workspace_id"], candidate.workspace_id)
+        self.assertEqual(signal["source"], {"kind": "public", "ref": candidate.locator})
+        self.assertEqual(signal["status"], "new")
+        self.assertIsNone(signal["company_entity_id"])
+        self.assertEqual(signal["dedup_key"], candidate.dedup_key)
+        self.assertEqual(signal["provenance"]["evidence_grade"], candidate.evidence_grade)
+        self.assertEqual(signal["provenance"]["epistemic_status"], candidate.epistemic_status)
+        # Must pass the same defense-in-depth guard every other signal does.
+        assert_no_demand_fields(signal)
+        Draft202012Validator(load_signal_schema()).validate(signal)
+
+    def test_signal_id_is_unique_per_call(self) -> None:
+        candidate = make_candidate()
+        first = candidate_to_signal(candidate)
+        second = candidate_to_signal(candidate)
+        self.assertNotEqual(first["signal_id"], second["signal_id"])
 
 
 if __name__ == "__main__":
