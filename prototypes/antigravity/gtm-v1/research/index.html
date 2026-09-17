@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script src="research-mock-extend.js"></script>
+<script src="../fit/fit-mock-extend.js"></script>
+<script>
+  GtmProtoShell.render("research", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(window.location.search);
+  var focusCompanyId = params.get("company_id");
+
+  // Priority is a mocked, static label — not a computed score. No
+  // real ranking formula exists yet (see SCREEN_CONTRACT.md
+  // DECISION_REQUIRED #2), so this prototype never implies one.
+  var PRIORITY_LABEL = { co_acme: "Haute", co_nautix: "Moyenne", co_verdal: "Basse" };
+  var STATUS_META = {
+    in_progress: { label: "Assignée", cta: "Reprendre", badge: "epi-inference" },
+    not_started: { label: "Non démarrée", cta: "Ouvrir", badge: "epi-unknown" },
+    complete: { label: "Complète", cta: "Revoir", badge: "epi-fact" },
+  };
+
+  function companyById(id) {
+    return d.companies.filter(function (c) { return c.company_id === id; })[0];
+  }
+
+  var rows = d.researchCases
+    .slice()
+    .sort(function (a, b) {
+      var order = { in_progress: 0, not_started: 1, complete: 2 };
+      return order[a.status] - order[b.status];
+    })
+    .map(function (rc) {
+      var c = companyById(rc.company_id);
+      if (!c) return "";
+      var meta = STATUS_META[rc.status] || { label: rc.status, cta: "Ouvrir", badge: "epi-unknown" };
+      var freshnessClass = rc.status === "complete" ? "freshness-stale" : rc.status === "in_progress" ? "freshness-fresh" : "freshness-aging";
+      var lastRun = rc.status === "complete" ? (rc.history.length ? rc.history[rc.history.length - 1].at : "—") : rc.opened_at || "—";
+      var focusAttr = focusCompanyId === c.company_id ? ' style="outline:2px solid var(--gtm-accent);"' : "";
+      return (
+        "<tr" + focusAttr + "><td><a href=\"company.html?company_id=" + c.company_id + "&tab=research\">" + c.name + "</a> " +
+        '<span class="badge ' + meta.badge + '">' + meta.label + "</span></td>" +
+        "<td>" + PRIORITY_LABEL[c.company_id] + "</td>" +
+        '<td><span class="badge ' + freshnessClass + '">&#x27F3; ' + rc.coverage + "</span></td>" +
+        "<td>" + lastRun + "</td>" +
+        "<td><a href=\"company.html?company_id=" + c.company_id + "&tab=research\"><button type=\"button\">" + meta.cta + "</button></a></td></tr>"
+      );
+    })
+    .join("");
+
+  var reviewNeeded = d.fitAssessments
+    ? d.fitAssessments.filter(function (f) { return f.status === "needs_human_review"; })
+    : [];
+  var reviewRows = reviewNeeded
+    .map(function (f) {
+      var c = companyById(f.company_id);
+      return (
+        "<tr><td>" + (c ? c.name : f.company_id) + "</td><td>" + f.overall_decision + "</td>" +
+        '<td><span class="badge epi-hypothesis">◇ revue humaine requise</span></td>' +
+        "<td><a href=\"company.html?company_id=" + f.company_id + "&tab=fits\"><button type=\"button\">Revoir</button></a></td></tr>"
+      );
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    "<div><p class=\"eyebrow\">Research</p><h1>Où concentrer l&rsquo;effort maintenant</h1>" +
+    '<p class="lede">Queue de travail par compte — assigné, bloqué, périmé — jamais une décision de Fit.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="drawer-section">' +
+    "<h4>Queue de research</h4>" +
+    '<table class="data-table"><thead><tr><th>Compte</th><th>Priorité</th><th>Couverture</th><th>Dernier run</th><th>Action</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>" +
+    "</div>" +
+    (reviewRows
+      ? '<div class="drawer-section"><h4>Assessments Fit en attente de revue humaine (lecture seule ici)</h4>' +
+        '<table class="data-table"><thead><tr><th>Compte</th><th>Décision proposée</th><th>Statut</th><th>Action</th></tr></thead>' +
+        "<tbody>" + reviewRows + "</tbody></table></div>"
+      : "");
+</script>
+</body>
+</html>

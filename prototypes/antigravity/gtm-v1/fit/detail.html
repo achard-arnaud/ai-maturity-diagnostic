@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit Detail — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .fit-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--gtm-space-4); flex-wrap: wrap; margin-bottom: var(--gtm-space-4); }
+  .fit-summary-line { display: flex; align-items: center; gap: var(--gtm-space-2); flex-wrap: wrap; font-size: 13px; color: var(--gtm-text-muted); margin: var(--gtm-space-2) 0 var(--gtm-space-4); }
+  /* Need coverage renders as a small secondary badge inline with the
+     other summary chips — never a large standalone number. Mission:
+     "un score peut exister comme résumé mais ne doit jamais dominer
+     l'explication." */
+  .need-coverage-badge { font-size: 12px; }
+  .fit-body { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gtm-space-4); align-items: start; }
+  @media (max-width: 900px) { .fit-body { grid-template-columns: 1fr; } }
+  .fit-section { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); margin-bottom: var(--gtm-space-3); background: var(--gtm-surface); }
+  .fit-section h3 { margin: 0 0 var(--gtm-space-2); font-size: 13px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  .fit-section ul { margin: 0; padding-left: 18px; }
+  .rail-block { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); margin-bottom: var(--gtm-space-3); background: var(--gtm-bg); }
+  .rail-block h4 { margin: 0 0 var(--gtm-space-2); font-size: 12px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { padding: var(--gtm-space-2) 0; border-top: 1px solid var(--gtm-border); font-size: 13px; }
+  .timeline li:first-child { border-top: none; }
+  .timeline time { color: var(--gtm-text-muted); font-size: 11px; display: block; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script src="../research/research-mock-extend.js"></script>
+<script src="fit-mock-extend.js"></script>
+<script>
+(function () {
+  "use strict";
+  GtmProtoShell.render("fit", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(window.location.search);
+  var fitId = params.get("fit_id") || "fit_acme_1";
+  var fit = d.fitAssessments.filter(function (f) { return f.fit_id === fitId; })[0];
+
+  if (!fit) {
+    main.innerHTML = '<div class="error-state">Fit Assessment introuvable pour fit_id=' + fitId + '. <a href="index.html">Retour à la Fit Queue</a></div>';
+    return;
+  }
+
+  var company = d.companies.filter(function (c) { return c.company_id === fit.company_id; })[0];
+  var demand = d.demands.filter(function (dm) { return dm.demand_id === fit.demand_id; })[0];
+  var product = d.products.filter(function (p) { return p.product_id === fit.product_id; })[0];
+  var snapshot = d.productSnapshots.filter(function (s) { return s.snapshot_id === fit.snapshot_id; })[0];
+
+  var STATUS_META = {
+    pending_review: { label: "Pending review", cls: "epi-inference", glyph: "◐" },
+    blocked: { label: "Blocked (hard gate)", cls: "blocker-badge", glyph: "⛔" },
+    stale: { label: "Stale", cls: "freshness-stale", glyph: "⟳" },
+    needs_human_review: { label: "Needs human review", cls: "epi-hypothesis", glyph: "◇" },
+    approved: { label: "Approved", cls: "human-decision-badge", glyph: "\u{1F464}" },
+    declined: { label: "Declined", cls: "human-decision-badge", glyph: "\u{1F464}" },
+  };
+  var meta = STATUS_META[fit.status] || { label: fit.status, cls: "epi-unknown", glyph: "?" };
+
+  function list(items, emptyText) {
+    if (!items || !items.length) return "<p style=\"color:var(--gtm-text-muted);font-size:14px;\">" + emptyText + "</p>";
+    return "<ul>" + items.map(function (i) { return "<li>" + i + "</li>"; }).join("") + "</ul>";
+  }
+  function ratingBlock(section) {
+    if (!section) return "<p>Non évalué.</p>";
+    return "<p><strong>" + section.rating + "</strong><br><span style=\"color:var(--gtm-text-muted);font-size:14px;\">" + section.note + "</span></p>";
+  }
+
+  // ---- Header ----
+  var headerHtml =
+    '<div class="fit-header">' +
+    "<div><p class=\"eyebrow\">Fit Detail</p><h1>" + (demand ? demand.problem : fit.demand_id) + "</h1>" +
+    '<div class="fit-summary-line">' +
+    '<span>Compte : <strong>' + (company ? company.name : fit.company_id) + "</strong></span>" +
+    '<span>Produit : <strong>' + (product ? product.name : fit.product_id) + "</strong></span>" +
+    '<span class="badge version-badge">v# ProductSnapshot ' + (snapshot ? snapshot.version : "?") + " (" + fit.snapshot_id + ")</span>" +
+    '<span class="badge version-badge">v# Assessment ' + fit.version + "</span>" +
+    "<span>" + '<span class="badge ' + meta.cls + '">' + meta.glyph + " " + meta.label + "</span></span>" +
+    "</div></div>" +
+    '<div><a href="index.html">← Fit Queue</a> · <a href="products.html?product_id=' + fit.product_id + "&snapshot_id=" + fit.snapshot_id + '">Voir la ProductSnapshot →</a></div>' +
+    "</div>";
+
+  // ---- Body (left column) ----
+  var bodyHtml =
+    '<div>' +
+    '<div class="fit-section"><h3>Overall decision</h3><p>' + fit.overall_decision + "</p>" +
+    '<p class="fit-summary-line" style="margin:4px 0 0;">Need coverage (résumé, non déterminant) : <span class="badge need-coverage-badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + fit.need_coverage + "</span></p></div>" +
+    '<div class="fit-section"><h3>ICP fit</h3>' + ratingBlock(fit.icp_fit) + "</div>" +
+    '<div class="fit-section"><h3>Timing</h3>' + ratingBlock(fit.timing) + "</div>" +
+    '<div class="fit-section"><h3>Integration fit</h3>' + ratingBlock(fit.integration_fit) + "</div>" +
+    '<div class="fit-section"><h3>Commercial unknowns</h3>' + list(fit.commercial_unknowns, "Aucun inconnu commercial identifié.") + "</div>" +
+    '<div class="fit-section"><h3>Matches</h3>' + list(fit.matches, "Aucun match identifié.") + "</div>" +
+    '<div class="fit-section"><h3>Gaps</h3>' + list(fit.gaps, "Aucun gap identifié.") + "</div>" +
+    '<div class="fit-section"><h3>Contradictions</h3>' + list(fit.contradictions, "Aucune contradiction identifiée.") + "</div>" +
+    '<div class="fit-section"><h3>Unknowns</h3>' + list(fit.unknowns, "Aucun inconnu identifié.") + "</div>" +
+    '<div class="fit-section"><h3>Alternatives</h3>' + list(fit.alternatives, "Aucune alternative proposée.") + "</div>" +
+    '<div class="fit-section"><h3>Evidence</h3>' +
+    (fit.evidence_ids && fit.evidence_ids.length
+      ? "<ul>" + fit.evidence_ids.map(function (eid) {
+          var e = d.evidence.filter(function (x) { return x.evidence_id === eid; })[0];
+          if (!e) return "<li>" + eid + "</li>";
+          return "<li>" + e.statement + " — <span class=\"source-badge\">\u{1F517} " + e.source + "</span></li>";
+        }).join("") + "</ul>"
+      : "<p style=\"color:var(--gtm-text-muted);font-size:14px;\">Aucune evidence rattachée à cette assessment.</p>") +
+    "</div>" +
+    '<div class="fit-section"><h3>Hard gates</h3>' +
+    (fit.hard_gates && fit.hard_gates.length
+      ? "<ul>" + fit.hard_gates.map(function (g) {
+          return "<li>" + (g.passed ? '<span class="badge epi-fact">● levé</span>' : '<span class="badge blocker-badge">⛔ non levé</span>') + " " + g.name + "</li>";
+        }).join("") + "</ul>"
+      : "<p>Aucun hard gate défini.</p>") +
+    "</div>" +
+    "</div>";
+
+  // ---- Right rail ----
+  var railHtml =
+    '<div>' +
+    '<div class="rail-block"><h4>Blockers &amp; resolvers</h4>' +
+    (fit.blockers && fit.blockers.length
+      ? fit.blockers.map(function (b) {
+          return '<p><span class="badge blocker-badge">⛔ ' + b.label + "</span><br>" +
+            '<button type="button"' + (b.resolved ? " disabled" : "") + ">" + b.resolver_cta + "</button></p>";
+        }).join("")
+      : "<p>Aucun blocker actif.</p>") +
+    "</div>" +
+    '<div class="rail-block"><h4>Reviewer</h4><p>' +
+    (fit.reviewer ? '<span class="badge human-decision-badge">\u{1F464} ' + fit.reviewer + "</span>" : "Aucun reviewer assigné — décision non humaine à ce stade.") +
+    "</p></div>" +
+    '<div class="rail-block"><h4>Historique de décision</h4>' +
+    (fit.decision_history && fit.decision_history.length
+      ? '<ul class="timeline">' + fit.decision_history.map(function (h) {
+          return "<li><time>" + h.at + "</time>" + h.actor + " — " + h.action + (h.note ? "<br><em>" + h.note + "</em>" : "") + "</li>";
+        }).join("") + "</ul>"
+      : "<p>Aucun historique.</p>") +
+    "</div>" +
+    '<div class="rail-block"><h4>Prochaine meilleure action</h4><p>' + (fit.next_best_action || "—") + "</p></div>" +
+    '<div class="rail-block"><h4>Targets</h4><p><button type="button" disabled title="' +
+    (fit.reviewer
+      ? "Ce Fit est approuvé par un reviewer humain, mais la création de Target elle-même est hors périmètre de cet écran — voir l’espace Targets (non construit dans cette livraison)"
+      : "Un Target ne peut être créé qu’à partir d’un Fit validé par une décision humaine (reviewer requis) — ce Fit n’en a pas") +
+    '">Créer un Target</button></p></div>' +
+    "</div>";
+
+  main.innerHTML = headerHtml + '<div class="fit-body">' + bodyHtml + railHtml + "</div>";
+})();
+</script>
+</body>
+</html>

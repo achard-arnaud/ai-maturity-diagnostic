@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit — États — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+
+<!-- Literal, inspectable HTML — moved into #gtmMain by shell.js's render().
+     Kept as static markup (not JS string concatenation) so a reviewer or
+     checks/check_screen.py can grep the 8 required data-state values
+     directly in the source. See SHELL_CONTRACT.md §1/§3. -->
+<template id="gtmMainContent">
+  <div class="section-head">
+    <div><p class="eyebrow">Fit</p><h1>Galerie d&rsquo;états</h1>
+    <p class="lede">Les 8 états requis par SHELL_CONTRACT.md §3, appliqués à la Fit Queue.</p></div>
+  </div>
+
+  <div class="state-switcher" role="tablist" aria-label="Choisir un état">
+    <button type="button" data-target="default" aria-pressed="true">default</button>
+    <button type="button" data-target="loading" aria-pressed="false">loading</button>
+    <button type="button" data-target="empty" aria-pressed="false">empty</button>
+    <button type="button" data-target="error" aria-pressed="false">error</button>
+    <button type="button" data-target="blocked" aria-pressed="false">blocked</button>
+    <button type="button" data-target="stale" aria-pressed="false">stale</button>
+    <button type="button" data-target="partial-data" aria-pressed="false">partial-data</button>
+    <button type="button" data-target="success" aria-pressed="false">success</button>
+  </div>
+
+  <section class="state-demo-panel" data-state="default">
+    <h2>Default</h2>
+    <table class="data-table">
+      <thead><tr><th>Compte</th><th>Demand</th><th>Décision</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Acme Corp</td><td>Planification production</td><td>PURSUE (draft)</td><td><span class="badge epi-inference">◐ pending review</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="state-demo-panel" data-state="loading" hidden>
+    <h2>Loading</h2>
+    <div class="state-banner state-banner--loading" role="status">&#x23F3; Chargement de la Fit Queue…</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="empty" hidden>
+    <h2>Empty</h2>
+    <div class="empty-state">Aucune assessment ne correspond à ce filtre.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="error" hidden>
+    <h2>Error</h2>
+    <div class="error-state">Impossible de charger la Fit Queue. <button type="button">Réessayer</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="blocked" hidden>
+    <h2>Blocked</h2>
+    <div class="state-banner state-banner--blocked" role="status">&#x26D4; 1 assessment bloquée par un hard gate. <button type="button" class="state-banner__resolve">Résoudre</button></div>
+    <table class="data-table">
+      <thead><tr><th>Compte</th><th>Demand</th><th>Décision</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Acme Corp</td><td>Reporting multi-sites</td><td>BLOCKED</td><td><span class="badge blocker-badge">&#x26D4; hard gate : revue sécurité</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="state-demo-panel" data-state="stale" hidden>
+    <h2>Stale</h2>
+    <div class="state-banner state-banner--stale" role="status">&#x21BB; Cette assessment a été calculée sur une ProductSnapshot désormais périmée.</div>
+    <table class="data-table">
+      <thead><tr><th>Compte</th><th>Demand</th><th>Décision</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Nautix</td><td>Suivi de flotte</td><td>PURSUE (draft, périmée)</td><td><span class="badge freshness-stale">&#x27F3; stale — snapshot v3.0 → v3.2</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="state-demo-panel" data-state="partial-data" hidden>
+    <h2>Partial data</h2>
+    <div class="state-banner state-banner--partial-data" role="status">&#x25D0; Certaines sections (Timing) n'ont pas pu être évaluées faute de données récentes.</div>
+    <table class="data-table">
+      <thead><tr><th>Compte</th><th>Demand</th><th>Décision</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Nautix</td><td>Suivi de flotte</td><td>PURSUE (à valider)</td><td><span class="badge epi-hypothesis">◇ needs human review</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="state-demo-panel" data-state="success" hidden>
+    <h2>Success</h2>
+    <table class="data-table">
+      <thead><tr><th>Compte</th><th>Demand</th><th>Décision</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Verdal Energie</td><td>Prévision de la demande</td><td>PURSUE (approuvé)</td><td><span class="badge human-decision-badge">&#x1F464; approved</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+</template>
+
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("fit", {});
+  document.querySelectorAll(".state-switcher button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".state-switcher button").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      document.querySelectorAll(".state-demo-panel").forEach(function (p) {
+        p.hidden = p.getAttribute("data-state") !== btn.getAttribute("data-target");
+      });
+    });
+  });
+</script>
+</body>
+</html>
