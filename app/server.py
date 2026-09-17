@@ -139,6 +139,13 @@ def _nudging_for(ctx: RequestContext) -> UseCaseNudger:
         return NUDGING
     return UseCaseNudger.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _value_chain_for(ctx: RequestContext) -> ValueChainCatalog:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return VALUE_CHAIN
+    return ValueChainCatalog.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -412,7 +419,7 @@ def build_app(
 
     @app.get("/api/value-chain")
     async def api_value_chain(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return VALUE_CHAIN.list_studies()
+        return _value_chain_for(ctx).list_studies()
 
     @app.get("/api/reach")
     async def api_reach(ctx: RequestContext = Depends(get_current_user)) -> Any:
@@ -634,13 +641,13 @@ def build_app(
     async def api_value_chain_study(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return VALUE_CHAIN.study(str(payload.get("study_id") or "").strip())
+        return _value_chain_for(ctx).study(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/value-chain/prepare")
     async def api_value_chain_prepare(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return VALUE_CHAIN.prepare_request(payload)
+        return _value_chain_for(ctx).prepare_request(payload)
 
     @app.post("/api/uc-graph/company")
     async def api_uc_graph_company(
