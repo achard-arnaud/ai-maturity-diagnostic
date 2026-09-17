@@ -13,6 +13,7 @@ from app.acquisition_policy import (
     assert_no_demand_or_fit_fields,
     build_evidence_candidate,
     candidate_to_evidence,
+    candidate_to_external_identity_mapping,
     candidate_to_signal,
 )
 from app.signal_policy import CONTRACTS_ROOT, assert_no_demand_fields, load_signal_schema
@@ -20,6 +21,11 @@ from app.signal_policy import CONTRACTS_ROOT, assert_no_demand_fields, load_sign
 
 def load_evidence_schema():
     path = CONTRACTS_ROOT / "evidence_v1.schema.yaml"
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def load_external_identity_mapping_schema():
+    path = CONTRACTS_ROOT / "external_identity_mapping.schema.yaml"
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
@@ -262,6 +268,86 @@ class CandidateToEvidenceTests(unittest.TestCase):
         first = candidate_to_evidence(candidate)
         second = candidate_to_evidence(candidate)
         self.assertNotEqual(first["evidence_id"], second["evidence_id"])
+
+
+def make_linkedin_candidate(**overrides):
+    defaults = dict(
+        source_name="linkedin",
+        space="targets",
+        locator="https://linkedin.com/in/jane-doe",
+        title="Jane Doe - VP Engineering at Acme",
+    )
+    defaults.update(overrides)
+    return make_candidate(**defaults)
+
+
+class CandidateToExternalIdentityMappingTests(unittest.TestCase):
+    def test_status_is_always_candidate(self) -> None:
+        # ADR-011 S4/S6: never "validated" from acquisition alone -- there
+        # is no parameter that could produce anything else.
+        mapping = candidate_to_external_identity_mapping(
+            make_linkedin_candidate(),
+            provider="linkedin",
+            internal_entity_type="person",
+            internal_entity_id="person_1",
+            source_evidence_id="evidence_1",
+        )
+        self.assertEqual("candidate", mapping["status"])
+
+    def test_produces_a_schema_valid_mapping(self) -> None:
+        mapping = candidate_to_external_identity_mapping(
+            make_linkedin_candidate(),
+            provider="linkedin",
+            internal_entity_type="person",
+            internal_entity_id="person_1",
+            source_evidence_id="evidence_1",
+            confidence=0.7,
+        )
+        Draft202012Validator(load_external_identity_mapping_schema()).validate(mapping)
+        self.assertEqual("person_1", mapping["internal_entity_id"])
+        self.assertEqual("evidence_1", mapping["source_evidence_id"])
+        self.assertEqual("https://linkedin.com/in/jane-doe", mapping["external_subject_ref"])
+
+    def test_unknown_internal_entity_type_is_rejected(self) -> None:
+        with self.assertRaises(AcquisitionPolicyError):
+            candidate_to_external_identity_mapping(
+                make_linkedin_candidate(),
+                provider="linkedin",
+                internal_entity_type="offer",
+                internal_entity_id="person_1",
+                source_evidence_id="evidence_1",
+            )
+
+    def test_missing_internal_entity_id_is_rejected(self) -> None:
+        with self.assertRaises(AcquisitionPolicyError):
+            candidate_to_external_identity_mapping(
+                make_linkedin_candidate(),
+                provider="linkedin",
+                internal_entity_type="person",
+                internal_entity_id="",
+                source_evidence_id="evidence_1",
+            )
+
+    def test_missing_source_evidence_id_is_rejected(self) -> None:
+        with self.assertRaises(AcquisitionPolicyError):
+            candidate_to_external_identity_mapping(
+                make_linkedin_candidate(),
+                provider="linkedin",
+                internal_entity_type="person",
+                internal_entity_id="person_1",
+                source_evidence_id="",
+            )
+
+    def test_confidence_out_of_range_is_rejected(self) -> None:
+        with self.assertRaises(AcquisitionPolicyError):
+            candidate_to_external_identity_mapping(
+                make_linkedin_candidate(),
+                provider="linkedin",
+                internal_entity_type="person",
+                internal_entity_id="person_1",
+                source_evidence_id="evidence_1",
+                confidence=1.5,
+            )
 
 
 if __name__ == "__main__":

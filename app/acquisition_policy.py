@@ -317,3 +317,56 @@ def candidate_to_evidence(candidate: EvidenceCandidate, *, license: str = PUBLIC
         "entity_refs": list(candidate.entity_refs),
         "evidence_grade": candidate.evidence_grade,
     }
+
+
+_EXTERNAL_IDENTITY_ENTITY_TYPES = frozenset({"person", "company", "relationship"})
+
+
+def candidate_to_external_identity_mapping(
+    candidate: EvidenceCandidate,
+    *,
+    provider: str,
+    internal_entity_type: str,
+    internal_entity_id: str,
+    source_evidence_id: str,
+    confidence: float | None = None,
+) -> dict[str, Any]:
+    """Map a Targets-space candidate onto an ExternalIdentityMapping-shaped
+    dict (contracts/external_identity_mapping.schema.yaml), ADR-011 S4/S6.
+
+    `status` is not a parameter: it is always "candidate" here, by
+    construction -- this function has no way to produce "validated". Per
+    LI-POL-008 and the schema's own x-rule ("External identifiers are
+    aliases and never replace internal IDs"), only a separate, existing
+    human/primary role-validation workflow may ever move a mapping past
+    "candidate"; a harvested LinkedIn hit alone never does.
+
+    `internal_entity_id` must already exist (role_validation_request
+    .schema.yaml's own x-rule: "Internal IDs are canonical and must exist
+    before a connector call") -- this function does not create people,
+    companies or relationships, only proposes an external alias for one
+    that's already known.
+    """
+
+    if internal_entity_type not in _EXTERNAL_IDENTITY_ENTITY_TYPES:
+        raise AcquisitionPolicyError(f"unknown internal_entity_type: {internal_entity_type!r}")
+    if not internal_entity_id.strip():
+        raise AcquisitionPolicyError("internal_entity_id is required")
+    if not source_evidence_id.strip():
+        raise AcquisitionPolicyError("source_evidence_id is required")
+    if confidence is not None and not (0 <= confidence <= 1):
+        raise AcquisitionPolicyError("confidence must be between 0 and 1")
+
+    mapping: dict[str, Any] = {
+        "mapping_id": f"idmap_{uuid.uuid4().hex}",
+        "provider": provider,
+        "internal_entity_type": internal_entity_type,
+        "internal_entity_id": internal_entity_id,
+        "external_subject_ref": candidate.locator,
+        "status": "candidate",
+        "observed_at": candidate.observed_at,
+        "source_evidence_id": source_evidence_id,
+    }
+    if confidence is not None:
+        mapping["confidence"] = confidence
+    return mapping
