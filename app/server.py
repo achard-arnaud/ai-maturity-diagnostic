@@ -125,6 +125,13 @@ def _heritage_for(ctx: RequestContext) -> UseCaseHeritage:
         return HERITAGE
     return UseCaseHeritage.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _reach_for(ctx: RequestContext) -> ReachMatchmaker:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return REACH
+    return ReachMatchmaker.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -402,7 +409,7 @@ def build_app(
 
     @app.get("/api/reach")
     async def api_reach(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return REACH.list_ready()
+        return _reach_for(ctx).list_ready()
 
     @app.get("/api/follow-up")
     async def api_follow_up(ctx: RequestContext = Depends(get_current_user)) -> Any:
@@ -656,13 +663,13 @@ def build_app(
     async def api_reach_preview(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return REACH.preview(str(payload.get("study_id") or "").strip())
+        return _reach_for(ctx).preview(str(payload.get("study_id") or "").strip())
 
     @app.post("/api/reach/prepare")
     async def api_reach_prepare(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return REACH.prepare_request(payload)
+        return _reach_for(ctx).prepare_request(payload)
 
     @app.post("/api/workflows/plan")
     async def api_workflows_plan(
