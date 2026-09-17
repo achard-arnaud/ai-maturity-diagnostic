@@ -11,11 +11,15 @@ every other workspace-scoped route in this app.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
+from app.acquisition_policy import AcquisitionPolicyError, SearchRequest, candidate_to_evidence
 from app.authruntime.deps import RequestContext, require_workspace_access
 from app.company360_view import get_company_360
+from app.evidence_store import find_by_hash, put_evidence
+from app.harvest_orchestration import recommended_sources_for_space, run_harvest
 from app.research_case_store import ResearchCaseNotFound, get_case, list_cases
 
 
@@ -54,5 +58,77 @@ def create_v1_research_router(root: Path) -> APIRouter:
             return get_case(root, workspace_id, research_case_id)
         except ResearchCaseNotFound as exc:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "not found") from exc
+
+    @router.post("/research-cases/{research_case_id}/acquire")
+    def acquire_evidence_route(
+        workspace_id: str,
+        research_case_id: str,
+        payload: dict[str, Any] = Body(default={}),
+        ctx: RequestContext = Depends(require_workspace_access()),
+    ):
+        """Epic 14 S05: a ResearchCase requests complementary public
+        acquisition for its own company_entity_id -- product-blind
+        (Research-space sources only; see ADR-011 S6), and every
+        resulting candidate becomes evidence tied to this case's company,
+        never a Claim directly (a human/existing research workflow
+        promotes evidence to a Claim separately, per
+        app.research_policy.validate_claim_lineage -- this route does not
+        create claims)."""
+        try:
+            case = get_case(root, workspace_id, research_case_id)
+        except ResearchCaseNotFound as exc:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "not found") from exc
+
+        query = str(payload.get("query") or case.get("company_entity_id") or "").strip()
+        sources = payload.get("sources") or list(recommended_sources_for_space("research"))
+        try:
+            request = SearchRequest(
+                workspace_id=workspace_id,
+                query=query,
+                sources=tuple(sources),
+                space="research",
+                requested_by=ctx.email,
+                research_case_id=research_case_id,
+                days=int(payload.get("days") or 30),
+                limit=int(payload.get("limit") or 10),
+                enrich=bool(payload.get("enrich", True)),
+                allow_commercial=bool(payload.get("allow_commercial", False)),
+            )
+        except AcquisitionPolicyError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+        entity_refs = (case["company_entity_id"],)
+        harvest = run_harvest(root, workspace_id, ctx.email, request, entity_refs=entity_refs)
+
+        evidence_records: list[dict[str, Any]] = []
+        for candidate in harvest.candidates:
+            try:
+                evidence = candidate_to_evidence(candidate)
+            except AcquisitionPolicyError:
+                continue
+            existing = find_by_hash(root, workspace_id, evidence["hash"])
+            if existing is not None:
+                evidence_records.append(existing)
+                continue
+            put_evidence(root, workspace_id, evidence)
+            evidence_records.append(evidence)
+
+        return {
+            "run_id": harvest.run_id,
+            "status": harvest.status,
+            "correlation_id": harvest.correlation_id,
+            "research_case_id": research_case_id,
+            "source_runs": [
+                {
+                    "source": r.source,
+                    "status": r.status,
+                    "count": len(r.candidates),
+                    "elapsed_ms": r.elapsed_ms,
+                    "error": r.error,
+                }
+                for r in harvest.source_runs
+            ],
+            "evidence": evidence_records,
+        }
 
     return router

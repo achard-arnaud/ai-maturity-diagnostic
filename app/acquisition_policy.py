@@ -16,6 +16,7 @@ inputs build_evidence_candidate() expects.
 
 from __future__ import annotations
 
+import hashlib
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -269,3 +270,50 @@ def candidate_to_signal(candidate: EvidenceCandidate, *, stale_after_days: int =
     }
     assert_no_demand_or_fit_fields(signal)
     return signal
+
+
+# contracts/evidence_v1.schema.yaml's usage/license note for public-web
+# acquisition -- see scripts/social_search/NOTICE.md for the underlying
+# vendored source's own terms.
+PUBLIC_WEB_INDEX_LICENSE = "public web index (see scripts/social_search/NOTICE.md); no purchase, no authenticated access"
+
+
+def candidate_to_evidence(candidate: EvidenceCandidate, *, license: str = PUBLIC_WEB_INDEX_LICENSE) -> dict[str, Any]:
+    """Map an EvidenceCandidate onto a CanonicalEvidenceV1-shaped dict
+    (ADR-011 S6: Research-space candidates become evidence tied to an
+    already-identified company, never Discover-space candidates -- see
+    candidate_to_signal for those).
+
+    Raises if entity_refs is empty: evidence_v1.schema.yaml requires
+    entity_refs with minItems: 1 -- a candidate with no known company/
+    person yet is a Discover-space signal, not evidence (ADR-011 S6);
+    this function refuses to silently paper over that distinction.
+    """
+
+    if not candidate.entity_refs:
+        raise AcquisitionPolicyError(
+            "a candidate needs at least one entity_ref to become evidence -- "
+            "an entity-less candidate is a Discover-space signal, not Research-space "
+            "evidence (see candidate_to_signal, ADR-011 S6)"
+        )
+
+    if candidate.dated_at:
+        evidence_type = "fact_publication"
+        dated_at = candidate.dated_at
+    else:
+        evidence_type = "observation"
+        dated_at = candidate.observed_at
+
+    return {
+        "evidence_id": f"evidence_{uuid.uuid4().hex}",
+        "workspace_id": candidate.workspace_id,
+        "source": {"kind": candidate.source_kind, "ref": candidate.locator},
+        "locator": candidate.locator,
+        "evidence_type": evidence_type,
+        "dated_at": dated_at,
+        "excerpt": candidate.excerpt,
+        "hash": hashlib.sha256(candidate.excerpt.encode("utf-8")).hexdigest(),
+        "license": license,
+        "entity_refs": list(candidate.entity_refs),
+        "evidence_grade": candidate.evidence_grade,
+    }

@@ -4,15 +4,23 @@ import unittest
 
 from jsonschema import Draft202012Validator
 
+import yaml
+
 from app.acquisition_policy import (
     AcquisitionPolicyError,
     EvidenceCandidate,
     SearchRequest,
     assert_no_demand_or_fit_fields,
     build_evidence_candidate,
+    candidate_to_evidence,
     candidate_to_signal,
 )
-from app.signal_policy import assert_no_demand_fields, load_signal_schema
+from app.signal_policy import CONTRACTS_ROOT, assert_no_demand_fields, load_signal_schema
+
+
+def load_evidence_schema():
+    path = CONTRACTS_ROOT / "evidence_v1.schema.yaml"
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 def make_request(**overrides):
@@ -214,6 +222,46 @@ class CandidateToSignalTests(unittest.TestCase):
         first = candidate_to_signal(candidate)
         second = candidate_to_signal(candidate)
         self.assertNotEqual(first["signal_id"], second["signal_id"])
+
+
+class CandidateToEvidenceTests(unittest.TestCase):
+    def test_requires_at_least_one_entity_ref(self) -> None:
+        candidate = make_candidate(entity_refs=())
+        with self.assertRaises(AcquisitionPolicyError):
+            candidate_to_evidence(candidate)
+
+    def test_produces_a_schema_valid_evidence_record(self) -> None:
+        candidate = make_candidate(entity_refs=("company_acme",))
+        evidence = candidate_to_evidence(candidate)
+        Draft202012Validator(load_evidence_schema()).validate(evidence)
+        self.assertEqual(evidence["workspace_id"], candidate.workspace_id)
+        self.assertEqual(evidence["entity_refs"], ["company_acme"])
+        self.assertEqual(evidence["evidence_grade"], candidate.evidence_grade)
+        self.assertEqual(evidence["locator"], candidate.locator)
+        self.assertEqual(evidence["source"], {"kind": "public", "ref": candidate.locator})
+
+    def test_dated_at_present_uses_fact_publication_type(self) -> None:
+        candidate = make_candidate(entity_refs=("company_acme",), dated_at="2026-08-01T00:00:00+00:00")
+        evidence = candidate_to_evidence(candidate)
+        self.assertEqual("fact_publication", evidence["evidence_type"])
+        self.assertEqual("2026-08-01T00:00:00+00:00", evidence["dated_at"])
+
+    def test_missing_dated_at_falls_back_to_observation_type(self) -> None:
+        candidate = make_candidate(entity_refs=("company_acme",))
+        evidence = candidate_to_evidence(candidate)
+        self.assertEqual("observation", evidence["evidence_type"])
+        self.assertEqual(candidate.observed_at, evidence["dated_at"])
+
+    def test_hash_is_deterministic_for_the_same_excerpt(self) -> None:
+        first = candidate_to_evidence(make_candidate(entity_refs=("company_acme",)))
+        second = candidate_to_evidence(make_candidate(candidate_id="cand-2", entity_refs=("company_acme",)))
+        self.assertEqual(first["hash"], second["hash"])
+
+    def test_evidence_id_is_unique_per_call(self) -> None:
+        candidate = make_candidate(entity_refs=("company_acme",))
+        first = candidate_to_evidence(candidate)
+        second = candidate_to_evidence(candidate)
+        self.assertNotEqual(first["evidence_id"], second["evidence_id"])
 
 
 if __name__ == "__main__":
