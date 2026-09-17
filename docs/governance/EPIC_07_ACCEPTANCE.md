@@ -67,7 +67,7 @@ All 6 shipped in one PR to `dev`: [#53](https://github.com/achard-arnaud/ai-matu
   Epic 08 is expected to call it from its own TargetPlan creation
   code path.
 - Carried over from Epic 00-06 (not created by this Epic):
-  `feat/prospection-principes-todo` still unmerged; GitLab's `e2e-gate`
+  `feat/prospection-principes-todo` unmerged (now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`, not a live branch); GitLab's `e2e-gate`
   mirror unverified against a live runner; `app.product_workflow`'s
   publish route (Epic 06's own known limitation) is still unbuilt, so
   there is no HTTP path yet from a draft ProductVersion to a

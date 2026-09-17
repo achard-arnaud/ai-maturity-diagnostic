@@ -1,5 +1,21 @@
 # Contrat global d’agent — Qualification réseau, entreprise et produit v0.3
 
+> **Supersession de navigation (ajouté 2026-09-17, post-Epic 12/13).**
+> Ce document reste le contrat de référence pour le modèle de domaine
+> (network / enterprise / product / commercial / learning, hard gates,
+> recherche product-blind) et pour le back-office historique décrit
+> ci-dessous. Il ne décrit **plus** la navigation principale du produit :
+> depuis l'Epic 12 (mergé sur `main`), l'interface primaire est le shell
+> GTM `Home / Discover / Research / Fit / Targets / Reach / Engagement /
+> Pipeline / Insights` (`app/frontend/router.js`, `docs/gtm-transformation/`,
+> `docs/governance/ADR-010_GTM_FRONTEND_REPLATFORM.md`). L'ancien menu
+> `Demande / Offres / Qualification / Nudging / Suivi / Skills` décrit à la
+> section « Frontières de navigation » ci-dessous reste opérationnel en
+> mode legacy (`?legacy=1`) pendant la fenêtre de rollback d'un release,
+> mais n'est plus la vérité de navigation par défaut. Voir
+> `docs/audit/post-epic/DOCUMENTATION_DRIFT.md` (item 1) pour le détail de
+> cette réconciliation.
+
 ## Mission
 
 Transformer un réseau privé de contacts et des preuves publiques datées en décisions commerciales traçables : prioriser les entreprises à étudier, reconstituer leur stratégie IA réelle, établir leur demande, la comparer aux offres, sélectionner les bons interlocuteurs et capitaliser les apprentissages par secteur.
@@ -214,6 +230,6 @@ Un resolver route vers le prérequis manquant. Il ne modifie jamais un score, un
 
 La v0.7 adopte seulement les principes Zettelkasten utiles : unités atomiques, IDs stables, liens typés et backlinks. Aucun graph DB, vector store, système de notes parallèle ou moteur CRM n’est ajouté tant qu’un usage réel ne démontre pas un problème mesurable de recherche, de volume, de latence ou de coût de maintenance.
 
-### Frontières de navigation
+### Frontières de navigation (legacy — supersédée comme navigation principale par l'Epic 12, voir la note en tête de document)
 
-Les menus principaux restent `Demande`, `Offres`, `Qualification`, `Nudging`, `Suivi`, `Skills`. Porter/Ishikawa, patrimoine UC et Reach sont des vues contextuelles reliées aux artefacts existants ; ils ne deviennent pas des silos ou vérités concurrentes.
+Dans ce mode legacy, les menus principaux restent `Demande`, `Offres`, `Qualification`, `Nudging`, `Suivi`, `Skills`. Porter/Ishikawa, patrimoine UC et Reach sont des vues contextuelles reliées aux artefacts existants ; ils ne deviennent pas des silos ou vérités concurrentes. Cette structure reste correcte pour qui travaille en mode `?legacy=1` ; pour la navigation par défaut, voir la note de supersession en tête de document.

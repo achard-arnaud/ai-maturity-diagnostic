@@ -1,5 +1,20 @@
 # AI Maturity Diagnostic & Enterprise Intelligence v0.9
 
+> **Supersession de navigation (ajouté 2026-09-17, post-Epic 12/13).** Les
+> sections « Control plane v0.6/v0.7 » ci-dessous (y compris le menu
+> `Demande · Offres · Qualification · Nudging · Suivi · Skills`) décrivent
+> le back-office historique et restent exactes pour qui travaille dessus,
+> mais ne sont plus la navigation principale du produit depuis l'Epic 12.
+> L'interface primaire est désormais le shell GTM
+> `Home / Discover / Research / Fit / Targets / Reach / Engagement /
+> Pipeline / Insights` — voir `docs/gtm-transformation/`,
+> `docs/governance/ADR-010_GTM_FRONTEND_REPLATFORM.md` et les acceptance
+> records Epic 11-13 sous `docs/governance/`. L'ancien menu reste accessible
+> en mode legacy (`?legacy=1`) pendant la fenêtre de rollback. Détail de
+> cette réconciliation : `docs/audit/post-epic/DOCUMENTATION_DRIFT.md`
+> (une restructuration complète de ce README pour refléter le programme
+> E00-E13 reste un suivi non traité dans cette passe).
+
 Ce dépôt fournit un système modulaire pour transformer des preuves publiques, des vérités produit et des données privées autorisées en diagnostics IA, décisions commerciales, notes exécutives et dossiers de candidature traçables.
 
 Il ne confond jamais un signal avec une preuve, un score avec une décision, ni la mise en page avec l’analyse métier.
@@ -256,9 +271,9 @@ Les personnes sont organisées en `first`, `second` et `validation_only`. Un rô
 
 Un blocker exposé par un workflow comprend désormais son ID/type, pourquoi il bloque, l’état attendu, la skill ou action humaine propriétaire, un CTA, ses context paths et la postcondition. L’interface n’utilise plus un bouton désactivé comme seule réponse à un blocker actif : le resolver remonte vers le prérequis approprié.
 
-### Navigation et suivi
+### Navigation et suivi (legacy — voir la note de supersession en tête de document)
 
-Les menus principaux restent volontairement compacts : **Demande · Offres · Qualification · Nudging · Suivi · Skills**. Les vues Reach, Porter/Ishikawa et Patrimoine UC sont contextuelles afin d’éviter un CRM parallèle.
+Dans ce mode legacy, les menus principaux restent volontairement compacts : **Demande · Offres · Qualification · Nudging · Suivi · Skills**. Les vues Reach, Porter/Ishikawa et Patrimoine UC sont contextuelles afin d’éviter un CRM parallèle. Pour la navigation par défaut du produit, voir le shell GTM (`docs/gtm-transformation/`).
 
 - Offre -> audit vérité produit -> opportunités utilisant cette offre -> qualification.
 - Entreprise -> organisation -> UC -> chaîne de valeur -> patrimoine -> qualification.

@@ -72,7 +72,7 @@ All 7 shipped in one PR to `dev`: [#59](https://github.com/achard-arnaud/ai-matu
   workspace-configurable quota/window store yet; a future Sprint can
   add one without changing `evaluate_schedule`'s contract.
 - Carried over from Epic 00-08 (not created by this Epic):
-  `feat/prospection-principes-todo` still unmerged; GitLab's `e2e-gate`
+  `feat/prospection-principes-todo` unmerged (now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`, not a live branch); GitLab's `e2e-gate`
   mirror unverified against a live runner; Epic 06's product-publish
   route, Epic 07's `dimension_checks`/`gate_checks` evaluation-skill
   wiring, and Epic 08's target-plan write route all remain unbuilt, as

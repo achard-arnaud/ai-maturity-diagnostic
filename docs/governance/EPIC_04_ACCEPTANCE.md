@@ -71,7 +71,7 @@ All 7 shipped in one PR to `dev`: [#44](https://github.com/achard-arnaud/ai-matu
   authenticated workspace member can currently act as reviewer as long as
   they are not the case's own owner.
 - Carried over from Epic 00/02/03 (not created by this Epic):
-  `feat/prospection-principes-todo` still unmerged; GitLab's `e2e-gate`
+  `feat/prospection-principes-todo` unmerged (now archived as tag `archive/pre-gtm-cleanup-2026-09-16/feat-prospection-principes-todo`, not a live branch); GitLab's `e2e-gate`
   mirror unverified against a live runner; Epic 03's `ResearchQueued`
   event now has its intended consumer (this Epic's `ResearchCase`), but no
   automated process yet turns a `ResearchQueued` event into an actual
