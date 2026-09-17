@@ -132,6 +132,13 @@ def _reach_for(ctx: RequestContext) -> ReachMatchmaker:
         return REACH
     return ReachMatchmaker.for_workspace(workspace_id, repo_root=ROOT)
 
+
+def _nudging_for(ctx: RequestContext) -> UseCaseNudger:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return NUDGING
+    return UseCaseNudger.for_workspace(workspace_id, repo_root=ROOT)
+
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
 # page, whose own client-side JS is what performs the auth check (via
@@ -401,7 +408,7 @@ def build_app(
 
     @app.get("/api/nudging/inventories")
     async def api_nudging_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return NUDGING.list_inventories()
+        return _nudging_for(ctx).list_inventories()
 
     @app.get("/api/value-chain")
     async def api_value_chain(ctx: RequestContext = Depends(get_current_user)) -> Any:
@@ -591,13 +598,13 @@ def build_app(
     async def api_nudging_generate(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return NUDGING.generate_request(payload)
+        return _nudging_for(ctx).generate_request(payload)
 
     @app.post("/api/nudges/{nudge_id}/accept")
     async def api_nudges_accept(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.accept_nudge(
+        record = _nudging_for(ctx).accept_nudge(
             str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
         )
         return JSONResponse(status_code=200, content=record)
@@ -606,7 +613,7 @@ def build_app(
     async def api_nudges_reject(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.reject_nudge(
+        record = _nudging_for(ctx).reject_nudge(
             str(payload.get("study_id") or "").strip(),
             nudge_id.strip(),
             actor=ctx.email,
@@ -618,7 +625,7 @@ def build_app(
     async def api_nudges_ack_falsifier(
         nudge_id: str, payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = NUDGING.acknowledge_falsifier(
+        record = _nudging_for(ctx).acknowledge_falsifier(
             str(payload.get("study_id") or "").strip(), nudge_id.strip(), actor=ctx.email
         )
         return JSONResponse(status_code=200, content=record)
