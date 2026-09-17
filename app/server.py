@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from app.authruntime.app import create_app
@@ -37,7 +37,13 @@ from app import kanban
 from app import network_index
 from app.duplicate_dismissals import dismiss_duplicate_group
 from app.execution_context import correlation_scope
-from app.network_index import find_potential_duplicates, search_companies, search_people
+from app.network_index import (
+    find_potential_duplicates,
+    get_company,
+    get_person,
+    search_companies,
+    search_people,
+)
 from app.network_v1_routes import create_v1_network_router
 from app.network_writer import create_company, create_person, reassign_company_workspace
 from app.signal_routes import create_v1_signal_router
@@ -93,6 +99,29 @@ _STATIC_FILES = {
     "/login.html": "login.html",
     "/vendor/mermaid.min.js": "vendor/mermaid.min.js",
 }
+
+
+def _effective_workspace_id(ctx: RequestContext, requested: str | None) -> str | None:
+    """Resolve the workspace a legacy `/api/*` route should actually query.
+
+    These routes predate the /api/v1/workspaces/{workspace_id}/... path
+    convention and instead take an optional workspace_id query/body field.
+    Never trust that field at face value: default to the caller's own
+    membership, and only honor an explicit different value if the caller
+    can access it (always true for admins) -- mirrors
+    require_workspace_access()'s invariant for a route shape that doesn't
+    put workspace_id in the path. See
+    docs/governance/P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md.
+
+    Raises 404 (never 403) on a denied explicit request, matching ADR-007
+    §1's "don't disclose another workspace's data exists" rule already
+    used by every v1 route.
+    """
+    if not requested:
+        return ctx.workspace_id
+    if not ctx.can_access_workspace(requested):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+    return requested
 
 
 async def _json_body(request: Request) -> dict[str, Any]:
@@ -361,7 +390,7 @@ def build_app(
             company_id=company_id.strip() or None,
             role=role.strip() or None,
             stale_only=stale,
-            workspace_id=workspace_id.strip() or None,
+            workspace_id=_effective_workspace_id(ctx, workspace_id.strip() or None),
         )
 
     @app.get("/api/accounts/{company_id}/360")
@@ -370,9 +399,13 @@ def build_app(
     ) -> Any:
         result = get_account_360(ROOT, company_id.strip(), index_path=NETWORK_INDEX_PATH)
         if result is None:
-            from fastapi import HTTPException
-
-            raise HTTPException(status_code=404, detail="unknown company_id")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown company_id")
+        # Same generic-404 IDOR rule as /api/v1/...: a company from a
+        # workspace the caller can't access is indistinguishable from an
+        # unknown one, per ADR-007 §1 and docs/governance/
+        # P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md.
+        if not ctx.can_access_workspace(result["company"].get("workspace_id")):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown company_id")
         return result
 
     @app.get("/api/network/companies")
@@ -386,22 +419,38 @@ def build_app(
             NETWORK_INDEX_PATH,
             text=text.strip() or None,
             sector=sector.strip() or None,
-            workspace_id=workspace_id.strip() or None,
+            workspace_id=_effective_workspace_id(ctx, workspace_id.strip() or None),
         )
 
     @app.get("/api/network/duplicates")
     async def api_network_duplicates(
         include_dismissed: bool = False, ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        return find_potential_duplicates(NETWORK_INDEX_PATH, root=ROOT, include_dismissed=include_dismissed)
+        return find_potential_duplicates(
+            NETWORK_INDEX_PATH,
+            root=ROOT,
+            include_dismissed=include_dismissed,
+            workspace_id=_effective_workspace_id(ctx, None),
+        )
 
     @app.post("/api/network/duplicates/dismiss")
     async def api_network_duplicates_dismiss(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        record = dismiss_duplicate_group(
-            ROOT, payload.get("person_ids") or [], actor=ctx.email, reason=payload.get("reason")
-        )
+        person_ids = payload.get("person_ids") or []
+        # Every named person must resolve, via their seed company, to a
+        # workspace this caller can access -- otherwise this write would let
+        # a caller confirm cross-workspace person_ids exist and mutate
+        # dismissal state for a workspace they cannot see (ADR-007 SS1).
+        for person_id in person_ids:
+            person = get_person(NETWORK_INDEX_PATH, str(person_id))
+            if person is None:
+                continue
+            company = get_company(NETWORK_INDEX_PATH, str(person.get("seed_company_id") or ""))
+            company_workspace = company.get("workspace_id") if company else None
+            if not ctx.can_access_workspace(company_workspace):
+                raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
+        record = dismiss_duplicate_group(ROOT, person_ids, actor=ctx.email, reason=payload.get("reason"))
         return JSONResponse(status_code=200, content=record)
 
     # ------------------------------------------------------------------
@@ -624,10 +673,22 @@ def build_app(
     async def api_network_create_person(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        seed_company_id = str(payload.get("seed_company_id") or "")
+        # A person's workspace is implicit via their seed company (create_person
+        # takes no workspace_id of its own -- see app/network_writer.py's
+        # docstring); an unknown company_id still 400s below via create_person's
+        # own ControlPlaneError, so only a *known-but-foreign* company is
+        # rejected here, and with a 404 to match the "don't disclose another
+        # workspace's data exists" rule used by every other Category A route.
+        existing_company = get_company(NETWORK_INDEX_PATH, seed_company_id)
+        if existing_company is not None and not ctx.can_access_workspace(
+            existing_company.get("workspace_id")
+        ):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "unknown seed_company_id")
         person = create_person(
             NETWORK_DATA_ROOT,
             display_name=str(payload.get("display_name") or ""),
-            seed_company_id=str(payload.get("seed_company_id") or ""),
+            seed_company_id=seed_company_id,
             role_hypotheses=payload.get("role_hypotheses"),
             source=str(payload.get("source") or "manual_entry"),
         )
@@ -638,11 +699,15 @@ def build_app(
     async def api_network_create_company(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        requested_workspace_id = payload.get("workspace_id")
+        workspace_id = _effective_workspace_id(
+            ctx, str(requested_workspace_id).strip() if requested_workspace_id else None
+        )
         company = create_company(
             NETWORK_DATA_ROOT,
             canonical_name=str(payload.get("canonical_name") or ""),
             sector_code=payload.get("sector_code"),
-            workspace_id=payload.get("workspace_id"),
+            workspace_id=workspace_id,
         )
         network_index.rebuild(NETWORK_INDEX_PATH.parent, NETWORK_INDEX_PATH)
         return JSONResponse(status_code=201, content=company)
@@ -691,10 +756,19 @@ def build_app(
     async def api_campaigns_prospecting(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
+        criteria = dict(payload.get("criteria") or {})
+        # launch_prospecting_campaign forwards criteria unchecked into
+        # search_people/search_companies (app/campaigns.py's _CRITERIA_FIELDS
+        # includes workspace_id) -- sanitize it the same way every other
+        # Category A route resolves a client-supplied workspace_id.
+        raw_workspace_id = criteria.get("workspace_id")
+        criteria["workspace_id"] = _effective_workspace_id(
+            ctx, str(raw_workspace_id).strip() if raw_workspace_id else None
+        )
         record = campaigns.launch_prospecting_campaign(
             ROOT,
             name=str(payload.get("name") or "").strip(),
-            criteria=payload.get("criteria") or {},
+            criteria=criteria,
             actor=ctx.email,
         )
         return JSONResponse(status_code=201, content=record)

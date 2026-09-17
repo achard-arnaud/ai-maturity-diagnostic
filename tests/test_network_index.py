@@ -233,6 +233,27 @@ class NetworkIndexTests(unittest.TestCase):
             )
 
 
+class GetPersonTests(unittest.TestCase):
+    def test_get_person_returns_record_or_none(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            write_jsonl(data_root / "people.jsonl", [person("PERS-1", "Jean Dupont", "COMP-1")])
+            write_jsonl(data_root / "companies.jsonl", [])
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            record = network_index.get_person(index_path, "PERS-1")
+            self.assertEqual(record["person_id"], "PERS-1")
+            self.assertEqual(record["seed_company_id"], "COMP-1")
+
+            self.assertIsNone(network_index.get_person(index_path, "UNKNOWN"))
+
+    def test_get_person_returns_none_when_index_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(network_index.get_person(Path(tmp) / "missing.sqlite", "PERS-1"))
+
+
 class FindPotentialDuplicatesTests(unittest.TestCase):
     def test_same_name_different_company_is_flagged(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -252,6 +273,43 @@ class FindPotentialDuplicatesTests(unittest.TestCase):
             self.assertEqual(groups[0]["normalized_name"], "jean dupont")
             person_ids = {r["person_id"] for r in groups[0]["records"]}
             self.assertEqual(person_ids, {"PERS-1", "PERS-2"})
+
+    def test_workspace_id_scopes_groups_to_one_workspace(self) -> None:
+        # P0 Category A: find_potential_duplicates must never surface a
+        # cross-workspace group to a caller scoped to a single workspace.
+        with tempfile.TemporaryDirectory() as tmp:
+            data_root = Path(tmp)
+            people = [
+                person("PERS-ACME-1", "Jean Dupont", "COMP-ACME-1"),
+                person("PERS-ACME-2", "Jean Dupont", "COMP-ACME-2"),
+                person("PERS-OTHER-1", "Marie Curie", "COMP-OTHER-1"),
+                person("PERS-OTHER-2", "Marie Curie", "COMP-OTHER-2"),
+            ]
+            companies = [
+                company("COMP-ACME-1", "Acme One", workspace_id="acme-ws"),
+                company("COMP-ACME-2", "Acme Two", workspace_id="acme-ws"),
+                company("COMP-OTHER-1", "Other One", workspace_id="other-ws"),
+                company("COMP-OTHER-2", "Other Two", workspace_id="other-ws"),
+            ]
+            write_jsonl(data_root / "people.jsonl", people)
+            write_jsonl(data_root / "companies.jsonl", companies)
+            write_jsonl(data_root / "relationships.jsonl", [])
+            index_path = Path(tmp) / "index.sqlite"
+            network_index.rebuild(data_root, index_path)
+
+            # No filter -- both groups still returned unchanged (backward
+            # compatible with every existing caller that omits workspace_id).
+            groups = network_index.find_potential_duplicates(index_path)
+            self.assertEqual({g["normalized_name"] for g in groups}, {"jean dupont", "marie curie"})
+
+            groups = network_index.find_potential_duplicates(index_path, workspace_id="acme-ws")
+            self.assertEqual([g["normalized_name"] for g in groups], ["jean dupont"])
+
+            groups = network_index.find_potential_duplicates(index_path, workspace_id="other-ws")
+            self.assertEqual([g["normalized_name"] for g in groups], ["marie curie"])
+
+            groups = network_index.find_potential_duplicates(index_path, workspace_id="empty-ws")
+            self.assertEqual(groups, [])
 
     def test_different_names_are_not_flagged(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
