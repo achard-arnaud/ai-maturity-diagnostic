@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("discover", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function personRow(sig) {
+    return "";
+  }
+
+  var priorityCards = d.companies
+    .filter(function (c) { return c.research_status !== "complete"; })
+    .map(function (c) {
+      var sig = d.signals.filter(function (s) { return s.company_id === c.company_id; })[0];
+      return (
+        '<article class="card">' +
+        '<p class="eyebrow">' + c.sector + " · " + c.location + "</p>" +
+        "<h3>" + c.name + "</h3>" +
+        '<p style="color:var(--gtm-text-muted);font-size:14px;">' + (sig ? sig.summary : "Aucun signal récent") + "</p>" +
+        '<div class="meta">' +
+        '<span class="badge freshness-' + (sig ? sig.freshness : "stale") + '">⟳ ' + (sig ? sig.freshness : "stale") + "</span>" +
+        '<span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + c.research_status.replace("_", " ") + "</span>" +
+        "</div>" +
+        '<div style="margin-top:8px;"><a href="companies.html?company_id=' + c.company_id + '">Ouvrir la fiche →</a></div>' +
+        "</article>"
+      );
+    })
+    .join("");
+
+  var savedSearches = [
+    { name: "Comptes industriels > 500 salariés, France", count: 34 },
+    { name: "Signaux hiring Data/Platform (30j)", count: 9 },
+  ]
+    .map(function (s) {
+      return '<li>' + s.name + ' <span style="color:var(--gtm-text-muted);">(' + s.count + ")</span></li>";
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    "<div><p class=\"eyebrow\">Discover</p><h1>Qui étudier, et pourquoi maintenant</h1>" +
+    '<p class="lede">Comptes, personnes et signaux — sans jamais transformer un signal en preuve de besoin.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Discover">' +
+    '<a href="index.html" aria-current="page">Discover Home</a>' +
+    '<a href="people.html">People</a>' +
+    '<a href="companies.html">Companies</a>' +
+    '<a href="signals.html">Signals</a>' +
+    '<a href="lists.html">Lists</a>' +
+    "</div>" +
+    '<div class="drawer-section">' +
+    "<h4>Comptes prioritaires (research non complète)</h4>" +
+    '<div class="grid">' + priorityCards + "</div>" +
+    "</div>" +
+    '<div class="drawer-section">' +
+    "<h4>Recherches sauvegardées &amp; watchlists</h4>" +
+    '<ul>' + savedSearches + "</ul>" +
+    "</div>";
+</script>
+</body>
+</html>

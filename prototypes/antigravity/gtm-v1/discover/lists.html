@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover · Lists — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("discover", {});
+  var main = document.getElementById("gtmMain");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Discover</p><h1>Lists</h1>' +
+    '<p class="lede">People list / Company list / Smart list — les règles de membership d’une Smart List sont toujours visibles, jamais implicites.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Discover Home</a><a href="people.html">People</a>' +
+    '<a href="companies.html">Companies</a><a href="signals.html">Signals</a><a href="lists.html" aria-current="page">Lists</a></div>' +
+    '<div class="grid">' +
+    '<article class="card"><p class="eyebrow">People list</p><h3>Champions identifiés Q3</h3><p style="color:var(--gtm-text-muted);font-size:14px;">3 personnes · ajoutées manuellement</p></article>' +
+    '<article class="card"><p class="eyebrow">Company list</p><h3>Comptes industriels France</h3><p style="color:var(--gtm-text-muted);font-size:14px;">34 comptes · ajoutés manuellement</p></article>' +
+    '<article class="card"><p class="eyebrow">Smart list</p><h3>Signaux hiring Data (30j)</h3>' +
+    '<p style="color:var(--gtm-text-muted);font-size:14px;">Règle : signal.kind = hiring ET signal.observed_at &lt; 30j ET secteur ∈ {tech, industrie}</p>' +
+    '<div class="meta"><span class="badge epi-fact">règle visible</span></div></article>' +
+    "</div>";
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover · People — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("discover", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function companyName(id) {
+    var c = d.companies.filter(function (x) { return x.company_id === id; })[0];
+    return c ? c.name : id;
+  }
+
+  var rows = d.people.map(function (p) {
+    var roleBadge = p.role_status === "verified"
+      ? '<span class="badge epi-fact">● vérifié</span>'
+      : '<span class="badge epi-hypothesis">◇ non vérifié</span>';
+    return "<tr><td>" + p.name + "</td><td>" + p.title + " " + roleBadge + "</td><td>" + companyName(p.company_id) +
+      "</td><td>" + p.relationship_distance + "</td>" +
+      '<td><a href="#">view</a> · <a href="#">add to list</a> · <a href="#">queue for validation</a></td></tr>';
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Discover</p><h1>People</h1>' +
+    '<p class="lede">Un rôle non vérifié reste visuellement distinct d’un rôle confirmé — jamais promu en autorité par défaut.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Discover Home</a><a href="people.html" aria-current="page">People</a>' +
+    '<a href="companies.html">Companies</a><a href="signals.html">Signals</a><a href="lists.html">Lists</a></div>' +
+    '<table class="data-table"><thead><tr><th>Personne</th><th>Rôle (statut)</th><th>Compte</th><th>Distance relation</th><th>Actions</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>
