@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Sequences — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function targetPlan(id) { return d.targetPlans.filter(function (p) { return p.target_plan_id === id; })[0]; }
+  function company(id) { return d.companies.filter(function (c) { return c.company_id === id; })[0]; }
+
+  var rows = d.sequences.map(function (s) {
+    var plan = targetPlan(s.target_plan_id);
+    var c = company(plan.company_id);
+    var steps = d.touchpoints.filter(function (t) { return t.sequence_id === s.sequence_id; });
+    return "<tr><td>" + s.name + "</td><td>" + c.name + "</td><td>" + s.channel + "</td><td>" + steps.length + "</td>" +
+      '<td><span class="badge epi-fact">' + s.status + "</span></td>" +
+      '<td><a href="index.html">voir dans la file →</a></td></tr>';
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Sequences</h1>' +
+    '<p class="lede">Une Sequence regroupe les Touchpoints d’un plan de ciblage — pas de canal automatique inventé au-delà de ceux du mock.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html" aria-current="page">Sequences</a>' +
+    '<a href="messages.html">Messages</a><a href="tasks.html">Tasks</a><a href="calls.html">Calls</a>' +
+    '<a href="meetings.html">Meetings</a><a href="history.html">Touchpoint history</a></div>' +
+    '<table class="data-table"><thead><tr><th>Séquence</th><th>Compte</th><th>Canal</th><th>Étapes</th><th>Statut</th><th></th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

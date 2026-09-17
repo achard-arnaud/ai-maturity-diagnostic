@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Tasks — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+
+  var manualTasks = d.touchpoints.filter(function (t) { return t.channel.indexOf("manual") !== -1; });
+  var rows = manualTasks.map(function (tp) {
+    var p = person(tp.person_id);
+    return "<tr><td>" + tp.channel.replace("_", " ") + "</td><td>" + p.name + "</td><td>" + tp.scheduled_at.replace("T", " ") + "</td>" +
+      '<td><span class="badge epi-hypothesis">◇ ' + tp.status.replace("_", " ") + "</span></td>" +
+      '<td><a href="message-preview.html?touchpoint_id=' + tp.touchpoint_id + '">ouvrir →</a></td></tr>';
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Tasks</h1>' +
+    '<p class="lede">Tâches manuelles dues — notamment tout ce qui passe par un canal sans envoi automatisé simulé (ex. LinkedIn).</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html">Sequences</a>' +
+    '<a href="messages.html">Messages</a><a href="tasks.html" aria-current="page">Tasks</a><a href="calls.html">Calls</a>' +
+    '<a href="meetings.html">Meetings</a><a href="history.html">Touchpoint history</a></div>' +
+    (rows
+      ? '<table class="data-table"><thead><tr><th>Type</th><th>Personne</th><th>Échéance</th><th>Statut</th><th></th></tr></thead><tbody>' + rows + "</tbody></table>"
+      : '<div class="empty-state">Aucune tâche manuelle en attente.</div>');
+</script>
+</body>
+</html>

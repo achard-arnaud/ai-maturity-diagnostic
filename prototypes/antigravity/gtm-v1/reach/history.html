@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Touchpoint history — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+
+  var rows = d.touchpoints
+    .slice()
+    .sort(function (a, b) { return a.scheduled_at.localeCompare(b.scheduled_at); })
+    .map(function (tp) {
+      var p = person(tp.person_id);
+      return "<tr><td>" + tp.scheduled_at.replace("T", " ") + "</td><td>" + tp.channel.replace("_", " ") + "</td><td>" + p.name + "</td>" +
+        "<td>étape " + tp.step + "</td><td>" + tp.status.replace("_", " ") + "</td></tr>";
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Touchpoint history</h1>' +
+    '<p class="lede">Lecture seule — tous statuts, tri chronologique.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html">Sequences</a>' +
+    '<a href="messages.html">Messages</a><a href="tasks.html">Tasks</a><a href="calls.html">Calls</a>' +
+    '<a href="meetings.html">Meetings</a><a href="history.html" aria-current="page">Touchpoint history</a></div>' +
+    '<table class="data-table"><thead><tr><th>Horodatage</th><th>Canal</th><th>Personne</th><th>Étape</th><th>Statut</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

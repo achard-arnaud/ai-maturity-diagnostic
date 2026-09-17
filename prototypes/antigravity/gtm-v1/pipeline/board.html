@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline · Board — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .board-group { margin-bottom: var(--gtm-space-5); }
+  .board-group h3 { font-size: 13px; text-transform: uppercase; color: var(--gtm-text-muted); margin-bottom: var(--gtm-space-2); }
+  .card .card-meta-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--gtm-text-muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("pipeline", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function company(id) { return d.companies.filter(function (c) { return c.company_id === id; })[0]; }
+
+  // Local, UI-only overlay: card-level fields (blocker, proof status) the
+  // mission's Board asks for that Opportunity/Deal don't carry directly —
+  // additive, same ids, no new object. See pipeline/SCREEN_CONTRACT.md.
+  var oppMeta = { opp_acme_1: { blocker: null, proof_status: "Preuve : Fit v2 pending_review" } };
+  var dealMeta = { deal_acme_1: { blocker: "Attente signature sponsor budgétaire", proof_status: "Proposition non encore envoyée" } };
+
+  function oppCard(o) {
+    var c = company(o.company_id);
+    var meta = oppMeta[o.opportunity_id] || {};
+    return (
+      '<article class="card">' +
+      "<h3>" + c.name + "</h3>" +
+      (meta.blocker ? '<span class="badge blocker-badge">⛔ ' + meta.blocker + "</span>" : "") +
+      '<div class="card-meta-row"><span>' + o.owner + "</span><span>" + o.value + "</span></div>" +
+      '<p style="font-size:12px;margin:4px 0;">' + o.next_action + "</p>" +
+      '<div class="card-meta-row"><span>Dernier engagement : ' + o.last_engagement + "</span></div>" +
+      '<div class="meta"><span class="badge epi-inference">◐ ' + (meta.proof_status || "—") + "</span></div>" +
+      '<div style="margin-top:6px;"><a href="opportunity.html?opportunity_id=' + o.opportunity_id + '">détail →</a></div>' +
+      "</article>"
+    );
+  }
+
+  function dealCard(deal) {
+    var opp = d.opportunities.filter(function (o) { return o.opportunity_id === deal.opportunity_id; })[0];
+    var c = company(opp.company_id);
+    var meta = dealMeta[deal.deal_id] || {};
+    return (
+      '<article class="card">' +
+      "<h3>" + c.name + "</h3>" +
+      (meta.blocker ? '<span class="badge blocker-badge">⛔ ' + meta.blocker + "</span>" : "") +
+      '<div class="card-meta-row"><span>' + opp.owner + "</span><span>" + opp.value + "</span></div>" +
+      '<div class="meta"><span class="badge epi-inference">◐ ' + (meta.proof_status || "—") + "</span></div>" +
+      '<div style="margin-top:6px;"><a href="deal.html?deal_id=' + deal.deal_id + '">détail →</a></div>' +
+      "</article>"
+    );
+  }
+
+  var oppColumns = ["discovery"].map(function (stage) {
+    var cards = d.opportunities.filter(function (o) { return o.stage === stage; }).map(oppCard).join("");
+    return '<div class="board-column"><h3>' + stage + "</h3>" + cards + "</div>";
+  }).join("");
+
+  var dealColumns = ["proposal"].map(function (stage) {
+    var cards = d.deals.filter(function (deal) { return deal.stage === stage; }).map(dealCard).join("");
+    return '<div class="board-column"><h3>' + stage + "</h3>" + cards + "</div>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Pipeline</p><h1>Board</h1>' +
+    '<p class="lede">Seules les stages déjà présents dans le mock apparaissent — aucun nom de stage inventé (cf. DECISION_REQUIRED #2).</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Leads</a><a href="opportunities.html">Opportunities</a>' +
+    '<a href="deals.html">Deals</a><a href="board.html" aria-current="page">Board</a></div>' +
+    '<div class="board-group"><h3>Opportunities</h3><div class="board">' + oppColumns + "</div></div>" +
+    '<div class="board-group"><h3>Deals</h3><div class="board">' + dealColumns + "</div></div>";
+</script>
+</body>
+</html>

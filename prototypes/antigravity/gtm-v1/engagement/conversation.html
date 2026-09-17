@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engagement · Conversation — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .conv-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--gtm-space-4); }
+  @media (max-width: 900px) { .conv-layout { grid-template-columns: 1fr; } }
+  .thread-msg { background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); margin-bottom: var(--gtm-space-2); font-size: 14px; }
+  .thread-msg .from { font-weight: 600; font-size: 12px; color: var(--gtm-text-muted); display: block; margin-bottom: 4px; }
+  .cta-row { display: flex; gap: var(--gtm-space-2); flex-wrap: wrap; margin-top: var(--gtm-space-4); }
+  .cta-row button { padding: var(--gtm-space-2) var(--gtm-space-3); border-radius: var(--gtm-radius-sm); cursor: pointer; font-size: 13px; border: 1px solid var(--gtm-border); background: var(--gtm-surface); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("engagement", { rail: true });
+  var main = document.getElementById("gtmMain");
+  var rail = document.getElementById("gtmRail");
+  var d = window.GtmMockData;
+
+  var demoEvents = d.engagementEvents.concat([
+    { engagement_id: "eng_2", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "meeting_booked", occurred_at: "2026-09-19T10:00:00", sentiment: "positive" },
+    { engagement_id: "eng_3", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "objection", occurred_at: "2026-09-17T16:30:00", sentiment: "negative", note: "Budget déjà alloué pour cette année" },
+    { engagement_id: "eng_4", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "unsubscribed", occurred_at: "2026-09-16T09:00:00", sentiment: "negative" },
+    { engagement_id: "eng_5", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "no_response", occurred_at: "2026-09-14T00:00:00", sentiment: "neutral" },
+    { engagement_id: "eng_6", sequence_id: "seq_acme_1", person_id: "pe_marc", kind: "follow_up_due", occurred_at: "2026-09-20T09:00:00", sentiment: "neutral" },
+  ]);
+
+  var params = new URLSearchParams(location.search);
+  var engId = params.get("engagement_id") || "eng_1";
+  var ev = demoEvents.filter(function (e) { return e.engagement_id === engId; })[0] || demoEvents[0];
+  var p = d.people.filter(function (x) { return x.person_id === ev.person_id; })[0];
+  var seq = d.sequences.filter(function (s) { return s.sequence_id === ev.sequence_id; })[0];
+  var plan = d.targetPlans.filter(function (tp) { return tp.target_plan_id === seq.target_plan_id; })[0];
+  var c = d.companies.filter(function (x) { return x.company_id === plan.company_id; })[0];
+  var fit = d.fitAssessments.filter(function (f) { return f.fit_id === plan.fit_id; })[0];
+  var member = plan.members.filter(function (m) { return m.person_id === ev.person_id; })[0];
+  var touchpoints = d.touchpoints.filter(function (t) { return t.sequence_id === seq.sequence_id && t.person_id === ev.person_id; });
+
+  var KIND_LABEL = {
+    replied: "Réponse", meeting_booked: "Meeting booké", objection: "Objection",
+    unsubscribed: "Unsubscribe / consentement retiré", no_response: "No response", follow_up_due: "Follow-up dû",
+  };
+
+  var threadHtml =
+    touchpoints.map(function (t) {
+      return '<div class="thread-msg"><span class="from">Nous → ' + p.name + " · " + t.scheduled_at.replace("T", " ") + '</span>' + t.why_now + "</div>";
+    }).join("") +
+    '<div class="thread-msg"><span class="from">' + p.name + " · " + ev.occurred_at.replace("T", " ") + '</span>' +
+    KIND_LABEL[ev.kind] + (ev.note ? " — " + ev.note : "") + "</div>";
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Engagement · ' + c.name + '</p><h1>Conversation — ' + p.name + "</h1>" +
+    '<p class="lede">' + p.title + ' <span class="badge human-decision-badge">\u{1F464} ' + member.stakeholder_role.replace("_", " ") + "</span></p></div>" +
+    '<div><a href="index.html">← Inbox</a></div>' +
+    "</div>" +
+    '<div class="conv-layout">' +
+    "<div><h3>Thread</h3>" + threadHtml +
+    '<div class="cta-row"><button type="button">Stopper la séquence</button><button type="button">Mettre en pause</button><button type="button">Marquer follow-up fait</button></div>' +
+    "</div>" +
+    '<div><h4>Compte</h4><p style="font-size:13px;">' + c.name + " · " + c.sector + "</p>" +
+    '<h4>Fit context</h4><p style="font-size:13px;">' + fit.overall_decision + " · couverture " + fit.need_coverage + "</p>" +
+    '<h4>Objections</h4><p style="font-size:13px;">' + (ev.kind === "objection" ? (ev.note || "Objection non détaillée") : "Aucune objection enregistrée pour cette conversation.") + "</p>" +
+    '<h4>Prochaine action</h4><p style="font-size:13px;">' + (seq.status === "active" ? "Répondre / qualifier avant la prochaine étape de séquence" : "Séquence non active") + "</p>" +
+    "</div>" +
+    "</div>";
+
+  rail.innerHTML =
+    '<div class="drawer-section"><h4>Séquence liée</h4>' +
+    '<p style="font-size:13px;">' + seq.name + ' <span class="badge epi-fact">' + seq.status + "</span></p></div>" +
+    '<div class="drawer-section"><h4>Target</h4>' +
+    '<p style="font-size:13px;">' + p.name + " — " + p.title + "</p></div>";
+</script>
+</body>
+</html>

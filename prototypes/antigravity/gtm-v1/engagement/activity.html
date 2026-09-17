@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engagement · Activity Feed — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .feed-lanes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gtm-space-4); }
+  @media (max-width: 900px) { .feed-lanes { grid-template-columns: 1fr; } }
+  .lane { background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); }
+  .lane h3 { margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: .03em; }
+  .lane.outbound h3 { color: var(--gtm-accent); }
+  .lane.external h3 { color: var(--gtm-hypothesis); }
+  .feed-item { border-bottom: 1px solid var(--gtm-border); padding: var(--gtm-space-2) 0; font-size: 13px; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item .when { color: var(--gtm-text-muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("engagement", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  // Same locally-added demo EngagementEvent instances as index.html — kept
+  // consistent across engagement/** pages (see SCREEN_CONTRACT.md
+  // DECISION_REQUIRED #1). Not written back to shared/mock-data.js.
+  var demoEvents = d.engagementEvents.concat([
+    { engagement_id: "eng_2", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "meeting_booked", occurred_at: "2026-09-19T10:00:00", sentiment: "positive" },
+    { engagement_id: "eng_3", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "objection", occurred_at: "2026-09-17T16:30:00", sentiment: "negative", note: "Budget déjà alloué pour cette année" },
+    { engagement_id: "eng_4", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "unsubscribed", occurred_at: "2026-09-16T09:00:00", sentiment: "negative" },
+    { engagement_id: "eng_5", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "no_response", occurred_at: "2026-09-14T00:00:00", sentiment: "neutral" },
+    { engagement_id: "eng_6", sequence_id: "seq_acme_1", person_id: "pe_marc", kind: "follow_up_due", occurred_at: "2026-09-20T09:00:00", sentiment: "neutral" },
+  ]);
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+
+  var KIND_LABEL = {
+    replied: "a répondu", meeting_booked: "a booké un meeting", objection: "a objecté",
+    unsubscribed: "s'est désinscrit(e)", no_response: "n'a pas répondu (statut)", follow_up_due: "follow-up dû",
+  };
+  var TP_STATUS_LABEL = { scheduled: "envoyé", pending_approval: "en attente d'approbation (non envoyé)" };
+  var TP_CHANNEL_LABEL = { email: "Email envoyé", linkedin_manual_task: "Tâche manuelle LinkedIn effectuée" };
+
+  var outboundItems = d.touchpoints
+    .slice()
+    .sort(function (a, b) { return b.scheduled_at.localeCompare(a.scheduled_at); })
+    .map(function (t) {
+      var p = person(t.person_id);
+      return '<div class="feed-item"><span class="when">' + t.scheduled_at.replace("T", " ") + "</span><br>" +
+        TP_CHANNEL_LABEL[t.channel] + " — " + p.name + " <span class=\"badge epi-fact\" style=\"margin-left:4px;\">" + (TP_STATUS_LABEL[t.status] || t.status) + "</span></div>";
+    })
+    .join("");
+
+  var externalItems = demoEvents
+    .slice()
+    .sort(function (a, b) { return b.occurred_at.localeCompare(a.occurred_at); })
+    .map(function (e) {
+      var p = person(e.person_id);
+      return '<div class="feed-item"><span class="when">' + e.occurred_at.replace("T", " ") + "</span><br>" +
+        p.name + " " + KIND_LABEL[e.kind] + (e.note ? " — " + e.note : "") + "</div>";
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Engagement</p><h1>Activity Feed</h1>' +
+    '<p class="lede">Deux lanes toujours distinctes — un envoi n’est jamais présenté comme un engagement du prospect.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Engagement">' +
+    '<a href="index.html">Inbox</a>' +
+    '<a href="activity.html" aria-current="page">Activity Feed</a>' +
+    "</div>" +
+    '<div class="feed-lanes">' +
+    '<div class="lane outbound"><h3>Activité sortante (ce que nous avons fait)</h3>' + outboundItems + "</div>" +
+    '<div class="lane external"><h3>Engagement externe (ce que le prospect a fait)</h3>' + externalItems + "</div>" +
+    "</div>";
+</script>
+</body>
+</html>

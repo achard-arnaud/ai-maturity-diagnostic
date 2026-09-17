@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline · Deals — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("pipeline", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function opportunity(id) { return d.opportunities.filter(function (o) { return o.opportunity_id === id; })[0]; }
+  function company(id) { return d.companies.filter(function (c) { return c.company_id === id; })[0]; }
+
+  var rows = d.deals.map(function (deal) {
+    var opp = opportunity(deal.opportunity_id);
+    var c = company(opp.company_id);
+    return "<tr><td><a href=\"deal.html?deal_id=" + deal.deal_id + "\">" + c.name + "</a></td>" +
+      '<td><span class="badge epi-fact">' + deal.stage + "</span></td>" +
+      "<td>" + (deal.outcome || "en cours") + "</td>" +
+      "<td>" + opp.value + "</td></tr>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Pipeline</p><h1>Deals</h1>' +
+    '<p class="lede">Proposal / negotiation / decision présentés simplement — pas de CPQ, le backend n’en a pas.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Leads</a><a href="opportunities.html">Opportunities</a>' +
+    '<a href="deals.html" aria-current="page">Deals</a><a href="board.html">Board</a></div>' +
+    '<table class="data-table"><thead><tr><th>Compte</th><th>Stage</th><th>Outcome</th><th>Valeur</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

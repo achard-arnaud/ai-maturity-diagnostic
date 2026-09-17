@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Targets — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("targets", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  // Local, UI-only overlay: fields the mission's Targets Home needs
+  // (validation blockers, warm path, currentness, role coverage) that
+  // shared/mock-data.js does not carry. Keyed by target_plan_id, additive,
+  // same TargetPlan shape — no new canonical object. See
+  // targets/SCREEN_CONTRACT.md DECISION_REQUIRED #3.
+  var ALL_ROLES = ["economic_buyer", "champion", "user", "technical_sponsor", "prescriber", "procurement", "blocker_veto"];
+  var ROLE_LABELS = {
+    economic_buyer: "Economic buyer",
+    champion: "Champion",
+    user: "User",
+    technical_sponsor: "Technical sponsor",
+    prescriber: "Prescriber",
+    procurement: "Procurement",
+    blocker_veto: "Blocker / veto",
+  };
+  var targetPlanMeta = {
+    tp_acme_1: {
+      validation_blockers: ["Rôle « economic buyer » : confiance d'autorité non validée humainement"],
+      warm_path: "M. Ferréol (1er degré) → introduction possible vers C. Dubosc",
+      currentness: "fresh",
+    },
+  };
+
+  function roleCoverage(plan) {
+    var covered = plan.members.map(function (m) { return m.stakeholder_role; });
+    return {
+      covered: ALL_ROLES.filter(function (r) { return covered.indexOf(r) !== -1; }),
+      missing: ALL_ROLES.filter(function (r) { return covered.indexOf(r) === -1; }),
+    };
+  }
+
+  function planCard(company) {
+    var plan = d.targetPlans.filter(function (p) { return p.company_id === company.company_id; })[0];
+    if (!plan) {
+      return (
+        '<article class="card">' +
+        '<p class="eyebrow">' + company.sector + " · " + company.location + "</p>" +
+        "<h3>" + company.name + "</h3>" +
+        '<p style="color:var(--gtm-text-muted);font-size:14px;">Aucun plan de ciblage — pas de Fit validé pour ce compte.</p>' +
+        '<div class="meta"><span class="badge epi-unknown">? pas de Fit</span></div>' +
+        '<div style="margin-top:8px;">' +
+        '<button type="button" disabled title="Un Target ne peut être créé sans Fit validé (PURSUE) — voir Fit.">Ouvrir le comité d’achat</button>' +
+        "</div>" +
+        "</article>"
+      );
+    }
+    var meta = targetPlanMeta[plan.target_plan_id] || { validation_blockers: [], warm_path: "—", currentness: "stale" };
+    var coverage = roleCoverage(plan);
+    var blockers = meta.validation_blockers.map(function (b) {
+      return '<div class="state-banner state-banner--blocked" role="status" style="margin-bottom:4px;"><span aria-hidden="true">⛔</span> ' + b + '</div>';
+    }).join("");
+    return (
+      '<article class="card">' +
+      '<p class="eyebrow">' + company.sector + " · " + company.location + "</p>" +
+      "<h3>" + company.name + "</h3>" +
+      '<p style="color:var(--gtm-text-muted);font-size:14px;">Plan de ciblage : ' + plan.status + " · " + plan.members.length + " membres</p>" +
+      (blockers || "") +
+      '<p style="font-size:13px;margin:4px 0;"><strong>Chemin warm :</strong> ' + meta.warm_path + "</p>" +
+      '<div class="meta">' +
+      '<span class="badge epi-fact">● ' + coverage.covered.length + "/" + ALL_ROLES.length + " rôles couverts</span>" +
+      '<span class="badge freshness-' + meta.currentness + '">⟳ ' + meta.currentness + "</span>" +
+      "</div>" +
+      '<p style="font-size:12px;color:var(--gtm-text-muted);margin:6px 0 0;">Manquants : ' + coverage.missing.map(function (r) { return ROLE_LABELS[r]; }).join(", ") + "</p>" +
+      '<div style="margin-top:8px;"><a href="committee.html?target_plan_id=' + plan.target_plan_id + '">Ouvrir le comité d’achat →</a></div>' +
+      "</article>"
+    );
+  }
+
+  var cards = d.companies.map(planCard).join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Targets</p><h1>Qui cibler, une fois le Fit validé</h1>' +
+    '<p class="lede">Un Target n’existe qu’après un Fit valide — jamais un Contact promu directement en cible commerciale.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Targets">' +
+    '<a href="index.html" aria-current="page">Targets Home</a>' +
+    '<a href="committee.html?target_plan_id=tp_acme_1">Comité d’achat — Acme</a>' +
+    "</div>" +
+    '<div class="drawer-section">' +
+    "<h4>Plans de ciblage par compte</h4>" +
+    '<div class="grid">' + cards + "</div>" +
+    "</div>";
+</script>
+</body>
+</html>

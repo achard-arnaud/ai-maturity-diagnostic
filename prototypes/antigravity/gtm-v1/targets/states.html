@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Targets — États — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+
+<!-- Literal, inspectable HTML — moved into #gtmMain by shell.js's render().
+     Kept as static markup (not JS string concatenation) so a reviewer or
+     checks/check_screen.py can grep the 8 required data-state values
+     directly in the source. See SHELL_CONTRACT.md §1/§3. -->
+<template id="gtmMainContent">
+  <div class="section-head">
+    <div><p class="eyebrow">Targets</p><h1>Galerie d&rsquo;états</h1>
+    <p class="lede">Les 8 états requis par SHELL_CONTRACT.md §3, appliqués à la vue Targets Home.</p></div>
+  </div>
+
+  <div class="state-switcher" role="tablist" aria-label="Choisir un état">
+    <button type="button" data-target="default" aria-pressed="true">default</button>
+    <button type="button" data-target="loading" aria-pressed="false">loading</button>
+    <button type="button" data-target="empty" aria-pressed="false">empty</button>
+    <button type="button" data-target="error" aria-pressed="false">error</button>
+    <button type="button" data-target="blocked" aria-pressed="false">blocked</button>
+    <button type="button" data-target="stale" aria-pressed="false">stale</button>
+    <button type="button" data-target="partial-data" aria-pressed="false">partial-data</button>
+    <button type="button" data-target="success" aria-pressed="false">success</button>
+  </div>
+
+  <section class="state-demo-panel" data-state="default">
+    <h2>Default</h2>
+    <div class="grid">
+      <article class="card"><p class="eyebrow">Industrial software · Lyon</p><h3>Acme Corp</h3>
+        <p style="color:var(--gtm-text-muted);font-size:14px;">Plan de ciblage : draft · 3 membres</p>
+        <div class="meta"><span class="badge epi-fact">● 2/7 rôles couverts</span></div>
+        <div style="margin-top:8px;"><a href="committee.html?target_plan_id=tp_acme_1">Ouvrir le comité d&rsquo;achat →</a></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="state-demo-panel" data-state="loading" hidden>
+    <h2>Loading</h2>
+    <div class="state-banner state-banner--loading" role="status">&#x23F3; Chargement des plans de ciblage…</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="empty" hidden>
+    <h2>Empty</h2>
+    <div class="empty-state">Aucun plan de ciblage pour ce filtre — vérifiez qu&rsquo;un Fit validé existe pour ce compte.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="error" hidden>
+    <h2>Error</h2>
+    <div class="error-state">Impossible de charger les plans de ciblage. <button type="button">Réessayer</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="blocked" hidden>
+    <h2>Blocked</h2>
+    <div class="state-banner state-banner--blocked" role="status">&#x26D4; Bloqué — le rôle &laquo;&nbsp;economic buyer&nbsp;&raquo; attend une validation humaine de son autorité. <button type="button" class="state-banner__resolve">Résoudre</button></div>
+  </section>
+
+  <section class="state-demo-panel" data-state="stale" hidden>
+    <h2>Stale</h2>
+    <div class="state-banner state-banner--stale" role="status">&#x21BB; La fraîcheur des preuves de ce plan date de plus de 30 jours — à revérifier avant activation.</div>
+  </section>
+
+  <section class="state-demo-panel" data-state="partial-data" hidden>
+    <h2>Partial data</h2>
+    <div class="state-banner state-banner--partial-data" role="status">&#x25D0; Chemin de relation partiel — certaines connexions LinkedIn n&rsquo;ont pas pu être vérifiées.</div>
+    <div class="grid">
+      <article class="card"><p class="eyebrow">Industrial software · Lyon</p><h3>Acme Corp</h3>
+        <div class="meta"><span class="badge freshness-aging">&#x27F3; aging</span></div></article>
+    </div>
+  </section>
+
+  <section class="state-demo-panel" data-state="success" hidden>
+    <h2>Success</h2>
+    <div class="grid">
+      <article class="card"><p class="eyebrow">Industrial software · Lyon</p><h3>Acme Corp</h3>
+        <p style="color:var(--gtm-text-muted);font-size:14px;">Plan de ciblage : draft · 3 membres</p>
+        <div class="meta"><span class="badge epi-fact">● 2/7 rôles couverts</span><span class="badge freshness-fresh">&#x27F3; fresh</span></div></article>
+    </div>
+  </section>
+</template>
+
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("targets", {});
+  document.querySelectorAll(".state-switcher button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".state-switcher button").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      document.querySelectorAll(".state-demo-panel").forEach(function (p) {
+        p.hidden = p.getAttribute("data-state") !== btn.getAttribute("data-target");
+      });
+    });
+  });
+</script>
+</body>
+</html>

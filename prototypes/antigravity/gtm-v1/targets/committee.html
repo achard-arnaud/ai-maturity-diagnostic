@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Targets · Buying Committee — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .role-title-cell .title { display: block; color: var(--gtm-text); font-size: 14px; }
+  .role-title-cell .title-label { display: block; font-size: 11px; color: var(--gtm-text-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: 2px; }
+  .view-toggle { display: flex; gap: var(--gtm-space-2); margin-bottom: var(--gtm-space-4); }
+  .view-toggle button { padding: var(--gtm-space-1) var(--gtm-space-3); border: 1px solid var(--gtm-border); background: var(--gtm-surface); border-radius: var(--gtm-radius-sm); cursor: pointer; font-size: 13px; }
+  .view-toggle button[aria-pressed="true"] { background: var(--gtm-accent); color: var(--gtm-accent-contrast); border-color: var(--gtm-accent); }
+  .committee-graph { display: flex; gap: var(--gtm-space-4); overflow-x: auto; }
+  .role-column { flex: 0 0 200px; background: var(--gtm-bg); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); min-height: 120px; }
+  .role-column h4 { margin: 0 0 var(--gtm-space-2); font-size: 12px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  .role-column .empty-slot { font-size: 12px; color: var(--gtm-text-muted); font-style: italic; }
+  .person-node { background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); padding: var(--gtm-space-2); margin-bottom: var(--gtm-space-2); font-size: 13px; }
+  .person-node .name { font-weight: 600; }
+  .person-node .title { display: block; color: var(--gtm-text-muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("targets", { rail: true });
+  var main = document.getElementById("gtmMain");
+  var rail = document.getElementById("gtmRail");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(location.search);
+  var planId = params.get("target_plan_id") || "tp_acme_1";
+  var plan = d.targetPlans.filter(function (p) { return p.target_plan_id === planId; })[0] || d.targetPlans[0];
+  var company = d.companies.filter(function (c) { return c.company_id === plan.company_id; })[0];
+  var fit = d.fitAssessments.filter(function (f) { return f.fit_id === plan.fit_id; })[0];
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+  function evidenceFor(ids) { return (ids || []).map(function (id) { return d.evidence.filter(function (e) { return e.evidence_id === id; })[0]; }).filter(Boolean); }
+
+  var ROLE_LABELS = {
+    economic_buyer: "Economic buyer", champion: "Champion", user: "User",
+    technical_sponsor: "Technical sponsor", prescriber: "Prescriber",
+    procurement: "Procurement", blocker_veto: "Blocker / veto",
+  };
+  var ALL_ROLES = Object.keys(ROLE_LABELS);
+
+  // Local, UI-only overlay for fields the mission's Buying Committee needs
+  // (reachability, priority, evidence binding, currentness) that
+  // shared/mock-data.js's TargetPlan.members doesn't carry. Keyed by
+  // person_id, additive, same member shape — no new canonical object. See
+  // targets/SCREEN_CONTRACT.md DECISION_REQUIRED #3.
+  var memberMeta = {
+    pe_claire: { reachability: "Froid — intro tierce requise", priority: "Haute", evidence_ids: ["ev_2"], currentness: "fresh" },
+    pe_marc: { reachability: "Chaud — 1er degré direct", priority: "Haute", evidence_ids: ["ev_1"], currentness: "fresh" },
+    pe_lina: { reachability: "Froid — aucun chemin direct connu", priority: "Moyenne", evidence_ids: [], currentness: "stale" },
+  };
+
+  var EPI_CLASS = { fact: "epi-fact", inference: "epi-inference", hypothesis: "epi-hypothesis", unknown: "epi-unknown" };
+  var EPI_GLYPH = { fact: "●", inference: "◐", hypothesis: "◇", unknown: "?" };
+
+  function evidenceCell(meta) {
+    var items = evidenceFor(meta.evidence_ids);
+    if (!items.length) return '<span class="badge epi-unknown">? aucune preuve liée</span>';
+    return items.map(function (e) {
+      return '<span class="badge ' + EPI_CLASS[e.claim_type] + '" title="' + e.statement.replace(/"/g, "&quot;") + '">' + EPI_GLYPH[e.claim_type] + " " + e.source + "</span>";
+    }).join(" ");
+  }
+
+  function rowHtml(member) {
+    var p = person(member.person_id);
+    var meta = memberMeta[member.person_id] || { reachability: "Inconnue", priority: "—", evidence_ids: [], currentness: "stale" };
+    return (
+      "<tr>" +
+      "<td>" + p.name + "</td>" +
+      '<td class="role-title-cell"><span class="title">' + p.title + '</span><span class="title-label">Titre (fait)</span></td>' +
+      '<td><span class="badge human-decision-badge">\u{1F464} ' + ROLE_LABELS[member.stakeholder_role] + "</span></td>" +
+      "<td>" + member.influence + "</td>" +
+      '<td><span class="badge confidence-' + member.authority_confidence + '">' + member.authority_confidence + "</span></td>" +
+      "<td>" + p.relationship_distance + "</td>" +
+      "<td>" + meta.reachability + "</td>" +
+      "<td>" + meta.priority + "</td>" +
+      "<td>" + evidenceCell(meta) + "</td>" +
+      '<td><span class="badge freshness-' + meta.currentness + '">⟳ ' + meta.currentness + "</span></td>" +
+      "</tr>"
+    );
+  }
+
+  var rows = plan.members.map(rowHtml).join("");
+
+  var graphColumns = ALL_ROLES.map(function (role) {
+    var members = plan.members.filter(function (m) { return m.stakeholder_role === role; });
+    var nodes = members.length
+      ? members.map(function (m) {
+          var p = person(m.person_id);
+          return '<div class="person-node"><span class="name">' + p.name + '</span><span class="title">' + p.title + "</span></div>";
+        }).join("")
+      : '<span class="empty-slot">Aucun titulaire</span>';
+    return '<div class="role-column"><h4>' + ROLE_LABELS[role] + "</h4>" + nodes + "</div>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Targets · ' + company.name + '</p><h1>Comité d’achat</h1>' +
+    '<p class="lede">Titre = fait observé. Rôle de stakeholder = jugement humain. Jamais confondus.</p></div>' +
+    "<div><a href=\"index.html\">← Targets Home</a></div>" +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Targets">' +
+    '<a href="index.html">Targets Home</a>' +
+    '<a href="committee.html?target_plan_id=' + plan.target_plan_id + '" aria-current="page">Comité d’achat — ' + company.name + "</a>" +
+    "</div>" +
+    '<div class="view-toggle" role="tablist" aria-label="Vue du comité">' +
+    '<button type="button" data-view="table" aria-pressed="true">Table</button>' +
+    '<button type="button" data-view="graph" aria-pressed="false">Graphe (par rôle)</button>' +
+    "</div>" +
+    '<div id="committeeTable">' +
+    '<table class="data-table"><thead><tr>' +
+    "<th>Personne</th><th>Titre</th><th>Rôle stakeholder</th><th>Influence</th>" +
+    "<th>Confiance autorité</th><th>Chemin relation</th><th>Reachability</th>" +
+    "<th>Priorité</th><th>Preuve</th><th>Fraîcheur</th>" +
+    "</tr></thead><tbody>" + rows + "</tbody></table>" +
+    "</div>" +
+    '<div id="committeeGraph" class="committee-graph" hidden>' + graphColumns + "</div>" +
+    '<div class="drawer-section" style="margin-top:24px;">' +
+    "<h4>Actions</h4>" +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+    '<a href="../reach/index.html?target_plan_id=' + plan.target_plan_id + '"><button type="button">Envoyer vers Reach</button></a>' +
+    '<button type="button" disabled title="L’autorité ne peut jamais être déduite du titre seul — validation humaine requise (SHELL_CONTRACT.md §5).">Déduire l’autorité depuis le titre</button>' +
+    "</div>" +
+    "</div>";
+
+  document.querySelectorAll(".view-toggle button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".view-toggle button").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+      btn.setAttribute("aria-pressed", "true");
+      var view = btn.getAttribute("data-view");
+      document.getElementById("committeeTable").hidden = view !== "table";
+      document.getElementById("committeeGraph").hidden = view !== "graph";
+    });
+  });
+
+  rail.innerHTML =
+    '<div class="drawer-section"><h4>Fit context</h4>' +
+    '<p style="font-size:13px;">' + fit.overall_decision + " · couverture besoin " + fit.need_coverage + "</p>" +
+    '<p style="font-size:12px;color:var(--gtm-text-muted);">Snapshot ' + fit.snapshot_id + ' · <span class="version-badge">v' + fit.version + "</span></p>" +
+    "</div>" +
+    '<div class="drawer-section"><h4>Statut du plan</h4>' +
+    '<p style="font-size:13px;">' + plan.status + "</p></div>";
+</script>
+</body>
+</html>

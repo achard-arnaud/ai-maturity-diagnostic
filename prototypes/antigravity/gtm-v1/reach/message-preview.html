@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Message preview — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .preview-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--gtm-space-4); }
+  @media (max-width: 900px) { .preview-layout { grid-template-columns: 1fr; } }
+  .message-body { background: var(--gtm-surface); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-4); white-space: pre-wrap; font-size: 14px; }
+  .evidence-list li { margin-bottom: var(--gtm-space-2); font-size: 13px; }
+  .cta-row { display: flex; gap: var(--gtm-space-2); flex-wrap: wrap; margin-top: var(--gtm-space-4); }
+  .cta-row button { padding: var(--gtm-space-2) var(--gtm-space-3); border-radius: var(--gtm-radius-sm); cursor: pointer; font-size: 13px; border: 1px solid var(--gtm-border); background: var(--gtm-surface); }
+  .cta-row button.primary { background: var(--gtm-accent); color: var(--gtm-accent-contrast); border-color: var(--gtm-accent); }
+  .cta-row button[disabled] { opacity: .5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(location.search);
+  var tpId = params.get("touchpoint_id") || "tpt_1";
+  var tp = d.touchpoints.filter(function (t) { return t.touchpoint_id === tpId; })[0] || d.touchpoints[0];
+  var p = d.people.filter(function (x) { return x.person_id === tp.person_id; })[0];
+  var seq = d.sequences.filter(function (s) { return s.sequence_id === tp.sequence_id; })[0];
+  var plan = d.targetPlans.filter(function (pl) { return pl.target_plan_id === seq.target_plan_id; })[0];
+  var c = d.companies.filter(function (x) { return x.company_id === plan.company_id; })[0];
+  var member = plan.members.filter(function (m) { return m.person_id === tp.person_id; })[0];
+
+  // Local UI-only mapping of which Evidence justified this message's
+  // personalization — same evidence_id, no new object. See
+  // reach/SCREEN_CONTRACT.md.
+  var evidenceIdsByTouchpoint = { tpt_1: ["ev_1", "ev_2"], tpt_2: ["ev_2"] };
+  var evList = (evidenceIdsByTouchpoint[tp.touchpoint_id] || []).map(function (id) {
+    return d.evidence.filter(function (e) { return e.evidence_id === id; })[0];
+  });
+
+  var EPI_CLASS = { fact: "epi-fact", inference: "epi-inference", hypothesis: "epi-hypothesis", unknown: "epi-unknown" };
+  var EPI_GLYPH = { fact: "●", inference: "◐", hypothesis: "◇", unknown: "?" };
+
+  var isManualLinkedin = tp.channel === "linkedin_manual_task";
+
+  var messageDraft = isManualLinkedin
+    ? "Bonjour " + p.name.split(" ")[0] + ",\n\nJe vois que vous venez d'être promu(e) " + p.title + " — félicitations. " +
+      "Nous accompagnons des équipes Data/Platform sur la réplanification temps réel...\n\n[Brouillon — tâche manuelle, à personnaliser avant envoi via LinkedIn]"
+    : "Bonjour " + p.name.split(" ")[0] + ",\n\nEn tant que " + p.title + " chez " + c.name + ", je me permets de vous solliciter suite à " + tp.why_now.toLowerCase() + "...\n\n[Brouillon email]";
+
+  var evidenceHtml = evList.length
+    ? evList.map(function (e) {
+        return '<li><span class="badge ' + EPI_CLASS[e.claim_type] + '">' + EPI_GLYPH[e.claim_type] + " " + e.claim_type + "</span> " + e.statement +
+          ' <span class="source-badge">' + e.source + "</span></li>";
+      }).join("")
+    : "<li>Aucune preuve liée.</li>";
+
+  var ctaHtml = isManualLinkedin
+    ? '<button type="button" class="primary">Approuver</button>' +
+      '<button type="button">Modifier</button>' +
+      '<button type="button">Rejeter</button>' +
+      '<button type="button">Mettre en pause</button>' +
+      '<button type="button" disabled title="Aucun envoi LinkedIn automatique n’est simulé — cette action reste une tâche manuelle passée à l’opérateur.">Envoyer via LinkedIn</button>' +
+      '<button type="button">Marquer comme fait manuellement</button>'
+    : '<button type="button" class="primary">Approuver</button>' +
+      '<button type="button">Modifier</button>' +
+      '<button type="button">Rejeter</button>' +
+      '<button type="button">Mettre en pause</button>';
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Reach · ' + c.name + '</p><h1>Aperçu du message</h1>' +
+    '<p class="lede">' + p.name + " · " + p.title + ' <span class="badge human-decision-badge">\u{1F464} ' + member.stakeholder_role.replace("_", " ") + "</span></p></div>" +
+    '<div><a href="messages.html">← Messages</a></div>' +
+    "</div>" +
+    (isManualLinkedin ? '<div class="state-banner state-banner--blocked" role="status">⛔ Canal LinkedIn — aucun envoi automatique. Cette étape est une tâche manuelle avec passation.</div>' : "") +
+    '<div class="preview-layout">' +
+    '<div><h3>Message</h3><div class="message-body">' + messageDraft + "</div>" +
+    '<div class="cta-row">' + ctaHtml + "</div></div>" +
+    '<div><h3>Preuves utilisées pour la personnalisation</h3><ul class="evidence-list">' + evidenceHtml + "</ul>" +
+    '<p style="font-size:12px;color:var(--gtm-text-muted);">Why now : ' + tp.why_now + "</p></div>" +
+    "</div>";
+</script>
+</body>
+</html>
