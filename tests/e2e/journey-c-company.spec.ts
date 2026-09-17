@@ -23,7 +23,7 @@ test.describe("Journey C - company (authenticated)", () => {
   test.use({ storageState: STORAGE_STATE });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?legacy=1");
   });
 
   test("adding a company from the sector view opens the same generic skill-invoke drawer", async ({ page }) => {

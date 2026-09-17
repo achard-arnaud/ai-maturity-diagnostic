@@ -21,7 +21,7 @@ test.describe("Journey A - product/offer (authenticated)", () => {
   test.use({ storageState: STORAGE_STATE });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?legacy=1");
   });
 
   test("Offres tab exposes the Découvrir and Importer catalog forms", async ({ page }) => {

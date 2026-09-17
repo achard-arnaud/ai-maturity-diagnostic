@@ -35,6 +35,6 @@ export async function assertLoginRedirectWorks(page: Page) {
 
 /** Navigate to the control plane and switch to the given top-level nav tab. */
 export async function openTab(page: Page, tabName: string) {
-  await page.goto("/");
+  await page.goto("/?legacy=1");
   await page.getByRole("button", { name: tabName, exact: true }).click();
 }

@@ -108,7 +108,7 @@ class V09FrontendContractTests(unittest.TestCase):
         self.assertIn("/reassign", self.js)
 
     def test_blocker_actions_journal_view_is_wired(self) -> None:
-        self.assertIn('data-target="journal"', self.html)
+        self.assertIn('data-space="insights"', self.html)
         self.assertIn('id="journal" class="panel"', self.html)
         self.assertIn('id="blockerActionsFilterForm"', self.html)
         self.assertIn('id="blockerActionsStudyId"', self.html)

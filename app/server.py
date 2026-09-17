@@ -86,6 +86,8 @@ NETWORK_DATA_ROOT = ROOT / "data" / "private"
 _STATIC_FILES = {
     "/": "index.html",
     "/app.js": "app.js",
+    "/router.js": "router.js",
+    "/gtm-spaces.js": "gtm-spaces.js",
     "/styles.css": "styles.css",
     "/login.html": "login.html",
     "/vendor/mermaid.min.js": "vendor/mermaid.min.js",
@@ -194,6 +196,11 @@ def build_app(
     app.include_router(create_v1_reach_router(ROOT))
     app.include_router(create_v1_engagement_router(ROOT))
     app.include_router(create_v1_opportunity_router(ROOT))
+
+    @app.get("/w/{workspace_slug}/{space}", include_in_schema=False)
+    @app.get("/w/{workspace_slug}/{space}/{object_id}", include_in_schema=False)
+    async def gtm_deep_link(workspace_slug: str, space: str, object_id: str | None = None) -> Response:
+        return _static_response("index.html")
 
     # ------------------------------------------------------------------
     # Error handling parity with the old stdlib Handler (ADR-004/S1).

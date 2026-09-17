@@ -22,7 +22,7 @@ test.describe("Journey B - contact (authenticated)", () => {
   test.use({ storageState: STORAGE_STATE });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?legacy=1");
   });
 
   test("Ajouter un contact opens the generic skill-invoke drawer for network-contact-intake", async ({ page }) => {

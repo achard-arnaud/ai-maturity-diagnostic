@@ -12,8 +12,22 @@ class V06FrontendContractTests(unittest.TestCase):
         self.js = (ROOT / "app/frontend/app.js").read_text(encoding="utf-8")
 
     def test_primary_menus_exist(self) -> None:
-        for label in ("Demande", "Offres", "Qualification", "Nudging", "Suivi"):
+        for label in (
+            "Home",
+            "Discover",
+            "Research",
+            "Fit",
+            "Targets",
+            "Reach",
+            "Engagement",
+            "Pipeline",
+            "Insights",
+        ):
             self.assertIn(f">{label}<", self.html)
+        # The former v0.6 panels remain available through the one-release
+        # rollback path, but are no longer the primary information architecture.
+        for panel_id in ("demand", "offers", "qualification", "nudging", "backlog"):
+            self.assertIn(f'id="{panel_id}"', self.html)
 
     def test_demand_ctas_are_user_visible(self) -> None:
         for phrase in (
