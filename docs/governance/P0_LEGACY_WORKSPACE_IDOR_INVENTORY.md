@@ -210,16 +210,33 @@ stays the tenant-scoped path everywhere else in the module.
 
 - **P0-S01** — Category A (network_index IDOR): own-workspace/cross-
   workspace/unauthenticated tests written first (TDD), then the fix, per
-  route.
-- **P0-S02..S09** — Category B, one module per sprint (Demand,
+  route. **Done.**
+- **P0-S02..S08** — Category B, one module per sprint (Demand,
   Qualification, FollowUp+Heritage, Reach, Nudging, ValueChain, UcGraph),
   each: workspace-scoped construction wired in, shared-reference-path
   exception applied where found, existing tests re-verified green (proves
   the default-workspace behavior is unchanged byte-for-byte), new
-  cross-workspace-isolation tests added.
+  cross-workspace-isolation tests added. **Done** (S02 Demand, S03
+  Qualification, S04 FollowUp+Heritage, S05 Reach, S06 Nudging, S07
+  ValueChain, S08 UcGraph — all 8 modules covered across 7 sprints).
 - Each sprint: tests -> `scripts/check_release.py` green -> commit -> merge
   toward `dev`. P0 as a whole -> NRT -> `dev -> main`, per the program's
   own delivery discipline.
+
+### Closeout (P0-S09 / NRT)
+
+All 7 Category A routes and all 8 Category B modules are wired to the
+workspace-isolation invariant. Full-suite regression run and
+`scripts/check_release.py` were re-verified green after every sprint
+(1198 tests passing as of the last Category B sprint, 0 release errors),
+confirming default-workspace ("default"/admin-global) behavior is
+unchanged for every pre-existing test while every new cross-workspace
+test proves isolation for a real, non-default workspace. Category C
+(no workspace concept, or a documented deferred gap -- `catalog_promotion.py`'s
+own gap) is intentionally untouched, and the OIDC exact-return-URL gap
+(§7) remains assigned to E19. P0 is content-complete for the scope this
+program authorized; remaining steps are the epic-level PR/CI/merge
+sequence (`dev -> main`), not further code changes.
 
 ## 7. OIDC exact-return-URL gap
 
