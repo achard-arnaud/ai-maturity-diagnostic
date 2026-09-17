@@ -891,6 +891,67 @@ class ServerV07Tests(unittest.TestCase):
         )
         self.assertEqual(401, status)
 
+    def test_demand_route_scopes_non_default_workspace_and_shares_taxonomy(self) -> None:
+        # P0 Category B: a caller whose membership is a real, non-"default"
+        # workspace must be served DemandCatalog.for_workspace(...) --
+        # isolated tenant data, but still the shared ICB taxonomy -- instead
+        # of always silently reading the "default"/mono-root singleton's
+        # data regardless of who is asking.
+        import yaml as _yaml
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            (repo_root / "data" / "taxonomies").mkdir(parents=True)
+            (repo_root / "data" / "taxonomies" / "icb_v5_2026.yaml").write_text(
+                _yaml.safe_dump(
+                    {
+                        "industries": [
+                            {
+                                "code": "30",
+                                "name": "Financials",
+                                "supersectors": [
+                                    {"code": "3010", "name": "Banks", "sectors": [{"code": "301010", "name": "Banks"}]}
+                                ],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            acme_network = repo_root / "workspaces" / "acme-ws" / "data" / "private" / "network"
+            acme_network.mkdir(parents=True)
+            (acme_network / "companies.jsonl").write_text(
+                json.dumps({"company_id": "C1", "canonical_name": "Acme Bank"}) + "\n", encoding="utf-8"
+            )
+            (acme_network / "company_icb_mappings.jsonl").write_text(
+                json.dumps(
+                    {"company_id": "C1", "mapping_status": "validated", "confidence": "high", "sector": {"code": "301010"}}
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            non_admin = RequestContext(
+                user_id="u2", email="plain@b.com", is_admin=False, role="standard_user", workspace_id="acme-ws"
+            )
+            server_module.APP.dependency_overrides[get_current_user] = lambda: non_admin
+            with patch.object(server_module, "ROOT", repo_root):
+                status, data, _ = self.request("GET", "/api/demand")
+                self.assertEqual(200, status)
+                self.assertEqual({s["sector_code"] for s in data["sectors"]}, {"301010"})
+                self.assertEqual(data["sectors"][0]["mapped_company_count"], 1)
+
+                other = RequestContext(
+                    user_id="u3", email="other@b.com", is_admin=False, role="standard_user", workspace_id="other-ws"
+                )
+                server_module.APP.dependency_overrides[get_current_user] = lambda: other
+                status, data, _ = self.request("GET", "/api/demand")
+                self.assertEqual(200, status)
+                # Same shared taxonomy, but zero mapped companies -- other-ws
+                # never sees acme-ws's tenant data.
+                self.assertEqual({s["sector_code"] for s in data["sectors"]}, {"301010"})
+                self.assertEqual(data["sectors"][0]["mapped_company_count"], 0)
+
     def test_blocker_actions_route_returns_list_and_requires_auth(self) -> None:
         status, data, _ = self.request("GET", "/api/blocker-actions")
         self.assertEqual(200, status)

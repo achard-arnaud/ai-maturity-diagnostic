@@ -178,5 +178,88 @@ class CreateDemandProfileTests(unittest.TestCase):
                 )
 
 
+class DemandCatalogForWorkspaceTests(unittest.TestCase):
+    """P0 Category B: for_workspace must isolate tenant data (studies,
+    companies, mappings) per workspace while still sharing the read-only
+    ICB taxonomy from the un-scoped repo root (ADR-008 shared-core
+    principle, see docs/governance/P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md
+    §3a/§5)."""
+
+    def test_default_workspace_resolves_to_repo_root_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            catalog = DemandCatalog.for_workspace("default", repo_root=repo_root)
+            self.assertEqual(catalog.root, repo_root)
+            self.assertEqual(catalog.repo_root, repo_root)
+
+    def test_non_default_workspace_isolates_tenant_data_but_shares_taxonomy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            dump_yaml(
+                repo_root / "data/taxonomies/icb_v5_2026.yaml",
+                {
+                    "industries": [
+                        {
+                            "code": "30",
+                            "name": "Financials",
+                            "supersectors": [
+                                {"code": "3010", "name": "Banks", "sectors": [{"code": "301010", "name": "Banks"}]}
+                            ],
+                        }
+                    ]
+                },
+            )
+
+            acme = DemandCatalog.for_workspace("acme-ws", repo_root=repo_root)
+            other = DemandCatalog.for_workspace("other-ws", repo_root=repo_root)
+            self.assertNotEqual(acme.root, other.root)
+            self.assertEqual(acme.root, repo_root / "workspaces" / "acme-ws")
+
+            # Both workspaces see the same shared taxonomy...
+            acme_sectors = acme.snapshot(as_of=date(2026, 8, 7))["sectors"]
+            other_sectors = other.snapshot(as_of=date(2026, 8, 7))["sectors"]
+            self.assertEqual({s["sector_code"] for s in acme_sectors}, {"301010"})
+            self.assertEqual({s["sector_code"] for s in other_sectors}, {"301010"})
+
+            # ...but tenant data (companies/mappings) is fully isolated.
+            dump_jsonl(
+                acme.root / "data/private/network/companies.jsonl",
+                [{"company_id": "C1", "canonical_name": "Acme Bank"}],
+            )
+            dump_jsonl(
+                acme.root / "data/private/network/company_icb_mappings.jsonl",
+                [{"company_id": "C1", "mapping_status": "validated", "confidence": "high", "sector": {"code": "301010"}}],
+            )
+            acme_sectors = acme.snapshot(as_of=date(2026, 8, 7))["sectors"]
+            other_sectors = other.snapshot(as_of=date(2026, 8, 7))["sectors"]
+            self.assertEqual(acme_sectors[0]["mapped_company_count"], 1)
+            self.assertEqual(other_sectors[0]["mapped_company_count"], 0)
+
+    def test_non_default_workspace_taxonomy_still_resolves_when_workspace_dir_has_none(self) -> None:
+        # Regression guard for the exact gap flagged in the inventory doc:
+        # a fresh, empty workspaces/<id>/ directory has no data/taxonomies/
+        # of its own -- the shared-root fallback must still find it.
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp)
+            dump_yaml(
+                repo_root / "data/taxonomies/icb_v5_2026.yaml",
+                {
+                    "industries": [
+                        {
+                            "code": "30",
+                            "name": "Financials",
+                            "supersectors": [
+                                {"code": "3010", "name": "Banks", "sectors": [{"code": "301010", "name": "Banks"}]}
+                            ],
+                        }
+                    ]
+                },
+            )
+            catalog = DemandCatalog.for_workspace("fresh-ws", repo_root=repo_root)
+            self.assertFalse((catalog.root / "data" / "taxonomies").exists())
+            snapshot = catalog.snapshot(as_of=date(2026, 8, 7))
+            self.assertEqual(snapshot["sector_count"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

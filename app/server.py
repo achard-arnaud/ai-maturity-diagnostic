@@ -62,6 +62,7 @@ from app.reach import ReachMatchmaker
 from app.uc_graph import UseCaseGraph
 from app.value_chain import ValueChainCatalog
 from app.workflows import WorkflowPlanner
+from app.workspace_paths import DEFAULT_WORKSPACE_ID
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "app" / "frontend"
@@ -83,6 +84,25 @@ BLOCKER_ACTIONS = BlockerActionLog(ROOT)
 # scripts/rebuild_network_index.py, not on every request.
 NETWORK_INDEX_PATH = ROOT / "data" / "private" / "network" / "network_index.sqlite"
 NETWORK_DATA_ROOT = ROOT / "data" / "private"
+
+
+def _workspace_id_for(ctx: RequestContext) -> str:
+    """Concrete workspace_id a Category B domain module (ADR-007 §5) should
+    be constructed against for this request. A context with no fixed
+    membership (ctx.workspace_id is None -- an admin/global caller) resolves
+    to the "default" workspace: WorkspacePaths.root()'s own definition of
+    today's legacy mono-root, so this is byte-identical to the hardcoded
+    Class(ROOT) singletons below for every caller until a route actually
+    switches over to a per-request-scoped instance.
+    See docs/governance/P0_LEGACY_WORKSPACE_IDOR_INVENTORY.md §3."""
+    return ctx.workspace_id or DEFAULT_WORKSPACE_ID
+
+
+def _demand_for(ctx: RequestContext) -> DemandCatalog:
+    workspace_id = _workspace_id_for(ctx)
+    if workspace_id == DEFAULT_WORKSPACE_ID:
+        return DEMAND
+    return DemandCatalog.for_workspace(workspace_id, repo_root=ROOT)
 
 # Routes open to unauthenticated callers: the health probe (used by
 # uptime/ops checks that have no session) and the static SPA shell/login
@@ -322,11 +342,11 @@ def build_app(
 
     @app.get("/api/demand")
     async def api_demand(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return DEMAND.snapshot()
+        return _demand_for(ctx).snapshot()
 
     @app.get("/api/demand/inventories")
     async def api_demand_inventories(ctx: RequestContext = Depends(get_current_user)) -> Any:
-        return DEMAND.inventories()
+        return _demand_for(ctx).inventories()
 
     # Demand-profile intake (M2): writes a schema-conformant
     # 05_enterprise_demand_profile.yaml from the minimum a human can type,
@@ -337,7 +357,7 @@ def build_app(
     async def api_demand_intake(
         payload: dict[str, Any] = Depends(_json_body), ctx: RequestContext = Depends(get_current_user)
     ) -> Any:
-        result = DEMAND.create_demand_profile(
+        result = _demand_for(ctx).create_demand_profile(
             company=str(payload.get("company") or ""),
             problem_statement=str(payload.get("problem_statement") or ""),
             company_id=payload.get("company_id"),
