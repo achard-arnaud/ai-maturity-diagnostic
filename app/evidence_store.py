@@ -60,3 +60,14 @@ def get_evidence(root: Path, workspace_id: str, evidence_id: str) -> dict[str, A
         if record["evidence_id"] == evidence_id:
             return record
     raise EvidenceNotFound(f"evidence {evidence_id} not found in workspace {workspace_id}")
+
+
+def find_by_hash(root: Path, workspace_id: str, content_hash: str) -> dict[str, Any] | None:
+    """The existing evidence record with this excerpt hash, if any (Epic 14
+    S05: a repeated acquisition for the same ResearchCase must not create a
+    second evidence record for the same underlying observation)."""
+    store = ArtifactStore(root)
+    for record in _read_all(store, workspace_id):
+        if record["hash"] == content_hash:
+            return record
+    return None

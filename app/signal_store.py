@@ -95,3 +95,14 @@ def get_signal(root: Path, workspace_id: str, signal_id: str) -> dict[str, Any]:
         if record["signal_id"] == signal_id:
             return record
     raise SignalNotFound(f"signal {signal_id} not found in workspace {workspace_id}")
+
+
+def find_by_dedup_key(root: Path, workspace_id: str, dedup_key: str) -> dict[str, Any] | None:
+    """The existing signal with this dedup_key, if any (Epic 14 S04: a
+    harvest must not create a second signal for the same underlying
+    observation it, or an earlier run, already recorded)."""
+    store = ArtifactStore(root)
+    for record in _read_all(store, workspace_id):
+        if record["dedup_key"] == dedup_key:
+            return record
+    return None
