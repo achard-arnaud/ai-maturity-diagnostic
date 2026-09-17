@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Artifact Library — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .view-toggle { display: flex; gap: var(--gtm-space-1); }
+  .view-toggle button[aria-pressed="true"] { background: var(--gtm-accent); color: var(--gtm-accent-contrast); border-color: var(--gtm-accent); }
+  .artifact-list-row { display: flex; align-items: center; gap: var(--gtm-space-3); padding: var(--gtm-space-2) var(--gtm-space-3); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-surface); margin-bottom: var(--gtm-space-2); cursor: pointer; }
+  .artifact-list-row .title { flex: 1; }
+  .preview-panel { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-4); background: var(--gtm-surface); margin-top: var(--gtm-space-4); }
+  .preview-panel h4 { margin-top: var(--gtm-space-4); margin-bottom: var(--gtm-space-1); font-size: 13px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  button[disabled] { opacity: .55; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("admin", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function companyName(id) {
+    var c = d.companies.filter(function (x) { return x.company_id === id; })[0];
+    return c ? c.name : id;
+  }
+
+  var TYPE_LABEL = { research_note: "Research note", fit_export: "Fit export" };
+
+  function relatedObjects(a) {
+    var related = [];
+    if (a.type === "research_note") {
+      var rc = d.researchCases.filter(function (r) { return r.company_id === a.company_id; })[0];
+      if (rc) related.push({ label: "Research case " + rc.research_case_id, href: "../research/index.html?company_id=" + a.company_id });
+    }
+    if (a.type === "fit_export") {
+      var fit = d.fitAssessments.filter(function (f) { return f.company_id === a.company_id; })[0];
+      if (fit) related.push({ label: "Fit " + fit.fit_id, href: "../fit/index.html?fit_id=" + fit.fit_id });
+    }
+    related.push({ label: companyName(a.company_id), href: "../discover/index.html" });
+    return related;
+  }
+
+  function rowHtml(a) {
+    return (
+      '<div class="artifact-list-row" data-artifact-id="' + a.artifact_id + '">' +
+      '<span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + (TYPE_LABEL[a.type] || a.type) + "</span>" +
+      '<span class="title">' + a.title + "</span>" +
+      '<span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + companyName(a.company_id) + "</span>" +
+      '<span class="version-badge badge">v' + a.version + "</span>" +
+      '<span style="font-size:12px;color:var(--gtm-text-muted);">' + a.updated_at + "</span>" +
+      "</div>"
+    );
+  }
+
+  function cardHtml(a) {
+    return (
+      '<article class="card" data-artifact-id="' + a.artifact_id + '" style="cursor:pointer;"><p class="eyebrow">' + (TYPE_LABEL[a.type] || a.type) + "</p><h3>" + a.title + "</h3>" +
+      '<div class="meta"><span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + companyName(a.company_id) + '</span><span class="version-badge badge">v' + a.version + "</span></div>" +
+      '<p style="font-size:12px;color:var(--gtm-text-muted);margin-top:8px;">Auteur : ' + a.author + " · " + a.updated_at + "</p></article>"
+    );
+  }
+
+  function renderList() {
+    var isGrid = document.getElementById("viewGrid").getAttribute("aria-pressed") === "true";
+    var container = document.getElementById("artifactContainer");
+    if (isGrid) {
+      container.className = "grid";
+      container.innerHTML = d.artifacts.map(cardHtml).join("");
+    } else {
+      container.className = "";
+      container.innerHTML = d.artifacts.map(rowHtml).join("");
+    }
+    container.querySelectorAll("[data-artifact-id]").forEach(function (el) {
+      el.addEventListener("click", function () { showPreview(el.getAttribute("data-artifact-id")); });
+    });
+  }
+
+  function showPreview(id) {
+    var a = d.artifacts.filter(function (x) { return x.artifact_id === id; })[0];
+    if (!a) return;
+    var related = relatedObjects(a)
+      .map(function (r) { return '<li><a href="' + r.href + '">' + r.label + "</a></li>"; })
+      .join("");
+    document.getElementById("previewPanel").innerHTML =
+      '<p class="eyebrow">' + (TYPE_LABEL[a.type] || a.type) + "</p><h3 style=\"margin-top:0;\">" + a.title + "</h3>" +
+      '<div class="meta"><span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + companyName(a.company_id) + '</span><span class="version-badge badge">v' + a.version + '</span><span class="human-decision-badge badge">&#x1F464; ' + a.author + "</span></div>" +
+      '<h4>Aperçu</h4><div class="empty-state">Aperçu de contenu non implémenté en V1 — placeholder conceptuel (aucune logique de rendu/stockage inventée).</div>' +
+      '<h4>Historique de versions</h4><ul><li>v' + a.version + " — " + a.updated_at + " (actuelle)</li>" + (a.version > 1 ? "<li>v" + (a.version - 1) + " — version antérieure (non chargée en V1)</li>" : "") + "</ul>" +
+      '<h4>Objets liés</h4><ul>' + related + "</ul>" +
+      '<h4>Actions</h4>' +
+      '<button type="button" disabled title="Édition non implémentée — aucune capacité d’édition d’artefact côté produit réel (cf. CRUD_SEARCH_ARTIFACT_GAP.md)">Éditer</button> ' +
+      '<button type="button" disabled title="Export non implémenté — voir prototypes/antigravity/gtm-v1/export/ pour le flux UX conceptuel">Exporter</button>';
+  }
+
+  var typeOptions = Array.from(new Set(d.artifacts.map(function (a) { return a.type; })))
+    .map(function (t) { return '<option value="' + t + '">' + (TYPE_LABEL[t] || t) + "</option>"; })
+    .join("");
+  var companyOptions = d.companies.map(function (c) { return '<option value="' + c.company_id + '">' + c.name + "</option>"; }).join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Admin · Artifact / Output Library</p><h1>Bibliothèque d’outputs (placeholder V1)</h1>' +
+    '<p class="lede">Exploration conceptuelle — Epic pas encore accepté, aucune logique de stockage/recherche réelle n’est inventée ici (cf. CRUD_SEARCH_ARTIFACT_GAP.md).</p></div>' +
+    '<div><a href="index.html">&larr; Retour Admin</a></div>' +
+    "</div>" +
+    '<div class="toolbar">' +
+    '<input type="search" placeholder="Recherche globale (titre, contenu…)" aria-label="Recherche globale" disabled title="Recherche plein texte non implémentée côté produit réel">' +
+    '<select aria-label="Filtre type"><option>Tous types</option>' + typeOptions + "</select>" +
+    '<select aria-label="Filtre compte"><option>Tous comptes</option>' + companyOptions + "</select>" +
+    '<select aria-label="Filtre workflow" disabled title="Pas de champ workflow sur Artifact en V1"><option>Tous workflows</option></select>' +
+    '<select aria-label="Filtre auteur/agent"><option>Tous auteurs</option><option>alex@internal</option><option>system</option></select>' +
+    '<select aria-label="Filtre statut" disabled title="Pas de champ statut sur Artifact en V1"><option>Tous statuts</option></select>' +
+    '<input type="date" aria-label="Filtre date" disabled title="Filtre date non branché en V1">' +
+    '<span class="view-toggle" role="group" aria-label="Vue">' +
+    '<button type="button" id="viewList" aria-pressed="true">Liste</button>' +
+    '<button type="button" id="viewGrid" aria-pressed="false">Grille</button>' +
+    "</span>" +
+    "</div>" +
+    '<div id="artifactContainer"></div>' +
+    '<div class="preview-panel" id="previewPanel"><p style="color:var(--gtm-text-muted);">Sélectionnez un artefact pour l’aperçu, l’historique de versions et les objets liés.</p></div>' +
+    '<p style="margin-top:var(--gtm-space-4);font-size:13px;color:var(--gtm-text-muted);">Les filtres grisés ci-dessus n’ont pas de champ correspondant sur `Artifact` dans `shared/mock-data.js` — non implémentés plutôt que simulés silencieusement, cf. SCREEN_CONTRACT.md DECISION_REQUIRED #3.</p>';
+
+  document.getElementById("viewList").addEventListener("click", function () {
+    document.getElementById("viewList").setAttribute("aria-pressed", "true");
+    document.getElementById("viewGrid").setAttribute("aria-pressed", "false");
+    renderList();
+  });
+  document.getElementById("viewGrid").addEventListener("click", function () {
+    document.getElementById("viewGrid").setAttribute("aria-pressed", "true");
+    document.getElementById("viewList").setAttribute("aria-pressed", "false");
+    renderList();
+  });
+  renderList();
+</script>
+</body>
+</html>

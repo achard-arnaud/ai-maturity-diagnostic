@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Messages — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+
+  var CHANNEL_LABEL = { email: "Email", linkedin_manual_task: "Tâche manuelle LinkedIn" };
+
+  var rows = d.touchpoints.map(function (tp) {
+    var p = person(tp.person_id);
+    return "<tr><td>Étape " + tp.step + "</td><td>" + CHANNEL_LABEL[tp.channel] + "</td><td>" + p.name + "</td>" +
+      "<td>" + tp.why_now + "</td>" +
+      '<td><a href="message-preview.html?touchpoint_id=' + tp.touchpoint_id + '">aperçu →</a></td></tr>';
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Messages / Templates</h1>' +
+    '<p class="lede">Un aperçu montre toujours les preuves utilisées pour la personnalisation — jamais un texte généré sans traçabilité.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html">Sequences</a>' +
+    '<a href="messages.html" aria-current="page">Messages</a><a href="tasks.html">Tasks</a><a href="calls.html">Calls</a>' +
+    '<a href="meetings.html">Meetings</a><a href="history.html">Touchpoint history</a></div>' +
+    '<table class="data-table"><thead><tr><th>Étape</th><th>Canal</th><th>Destinataire</th><th>Why now</th><th></th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fit — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script src="../research/research-mock-extend.js"></script>
+<script src="fit-mock-extend.js"></script>
+<script>
+(function () {
+  "use strict";
+  GtmProtoShell.render("fit", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var STATUS_META = {
+    pending_review: { label: "Pending review", cls: "epi-inference", glyph: "◐" },
+    blocked: { label: "Blocked (hard gate)", cls: "blocker-badge", glyph: "⛔" },
+    stale: { label: "Stale", cls: "freshness-stale", glyph: "⟳" },
+    needs_human_review: { label: "Needs human review", cls: "epi-hypothesis", glyph: "◇" },
+    approved: { label: "Approved", cls: "human-decision-badge", glyph: "\u{1F464}" },
+    declined: { label: "Declined", cls: "human-decision-badge", glyph: "\u{1F464}" },
+  };
+
+  function companyName(id) { var c = d.companies.filter(function (x) { return x.company_id === id; })[0]; return c ? c.name : id; }
+  function demandById(id) { return d.demands.filter(function (x) { return x.demand_id === id; })[0]; }
+  function productName(id) { var p = d.products.filter(function (x) { return x.product_id === id; })[0]; return p ? p.name : id; }
+
+  function statusBadge(status) {
+    var m = STATUS_META[status] || { label: status, cls: "epi-unknown", glyph: "?" };
+    return '<span class="badge ' + m.cls + '">' + m.glyph + " " + m.label + "</span>";
+  }
+
+  var companyOptions = d.companies.map(function (c) { return '<option value="' + c.company_id + '">' + c.name + "</option>"; }).join("");
+  var productOptions = d.products.map(function (p) { return '<option value="' + p.product_id + '">' + p.name + "</option>"; }).join("");
+  var statusOptions = Object.keys(STATUS_META).map(function (s) { return '<option value="' + s + '">' + STATUS_META[s].label + "</option>"; }).join("");
+  var freshnessOptions = ["fresh", "aging", "stale"].map(function (f) { return '<option value="' + f + '">' + f + "</option>"; }).join("");
+
+  function buildRows(filter) {
+    return d.fitAssessments
+      .filter(function (f) {
+        if (filter.company && f.company_id !== filter.company) return false;
+        if (filter.product && f.product_id !== filter.product) return false;
+        if (filter.status && f.status !== filter.status) return false;
+        if (filter.freshness && f.freshness !== filter.freshness) return false;
+        return true;
+      })
+      .map(function (f) {
+        var dm = demandById(f.demand_id);
+        return (
+          "<tr><td>" + companyName(f.company_id) + "</td>" +
+          "<td>" + (dm ? dm.problem : f.demand_id) + "</td>" +
+          "<td>" + productName(f.product_id) + '<span class="badge version-badge">v# ' + f.version + "</span></td>" +
+          "<td>" + f.overall_decision + "</td>" +
+          "<td>" + statusBadge(f.status) + "</td>" +
+          '<td><span class="badge freshness-' + f.freshness + '">⟳ ' + f.freshness + "</span></td>" +
+          "<td><a href=\"detail.html?fit_id=" + f.fit_id + "\">Ouvrir →</a></td></tr>"
+        );
+      })
+      .join("");
+  }
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    "<div><p class=\"eyebrow\">Fit</p><h1>Cette Demand mérite-t-elle une proposition ?</h1>" +
+    '<p class="lede">Un score peut exister comme résumé mais ne domine jamais l’explication qualitative.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a> · <a href="products.html">Product Library →</a></div>' +
+    "</div>" +
+    '<div class="toolbar">' +
+    '<select id="fCompany" aria-label="Filtre compte"><option value="">Tous comptes</option>' + companyOptions + "</select>" +
+    '<select id="fProduct" aria-label="Filtre produit"><option value="">Tous produits</option>' + productOptions + "</select>" +
+    '<select id="fStatus" aria-label="Filtre décision/statut"><option value="">Tous statuts</option>' + statusOptions + "</select>" +
+    '<select id="fFreshness" aria-label="Filtre fraîcheur"><option value="">Toute fraîcheur</option>' + freshnessOptions + "</select>" +
+    "</div>" +
+    '<table class="data-table" id="fitTable"><thead><tr><th>Compte</th><th>Demand</th><th>Product · Snapshot</th><th>Décision (résumé)</th><th>Statut</th><th>Fraîcheur</th><th>Action</th></tr></thead>' +
+    '<tbody id="fitRows">' + buildRows({}) + "</tbody></table>";
+
+  function refresh() {
+    var filter = {
+      company: document.getElementById("fCompany").value,
+      product: document.getElementById("fProduct").value,
+      status: document.getElementById("fStatus").value,
+      freshness: document.getElementById("fFreshness").value,
+    };
+    var rowsHtml = buildRows(filter);
+    document.getElementById("fitRows").innerHTML = rowsHtml || '<tr><td colspan="7"><div class="empty-state">Aucune assessment ne correspond à ce filtre.</div></td></tr>';
+  }
+  ["fCompany", "fProduct", "fStatus", "fFreshness"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", refresh);
+  });
+})();
+</script>
+</body>
+</html>

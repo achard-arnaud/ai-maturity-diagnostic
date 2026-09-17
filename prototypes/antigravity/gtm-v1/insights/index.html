@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insights — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .boundary-banner { display: flex; align-items: center; gap: var(--gtm-space-2); padding: var(--gtm-space-2) var(--gtm-space-3); border: 1px solid var(--gtm-accent); border-radius: var(--gtm-radius-sm); background: color-mix(in srgb, var(--gtm-accent) 8%, transparent); margin-bottom: var(--gtm-space-4); font-size: 13px; }
+  .metric-tile h3 { font-size: 26px; margin: var(--gtm-space-1) 0 2px; }
+  .metric-tile .metric-sub { color: var(--gtm-text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("insights", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function tile(eyebrow, headline, sub, extraBadge) {
+    return (
+      '<article class="card metric-tile"><p class="eyebrow">' + eyebrow + '</p>' +
+      '<h3>' + headline + '</h3>' +
+      '<p class="metric-sub">' + sub + '</p>' +
+      '<div class="meta"><span class="badge epi-inference">&#x25D0; projection</span>' + (extraBadge || "") + '</div></article>'
+    );
+  }
+
+  // All figures below are client-computed from shared/mock-data.js's small
+  // fixture set for illustration only — not real insights_metrics.py output.
+  // See SCREEN_CONTRACT.md DECISION_REQUIRED #1.
+  var funnelSection =
+    tile("Funnel", d.companies.length + " comptes suivis", d.researchCases.length + " research en cours · " + d.fitAssessments.length + " Fit en cours") +
+    tile("Funnel — conversion", "Discover → Fit : illustratif", "Volume mock insuffisant pour un vrai taux (cf. DECISION_REQUIRED #3)");
+
+  var fitSection =
+    tile("Fit quality", (d.fitAssessments.filter(function (f) { return f.hard_gates_passed; }).length) + "/" + d.fitAssessments.length + " Fit avec hard gates passés", "Need coverage moyen : " + d.fitAssessments[0].need_coverage) +
+    tile("Fit performance", d.fitAssessments.filter(function (f) { return f.status === "pending_review"; }).length + " en attente de revue humaine", "Jamais transformé en vérité tant qu'un humain n'a pas décidé", '<span class="human-decision-badge badge">&#x1F464; décision requise</span>');
+
+  var outreachSection =
+    tile("Outreach activity", d.sequences.length + " séquence(s) active(s)", d.touchpoints.length + " touchpoints planifiés/en attente") +
+    tile("Outreach — approbations", d.touchpoints.filter(function (t) { return t.status === "pending_approval"; }).length + " en attente d'approbation manuelle", "Aucun envoi automatique sans validation, cf. SHELL_CONTRACT §5");
+
+  var engagementSection =
+    tile("Engagement", d.engagementEvents.length + " événement(s) enregistré(s)", "Dernier : " + d.engagementEvents[0].kind + " (" + d.engagementEvents[0].sentiment + ")");
+
+  var sourcesSection =
+    tile("Sources", Array.from(new Set(d.signals.map(function (s) { return s.source; }))).length + " sources de signal distinctes", Array.from(new Set(d.signals.map(function (s) { return s.source; }))).join(" · "));
+
+  var productSection =
+    tile("Product performance", d.products.length + " produit(s) évalué(s)", "Snapshot en vigueur : " + d.productSnapshots[0].version + " (immuable)", '<span class="version-badge badge">v' + d.productSnapshots[0].version + '</span>');
+
+  var costSection =
+    tile("Coût / rate-limit (projection métier)", "Illustratif — pas de connexion à BudgetLedger", "Distinct de l'observabilité opérationnelle (E20, pas encore construite) — cf. OPERATIONS_OBSERVABILITY_GAP.md §5");
+
+  var learningCount = 3; // page-local illustrative count, see learning-proposals.html
+
+  function section(title, html) {
+    return '<div class="drawer-section"><h4>' + title + '</h4><div class="grid">' + html + '</div></div>';
+  }
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Insights</p><h1>Métriques &amp; projections GTM</h1>' +
+    '<p class="lede">Comment le moteur GTM performe — jamais la vérité sur un compte, un Fit ou une opportunité individuelle.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    '</div>' +
+    '<div class="boundary-banner"><span aria-hidden="true">&#x25D0;</span> Toute tuile de cette page est une <strong>métrique / projection</strong> (badge &laquo;&nbsp;Inférence&nbsp;&raquo;) — jamais une vérité métier. Pour la vérité (Fit décidé, Opportunity réelle…), ouvrez l&rsquo;écran propriétaire.</div>' +
+    section("Funnel", funnelSection) +
+    section("Fit quality / performance", fitSection) +
+    section("Outreach activity", outreachSection) +
+    section("Engagement", engagementSection) +
+    section("Sources", sourcesSection) +
+    section("Product performance", productSection) +
+    section("Cost / rate-limit usage", costSection) +
+    '<div class="drawer-section"><h4>Learning proposals</h4>' +
+    '<div class="grid">' + tile("Learning proposals", learningCount + " proposition(s) en attente", "Revue humaine avec décision auditée — pas une simple métrique") + '</div>' +
+    '<div style="margin-top:8px;"><a href="learning-proposals.html">Ouvrir la file de revue →</a></div></div>' +
+    '<p style="margin-top:var(--gtm-space-5);font-size:13px;color:var(--gtm-text-muted);">Pour la santé opérationnelle du système (erreurs, runs, budget réel), voir <a href="../admin/index.html">Admin / Automation</a> — un espace distinct, jamais fusionné ici.</p>';
+</script>
+</body>
+</html>

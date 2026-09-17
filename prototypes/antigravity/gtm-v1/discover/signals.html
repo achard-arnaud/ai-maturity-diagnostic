@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover · Signals — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("discover", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  function companyName(id) {
+    var c = d.companies.filter(function (x) { return x.company_id === id; })[0];
+    return c ? c.name : id;
+  }
+
+  var rows = d.signals.map(function (s) {
+    var statusBadge = { new: "epi-hypothesis", reviewed: "epi-fact", rejected: "epi-unknown", expired: "epi-unknown" }[s.status] || "epi-unknown";
+    return "<tr><td>" + s.kind.replace("_", " ") + "</td><td>" + s.summary + "</td><td>" + companyName(s.company_id) +
+      '</td><td><span class="badge freshness-' + s.freshness + '">' + s.observed_at + "</span></td>" +
+      '<td><span class="badge ' + statusBadge + '">' + s.status + "</span></td>" +
+      '<td><span class="source-badge">' + s.source + "</span></td>" +
+      '<td><button type="button">queue research</button></td></tr>';
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Discover</p><h1>Signals</h1>' +
+    '<p class="lede">Job changes · Hiring · Funding · News · Custom — un signal reste une observation, jamais une preuve de besoin.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Discover Home</a><a href="people.html">People</a>' +
+    '<a href="companies.html">Companies</a><a href="signals.html" aria-current="page">Signals</a><a href="lists.html">Lists</a></div>' +
+    '<table class="data-table"><thead><tr><th>Type</th><th>Résumé</th><th>Compte</th><th>Observé</th><th>Statut</th><th>Source</th><th>Action</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

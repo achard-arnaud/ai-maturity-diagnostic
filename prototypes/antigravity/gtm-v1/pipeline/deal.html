@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline · Deal — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .deal-steps { display: flex; gap: var(--gtm-space-2); margin: var(--gtm-space-3) 0; }
+  .deal-steps span { padding: var(--gtm-space-1) var(--gtm-space-3); border: 1px solid var(--gtm-border); border-radius: 999px; font-size: 12px; color: var(--gtm-text-muted); }
+  .deal-steps span.current { border-color: var(--gtm-accent); color: var(--gtm-accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("pipeline", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(location.search);
+  var dealId = params.get("deal_id") || "deal_acme_1";
+  var deal = d.deals.filter(function (x) { return x.deal_id === dealId; })[0] || d.deals[0];
+  var opp = d.opportunities.filter(function (o) { return o.opportunity_id === deal.opportunity_id; })[0];
+  var c = d.companies.filter(function (x) { return x.company_id === opp.company_id; })[0];
+
+  var STEPS = ["proposal", "negotiation", "decision"];
+
+  var stepsHtml = STEPS.map(function (s) {
+    return '<span class="' + (s === deal.stage ? "current" : "") + '">' + s + "</span>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Pipeline · Deal</p><h1>' + c.name + "</h1>" +
+    '<p class="lede">Présentation simple proposal / negotiation / decision — pas de CPQ, le backend n’en a pas.</p></div>' +
+    '<div><a href="deals.html">← Deals</a></div>' +
+    "</div>" +
+    '<div class="deal-steps">' + stepsHtml + "</div>" +
+    '<div class="card" style="max-width:480px;">' +
+    "<h3>Statut</h3>" +
+    '<p style="font-size:14px;">Stage actuel : <span class="badge epi-fact">' + deal.stage + "</span></p>" +
+    '<p style="font-size:14px;">Valeur associée : ' + opp.value + "</p>" +
+    '<p style="font-size:14px;">Outcome : ' + (deal.outcome || "en cours — pas encore décidé") + "</p>" +
+    '<div style="margin-top:8px;"><a href="opportunity.html?opportunity_id=' + opp.opportunity_id + '">Voir l’Opportunity liée →</a></div>' +
+    "</div>";
+</script>
+</body>
+</html>

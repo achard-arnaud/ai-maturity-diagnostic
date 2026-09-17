@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engagement — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("engagement", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  // Local, additive demo instances of the same canonical EngagementEvent
+  // shape (shared/mock-data.js only has one: eng_1). These reuse existing
+  // ids (sequence_id/person_id already in the shared mock) so the account
+  // story stays coherent; they are NOT written back to shared/mock-data.js
+  // (isolation rule — this prototype only edits engagement/**). See
+  // engagement/SCREEN_CONTRACT.md DECISION_REQUIRED #1.
+  var demoEvents = d.engagementEvents.concat([
+    { engagement_id: "eng_2", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "meeting_booked", occurred_at: "2026-09-19T10:00:00", sentiment: "positive" },
+    { engagement_id: "eng_3", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "objection", occurred_at: "2026-09-17T16:30:00", sentiment: "negative", note: "Budget déjà alloué pour cette année" },
+    { engagement_id: "eng_4", sequence_id: "seq_acme_1", person_id: "pe_claire", kind: "unsubscribed", occurred_at: "2026-09-16T09:00:00", sentiment: "negative" },
+    { engagement_id: "eng_5", sequence_id: "seq_acme_1", person_id: "pe_lina", kind: "no_response", occurred_at: "2026-09-14T00:00:00", sentiment: "neutral" },
+    { engagement_id: "eng_6", sequence_id: "seq_acme_1", person_id: "pe_marc", kind: "follow_up_due", occurred_at: "2026-09-20T09:00:00", sentiment: "neutral" },
+  ]);
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+  function sequence(id) { return d.sequences.filter(function (s) { return s.sequence_id === id; })[0]; }
+  function company(id) { return d.companies.filter(function (c) { return c.company_id === id; })[0]; }
+
+  var KIND_BADGE = {
+    replied: '<span class="badge epi-fact">● réponse positive</span>',
+    meeting_booked: '<span class="badge epi-fact">● meeting booké</span>',
+    objection: '<span class="badge epi-inference">◐ objection</span>',
+    unsubscribed: '<span class="badge blocker-badge">⛔ unsubscribe</span>',
+    no_response: '<span class="badge epi-unknown">? no-response</span>',
+    follow_up_due: '<span class="badge epi-hypothesis">◇ follow-up dû</span>',
+  };
+
+  var rows = demoEvents
+    .slice()
+    .sort(function (a, b) { return b.occurred_at.localeCompare(a.occurred_at); })
+    .map(function (e) {
+      var p = person(e.person_id);
+      var seq = sequence(e.sequence_id);
+      var plan = d.targetPlans.filter(function (tp) { return tp.target_plan_id === seq.target_plan_id; })[0];
+      var c = company(plan.company_id);
+      return (
+        "<tr>" +
+        "<td>" + p.name + "</td>" +
+        "<td>" + (KIND_BADGE[e.kind] || e.kind) + "</td>" +
+        "<td>" + c.name + "</td>" +
+        "<td>" + e.occurred_at.replace("T", " ") + "</td>" +
+        '<td><a href="conversation.html?engagement_id=' + e.engagement_id + '">ouvrir →</a></td>' +
+        "</tr>"
+      );
+    })
+    .join("");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Engagement</p><h1>Inbox / Conversations</h1>' +
+    '<p class="lede">Ce que le prospect a fait — jamais confondu avec ce que nous avons fait (voir Activity Feed).</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Engagement">' +
+    '<a href="index.html" aria-current="page">Inbox</a>' +
+    '<a href="activity.html">Activity Feed</a>' +
+    "</div>" +
+    '<table class="data-table"><thead><tr><th>Personne</th><th>Type</th><th>Compte</th><th>Survenu</th><th></th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

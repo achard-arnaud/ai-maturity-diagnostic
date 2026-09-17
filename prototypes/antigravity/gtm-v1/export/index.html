@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Export / Editor — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .stepper { display: flex; gap: var(--gtm-space-2); flex-wrap: wrap; margin-bottom: var(--gtm-space-4); }
+  .stepper .step { padding: var(--gtm-space-1) var(--gtm-space-3); border: 1px solid var(--gtm-border); border-radius: 999px; font-size: 12px; color: var(--gtm-text-muted); }
+  .stepper .step.current { background: var(--gtm-accent); color: var(--gtm-accent-contrast); border-color: var(--gtm-accent); font-weight: 600; }
+  .stepper .step.done { color: var(--gtm-fact); border-color: var(--gtm-fact); }
+  .flow-panel { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-5); background: var(--gtm-surface); }
+  .flow-panel textarea { width: 100%; min-height: 160px; font-family: var(--gtm-font-mono); padding: var(--gtm-space-2); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-bg); color: var(--gtm-text); }
+  .diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gtm-space-3); }
+  .diff-cols pre { white-space: pre-wrap; background: var(--gtm-bg); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); padding: var(--gtm-space-3); font-size: 13px; }
+  .template-choice { display: flex; gap: var(--gtm-space-3); flex-wrap: wrap; }
+  .template-choice label { flex: 1 1 160px; border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); cursor: pointer; display: block; }
+  .render-mock { border: 1px dashed var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-6); text-align: center; color: var(--gtm-text-muted); background: var(--gtm-bg); }
+  .flow-nav { display: flex; justify-content: space-between; margin-top: var(--gtm-space-4); }
+  button[disabled] { opacity: .55; cursor: not-allowed; }
+  @media (max-width: 720px) { .diff-cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  // "admin" chosen as activeNav: Export has no nav slot of its own (per
+  // mission) and is reached from admin/artifact-library.html's Export CTA.
+  GtmProtoShell.render("admin", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+  var artifact = d.artifacts[0]; // art_1 — Acme research note, per SCREEN_CONTRACT.md
+
+  var STEPS = ["Aperçu artefact", "Édition", "Revue", "Choix de template", "Aperçu du rendu", "Export"];
+  var state = { step: 0, approved: false, template: "internal_note" };
+
+  function stepperHtml() {
+    return (
+      '<div class="stepper" role="tablist" aria-label="Étapes export">' +
+      STEPS.map(function (s, i) {
+        var cls = i === state.step ? "step current" : i < state.step ? "step done" : "step";
+        return '<span class="' + cls + '">' + (i + 1) + ". " + s + "</span>";
+      }).join("") +
+      "</div>"
+    );
+  }
+
+  function panel1() {
+    return (
+      '<div class="card"><p class="eyebrow">' + artifact.type.replace("_", " ") + "</p><h3>" + artifact.title + "</h3>" +
+      '<div class="meta"><span class="version-badge badge">v' + artifact.version + '</span><span class="human-decision-badge badge">&#x1F464; ' + artifact.author + '</span></div>' +
+      '<p style="color:var(--gtm-text-muted);font-size:13px;margin-top:8px;">Mis à jour ' + artifact.updated_at + "</p></div>" +
+      '<p style="margin-top:var(--gtm-space-4);font-size:13px;color:var(--gtm-text-muted);">Point de départ du flux — objet <code>Artifact</code> existant, aucune nouvelle forme inventée.</p>'
+    );
+  }
+
+  function panel2() {
+    return (
+      '<div class="state-banner state-banner--partial-data" role="status">&#x25D0; Éditeur illustratif (textarea) — la technologie réelle (Markdown / blocs / rich-text) n’est pas tranchée, cf. RICH_EDITOR_ADR_OPTIONS.md.</div>' +
+      '<textarea id="editorText">Acme Corp — Note de recherche v1\n\nContexte : passage à un data platform moderne motivé par la promotion de C. Dubosc.\n\nPreuve : ERP legacy pour la planification production (fait).\nInférence : le changement semble lié à la promotion récente.\nHypothèse : budget de transformation IT débloqué au Q1 (non confirmé).</textarea>'
+    );
+  }
+
+  function panel3() {
+    return (
+      '<div class="diff-cols">' +
+      "<div><h4>Avant</h4><pre>Acme Corp — Note de recherche v1\n\nContexte : passage à un data platform moderne.</pre></div>" +
+      "<div><h4>Après (édité)</h4><pre id=\"diffAfter\"></pre></div>" +
+      "</div>" +
+      '<div style="margin-top:var(--gtm-space-4);">' +
+      '<label><input type="checkbox" id="approveBox" ' + (state.approved ? "checked" : "") + "> J’approuve cette revue (décision humaine, jamais automatique)</label>" +
+      "</div>"
+    );
+  }
+
+  function panel4() {
+    var templates = [
+      { id: "internal_note", label: "Note interne", desc: "Format texte simple, usage interne." },
+      { id: "one_pager", label: "One-pager", desc: "Synthèse visuelle courte." },
+      { id: "client_export", label: "Export client", desc: "Mise en forme destinée à un tiers." },
+    ];
+    return (
+      '<div class="template-choice">' +
+      templates
+        .map(function (t) {
+          return (
+            '<label><input type="radio" name="tpl" value="' + t.id + '" ' + (state.template === t.id ? "checked" : "") + "> <strong>" + t.label + "</strong>" +
+            '<p style="color:var(--gtm-text-muted);font-size:13px;margin:4px 0 0;">' + t.desc + "</p></label>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function panel5() {
+    return (
+      '<div class="render-mock"><p style="margin:0 0 8px;">&#x1F5B9; Aperçu du rendu (simulé)</p>' +
+      "<p style=\"margin:0;\">Template : <strong>" + state.template.replace("_", " ") + "</strong></p></div>" +
+      '<p style="margin-top:var(--gtm-space-4);font-size:13px;color:var(--gtm-text-muted);">Rendu simulé — technologie de composition non tranchée (nice-output-engine vs build_org_tech_note.py vs autre), cf. DOCUMENT_COMPOSITION_EXPORT_OPTIONS.md.</p>'
+    );
+  }
+
+  function panel6() {
+    return (
+      '<div class="toolbar"><select aria-label="Format d’export"><option>PDF</option><option>DOCX</option><option>HTML</option></select></div>' +
+      '<button type="button" disabled title="Export non branché — proposition de flux UX uniquement, cf. SCREEN_CONTRACT.md DECISION_REQUIRED #2">Exporter (désactivé en V1)</button>'
+    );
+  }
+
+  var PANELS = [panel1, panel2, panel3, panel4, panel5, panel6];
+
+  function render() {
+    var backDisabled = state.step === 0 ? "disabled" : "";
+    var nextLabel = state.step === STEPS.length - 1 ? "Terminer" : "Suivant →";
+    var nextDisabled = state.step === 2 && !state.approved ? "disabled" : "";
+    var nextTooltip = nextDisabled ? 'title="Bloqué — approuvez la revue avant de continuer"' : "";
+    main.innerHTML =
+      '<div class="section-head">' +
+      '<div><p class="eyebrow">Export / Editor</p><h1>' + STEPS[state.step] + "</h1>" +
+      '<p class="lede">Flux d’expérience uniquement — aucune technologie d’édition/export réelle n’est tranchée ici.</p></div>' +
+      '<div><a href="states.html">Voir tous les états →</a></div>' +
+      "</div>" +
+      stepperHtml() +
+      '<div class="flow-panel">' + PANELS[state.step]() + "</div>" +
+      '<div class="flow-nav">' +
+      '<button type="button" id="btnBack" ' + backDisabled + '>&larr; Précédent</button>' +
+      '<button type="button" id="btnNext" ' + nextDisabled + " " + nextTooltip + ">" + nextLabel + "</button>" +
+      "</div>";
+
+    if (state.step === 1) {
+      document.getElementById("editorText").addEventListener("input", function (e) {
+        state.editedText = e.target.value;
+      });
+    }
+    if (state.step === 2) {
+      document.getElementById("diffAfter").textContent = state.editedText || "Acme Corp — Note de recherche v1\n\nContexte : passage à un data platform moderne motivé par la promotion de C. Dubosc.";
+      document.getElementById("approveBox").addEventListener("change", function (e) {
+        state.approved = e.target.checked;
+        render();
+      });
+    }
+    if (state.step === 3) {
+      document.querySelectorAll('input[name="tpl"]').forEach(function (r) {
+        r.addEventListener("change", function (e) { state.template = e.target.value; });
+      });
+    }
+    document.getElementById("btnBack").addEventListener("click", function () {
+      if (state.step > 0) { state.step -= 1; render(); }
+    });
+    document.getElementById("btnNext").addEventListener("click", function () {
+      if (state.step === 2 && !state.approved) return;
+      if (state.step < STEPS.length - 1) { state.step += 1; render(); }
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>

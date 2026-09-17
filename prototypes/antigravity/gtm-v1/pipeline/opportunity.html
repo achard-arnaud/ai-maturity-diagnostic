@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline · Opportunity — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .opp-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--gtm-space-4); }
+  @media (max-width: 900px) { .opp-layout { grid-template-columns: 1fr; } }
+  .opp-layout section { margin-bottom: var(--gtm-space-4); }
+  .opp-layout h3 { font-size: 13px; text-transform: uppercase; color: var(--gtm-text-muted); margin-bottom: var(--gtm-space-2); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("pipeline", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(location.search);
+  var oppId = params.get("opportunity_id") || "opp_acme_1";
+  var o = d.opportunities.filter(function (x) { return x.opportunity_id === oppId; })[0] || d.opportunities[0];
+  var c = d.companies.filter(function (x) { return x.company_id === o.company_id; })[0];
+  var demand = d.demands.filter(function (x) { return x.demand_id === o.demand_id; })[0];
+  var fit = d.fitAssessments.filter(function (x) { return x.fit_id === o.fit_id; })[0];
+  var plan = d.targetPlans.filter(function (x) { return x.target_plan_id === o.target_plan_id; })[0];
+  var deal = d.deals.filter(function (x) { return x.opportunity_id === o.opportunity_id; })[0];
+  var artifacts = d.artifacts.filter(function (a) { return a.company_id === o.company_id; });
+  var engagementEvents = d.engagementEvents.filter(function (e) {
+    var seq = d.sequences.filter(function (s) { return s.target_plan_id === plan.target_plan_id; })[0];
+    return seq && e.sequence_id === seq.sequence_id;
+  });
+
+  // Local, UI-only overlay: fields the mission's Opportunity detail needs
+  // (discovery notes, decision log) that opp_acme_1 doesn't carry in
+  // shared/mock-data.js — additive, same opportunity_id, no new object.
+  // See pipeline/SCREEN_CONTRACT.md DECISION_REQUIRED #3.
+  var oppMeta = {
+    opp_acme_1: {
+      discovery_notes: ["Cycle de replanification actuel : 3 semaines (ERP legacy)", "Sponsor pressenti : C. Dubosc (non confirmé formellement)"],
+      decision_log: [
+        { date: "2026-09-05", who: "alex@internal", decision: "Ouverture Opportunity suite à Fit PURSUE (draft)" },
+        { date: "2026-09-12", who: "alex@internal", decision: "Note de recherche v1 partagée en interne" },
+      ],
+      outcome: null,
+    },
+  };
+  var meta = oppMeta[o.opportunity_id] || { discovery_notes: [], decision_log: [], outcome: null };
+
+  function person(id) { return d.people.filter(function (p) { return p.person_id === id; })[0]; }
+
+  var stakeholdersHtml = plan.members.map(function (m) {
+    var p = person(m.person_id);
+    return '<li>' + p.name + " — <span>" + p.title + "</span> <span class=\"badge human-decision-badge\">\u{1F464} " + m.stakeholder_role.replace("_", " ") + "</span></li>";
+  }).join("");
+
+  var artifactsHtml = artifacts.map(function (a) {
+    return '<li>' + a.title + ' <span class="version-badge">v' + a.version + "</span> · " + a.author + " · " + a.updated_at + "</li>";
+  }).join("") || "<li>Aucun artefact.</li>";
+
+  var engagementHtml = engagementEvents.map(function (e) {
+    var p = person(e.person_id);
+    return "<li>" + p.name + " — " + e.kind + " (" + e.occurred_at.replace("T", " ") + ")</li>";
+  }).join("") || "<li>Aucun engagement enregistré pour l'instant.</li>";
+
+  var decisionLogHtml = meta.decision_log.map(function (l) {
+    return "<li>" + l.date + " — " + l.decision + ' <span style="color:var(--gtm-text-muted);font-size:12px;">(' + l.who + ")</span></li>";
+  }).join("") || "<li>Aucune entrée.</li>";
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Pipeline · Opportunity</p><h1>' + c.name + "</h1>" +
+    '<p class="lede">Stage : <span class="badge epi-fact">' + o.stage + "</span> · Owner : " + o.owner + "</p></div>" +
+    '<div><a href="opportunities.html">← Opportunities</a></div>' +
+    "</div>" +
+    '<div class="opp-layout">' +
+    "<div>" +
+    '<section><h3>Demand & Fit liés</h3><p style="font-size:14px;">' + demand.problem + "</p>" +
+    '<p style="font-size:13px;color:var(--gtm-text-muted);">Outcome visé : ' + demand.outcome + "</p>" +
+    '<p style="font-size:13px;">Fit : ' + fit.overall_decision + " · couverture besoin " + fit.need_coverage + ' <span class="version-badge">v' + fit.version + "</span></p></section>" +
+    '<section><h3>Discovery</h3><ul>' + (meta.discovery_notes.map(function (n) { return "<li>" + n + "</li>"; }).join("") || "<li>Aucune note.</li>") + "</ul></section>" +
+    '<section><h3>Preuve</h3><p style="font-size:13px;">Gates durs passés : ' + (fit.hard_gates_passed ? "oui" : "non") + " · Inconnus : " + fit.unknowns.join(", ") + "</p></section>" +
+    '<section><h3>Decision log</h3><ul>' + decisionLogHtml + "</ul></section>" +
+    '<section><h3>Prochaine action commerciale</h3><p style="font-size:14px;">' + o.next_action + "</p></section>" +
+    '<section><h3>Issue</h3><p style="font-size:13px;">' + (meta.outcome || "En cours — pas d'issue win/loss enregistrée.") + "</p></section>" +
+    "</div>" +
+    "<div>" +
+    '<section><h3>Stakeholders</h3><ul>' + stakeholdersHtml + "</ul>" +
+    '<a href="../targets/committee.html?target_plan_id=' + plan.target_plan_id + '">Voir le comité d’achat →</a></section>' +
+    '<section><h3>Activité / Engagement</h3><ul>' + engagementHtml + "</ul>" +
+    '<a href="../engagement/activity.html">Voir l’Activity Feed →</a></section>' +
+    '<section><h3>Artefacts</h3><ul>' + artifactsHtml + "</ul></section>" +
+    '<section><h3>Deal lié</h3>' + (deal ? '<a href="deal.html?deal_id=' + deal.deal_id + '">Ouvrir le Deal (' + deal.stage + ") →</a>" : "<p>Aucun Deal ouvert.</p>") + "</section>" +
+    "</div>" +
+    "</div>";
+</script>
+</body>
+</html>

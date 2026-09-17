@@ -1,0 +1,79 @@
+/* GTM V1 prototype — design tokens. Independent of app/frontend/styles.css
+   by isolation rule (prototypes/** must not depend on app/**), but
+   deliberately similar in spirit (neutral surface, one accent, semantic
+   status colors) so a reviewer comparing prototype to production isn't
+   jarred by an unrelated visual system. */
+
+:root {
+  --gtm-bg: #f7f7f8;
+  --gtm-surface: #ffffff;
+  --gtm-surface-raised: #ffffff;
+  --gtm-border: #e2e2e6;
+  --gtm-text: #1c1c22;
+  --gtm-text-muted: #63636e;
+  --gtm-accent: #2f6fed;
+  --gtm-accent-contrast: #ffffff;
+
+  --gtm-fact: #1a7f5a;
+  --gtm-inference: #a15c00;
+  --gtm-hypothesis: #6b46c1;
+  --gtm-unknown: #6b6b76;
+
+  --gtm-confidence-high: #1a7f5a;
+  --gtm-confidence-med: #a15c00;
+  --gtm-confidence-low: #b3261e;
+
+  --gtm-fresh: #1a7f5a;
+  --gtm-aging: #a15c00;
+  --gtm-stale: #b3261e;
+
+  --gtm-state-info: #2f6fed;
+  --gtm-state-warning: #a15c00;
+  --gtm-state-error: #b3261e;
+  --gtm-state-blocked: #b3261e;
+
+  --gtm-radius-sm: 4px;
+  --gtm-radius-md: 8px;
+  --gtm-space-1: 4px;
+  --gtm-space-2: 8px;
+  --gtm-space-3: 12px;
+  --gtm-space-4: 16px;
+  --gtm-space-5: 24px;
+  --gtm-space-6: 32px;
+
+  --gtm-font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gtm-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --gtm-shell-header-h: 56px;
+  --gtm-shell-sidebar-w: 220px;
+  --gtm-shell-rail-w: 300px;
+
+  /* Breakpoints (values only — used in shared/shell.css media queries,
+     kept here as the single source so screen-level CSS can reference the
+     same numbers in comments without drifting). ADR-010-aligned. */
+  --gtm-bp-tablet: 900px;
+  --gtm-bp-mobile: 720px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gtm-bg: #17171b;
+    --gtm-surface: #1f1f24;
+    --gtm-surface-raised: #26262c;
+    --gtm-border: #35353d;
+    --gtm-text: #f0f0f2;
+    --gtm-text-muted: #a3a3ad;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--gtm-font);
+  color: var(--gtm-text);
+  background: var(--gtm-bg);
+  -webkit-font-smoothing: antialiased;
+}

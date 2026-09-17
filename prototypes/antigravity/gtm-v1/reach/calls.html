@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Calls — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Calls</h1>' +
+    '<p class="lede">Appels planifiés issus d’un Touchpoint de canal call.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html">Sequences</a>' +
+    '<a href="messages.html">Messages</a><a href="tasks.html">Tasks</a><a href="calls.html" aria-current="page">Calls</a>' +
+    '<a href="meetings.html">Meetings</a><a href="history.html">Touchpoint history</a></div>' +
+    '<div class="empty-state">Aucun appel dans le mock actuel (shared/mock-data.js ne contient pas de Touchpoint de canal &laquo;&nbsp;call&nbsp;&raquo;) — voir SCREEN_CONTRACT.md DECISION_REQUIRED #1.</div>';
+</script>
+</body>
+</html>

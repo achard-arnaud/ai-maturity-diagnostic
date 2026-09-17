@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product Library — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .library-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: var(--gtm-space-4); align-items: start; }
+  @media (max-width: 900px) { .library-grid { grid-template-columns: 1fr; } }
+  .library-col h4 { margin: 0 0 var(--gtm-space-2); font-size: 12px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  .library-item { display: block; width: 100%; text-align: left; padding: var(--gtm-space-2) var(--gtm-space-3); margin-bottom: var(--gtm-space-2); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-surface); cursor: pointer; color: var(--gtm-text); }
+  .library-item[aria-current="true"] { border-color: var(--gtm-accent); background: color-mix(in srgb, var(--gtm-accent) 10%, var(--gtm-surface)); }
+  .diff-block { border: 1px dashed var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); margin-top: var(--gtm-space-3); }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script src="../research/research-mock-extend.js"></script>
+<script src="fit-mock-extend.js"></script>
+<script>
+(function () {
+  "use strict";
+  GtmProtoShell.render("fit", { rail: false });
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(window.location.search);
+  var selectedProductId = params.get("product_id") || (d.products[0] && d.products[0].product_id);
+  var selectedSnapshotId = params.get("snapshot_id") || null;
+
+  function snapshotsForProduct(productId) {
+    return d.productSnapshots
+      .filter(function (s) { return s.product_id === productId; })
+      .slice()
+      .sort(function (a, b) { return a.version < b.version ? -1 : 1; });
+  }
+
+  if (!selectedSnapshotId) {
+    var snaps = snapshotsForProduct(selectedProductId);
+    var current = snaps.filter(function (s) { return s.status === "published"; })[0];
+    selectedSnapshotId = (current || snaps[snaps.length - 1] || {}).snapshot_id || null;
+  }
+
+  function render() {
+    var productsCol = d.products.map(function (p) {
+      return '<button type="button" class="library-item" data-product="' + p.product_id + '" aria-current="' + (p.product_id === selectedProductId) + '">' + p.name + "</button>";
+    }).join("");
+
+    var snaps = snapshotsForProduct(selectedProductId);
+    var versionsCol = snaps.map(function (s) {
+      return '<button type="button" class="library-item" data-snapshot="' + s.snapshot_id + '" aria-current="' + (s.snapshot_id === selectedSnapshotId) + '">' +
+        "<strong>" + s.version + "</strong><br>" +
+        '<span class="badge ' + (s.status === "published" ? "epi-fact" : "") + '" style="' + (s.status === "published" ? "" : "border-color:var(--gtm-border);color:var(--gtm-text-muted);") + '">' + s.status + "</span> " +
+        '<span class="badge version-badge">' + (s.immutable ? "immuable" : "modifiable") + "</span>" +
+        "</button>";
+    }).join("");
+
+    var snapshot = d.productSnapshots.filter(function (s) { return s.snapshot_id === selectedSnapshotId; })[0];
+    var idx = snaps.findIndex(function (s) { return s.snapshot_id === selectedSnapshotId; });
+    var previous = idx > 0 ? snaps[idx - 1] : null;
+
+    var evidenceHtml;
+    if (!snapshot) {
+      evidenceHtml = '<div class="empty-state">Sélectionnez une snapshot pour voir son changelog / evidence.</div>';
+    } else {
+      var usedByFits = d.fitAssessments.filter(function (f) { return f.snapshot_id === snapshot.snapshot_id; });
+      evidenceHtml =
+        '<h4>' + snapshot.version + " — " + snapshot.snapshot_id + "</h4>" +
+        '<div class="meta" style="margin-bottom:var(--gtm-space-3);">' +
+        '<span class="badge ' + (snapshot.status === "published" ? "epi-fact" : "") + '" style="' + (snapshot.status === "published" ? "" : "border-color:var(--gtm-border);color:var(--gtm-text-muted);") + '">' + snapshot.status + "</span>" +
+        '<span class="badge version-badge">' + (snapshot.immutable ? "immuable une fois publiée" : "modifiable") + "</span>" +
+        "<span>Publiée le " + snapshot.published_at + "</span>" +
+        "</div>" +
+        "<h4>Changelog / Evidence de cette snapshot</h4>" +
+        (snapshot.changelog && snapshot.changelog.length
+          ? "<ul>" + snapshot.changelog.map(function (c) { return "<li>" + c + "</li>"; }).join("") + "</ul>"
+          : "<p>Aucun changelog renseigné.</p>") +
+        '<div class="diff-block"><h4>Diff vs. snapshot précédente</h4>' +
+        (previous
+          ? "<p><span class=\"badge version-badge\">" + previous.version + " → " + snapshot.version + "</span></p><ul>" +
+            snapshot.changelog.map(function (c) { return "<li>+ " + c + "</li>"; }).join("") + "</ul>"
+          : "<p>Aucune snapshot précédente — première version publiée.</p>") +
+        "</div>" +
+        "<h4 style=\"margin-top:var(--gtm-space-3);\">Fit Assessments citant exactement cette snapshot</h4>" +
+        (usedByFits.length
+          ? "<ul>" + usedByFits.map(function (f) { return "<li><a href=\"detail.html?fit_id=" + f.fit_id + "\">" + f.fit_id + "</a> — " + f.status + "</li>"; }).join("") + "</ul>"
+          : "<p>Aucune assessment ne cite cette snapshot.</p>");
+    }
+
+    main.innerHTML =
+      '<div class="section-head">' +
+      "<div><p class=\"eyebrow\">Fit</p><h1>Product Library</h1>" +
+      '<p class="lede">Products → Versions → Snapshots → Evidence. Une snapshot publiée est immuable — seule une nouvelle snapshot peut la remplacer.</p></div>' +
+      '<div><a href="index.html">← Fit Queue</a></div>' +
+      "</div>" +
+      '<div class="library-grid">' +
+      '<div class="library-col"><h4>Products</h4>' + productsCol + "</div>" +
+      '<div class="library-col"><h4>Versions / Snapshots</h4>' + versionsCol + "</div>" +
+      '<div class="library-col"><h4>Detail</h4>' + evidenceHtml + "</div>" +
+      "</div>";
+
+    main.querySelectorAll("[data-product]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        selectedProductId = btn.getAttribute("data-product");
+        selectedSnapshotId = null;
+        var snaps2 = snapshotsForProduct(selectedProductId);
+        var cur = snaps2.filter(function (s) { return s.status === "published"; })[0];
+        selectedSnapshotId = (cur || snaps2[snaps2.length - 1] || {}).snapshot_id || null;
+        render();
+      });
+    });
+    main.querySelectorAll("[data-snapshot]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        selectedSnapshotId = btn.getAttribute("data-snapshot");
+        render();
+      });
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

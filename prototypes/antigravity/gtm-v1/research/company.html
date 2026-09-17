@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company 360 — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+<style>
+  .tab-panel[hidden] { display: none; }
+  .research-section { border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-md); padding: var(--gtm-space-3); margin-bottom: var(--gtm-space-3); background: var(--gtm-surface); }
+  .research-section h4 { margin: 0 0 var(--gtm-space-2); font-size: 13px; text-transform: uppercase; color: var(--gtm-text-muted); }
+  .claim { padding: var(--gtm-space-2) 0; border-top: 1px solid var(--gtm-border); font-size: 14px; }
+  .claim:first-child { border-top: none; }
+  .claim .meta { display: flex; gap: var(--gtm-space-2); flex-wrap: wrap; margin-top: 4px; }
+  .research-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gtm-space-3); }
+  @media (max-width: 900px) { .research-grid { grid-template-columns: 1fr; } }
+  .company-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--gtm-space-4); flex-wrap: wrap; margin-bottom: var(--gtm-space-4); }
+  .company-tabs { flex-wrap: wrap; }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { padding: var(--gtm-space-2) 0; border-top: 1px solid var(--gtm-border); font-size: 14px; }
+  .timeline li:first-child { border-top: none; }
+  .timeline time { color: var(--gtm-text-muted); font-size: 12px; display: block; }
+  select.tab-select { display: none; }
+  @media (max-width: 720px) {
+    .company-tabs { display: none; }
+    select.tab-select { display: inline-block; width: 100%; padding: var(--gtm-space-2); border: 1px solid var(--gtm-border); border-radius: var(--gtm-radius-sm); background: var(--gtm-surface); color: var(--gtm-text); margin-bottom: var(--gtm-space-4); }
+  }
+</style>
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script src="research-mock-extend.js"></script>
+<script src="../fit/fit-mock-extend.js"></script>
+<script>
+(function () {
+  "use strict";
+  GtmProtoShell.render("research", { rail: true });
+  var main = document.getElementById("gtmMain");
+  var rail = document.getElementById("gtmRail");
+  var d = window.GtmMockData;
+
+  var params = new URLSearchParams(window.location.search);
+  var companyId = params.get("company_id") || "co_acme";
+  var initialTab = params.get("tab") || "overview";
+
+  var company = d.companies.filter(function (c) { return c.company_id === companyId; })[0];
+  if (!company) {
+    main.innerHTML = '<div class="error-state">Compte introuvable pour company_id=' + companyId + '. <a href="index.html">Retour à la queue Research</a></div>';
+    return;
+  }
+
+  var rc = d.researchCases.filter(function (r) { return r.company_id === companyId; })[0] || null;
+  var evForCase = rc ? d.evidence.filter(function (e) { return e.research_case_id === rc.research_case_id; }) : [];
+  var signalsForCo = d.signals.filter(function (s) { return s.company_id === companyId; });
+  var peopleForCo = d.people.filter(function (p) { return p.company_id === companyId; });
+  var demandsForCo = d.demands.filter(function (dm) { return dm.company_id === companyId; });
+  var fitsForCo = d.fitAssessments.filter(function (f) { return f.company_id === companyId; });
+  var artifactsForCo = d.artifacts.filter(function (a) { return a.company_id === companyId; });
+  var targetPlansForCo = d.targetPlans.filter(function (t) { return t.company_id === companyId; });
+  var seqIdsForCo = targetPlansForCo.reduce(function (acc, t) {
+    return acc.concat(d.sequences.filter(function (s) { return s.target_plan_id === t.target_plan_id; }).map(function (s) { return s.sequence_id; }));
+  }, []);
+  var touchpointsForCo = d.touchpoints.filter(function (t) { return seqIdsForCo.indexOf(t.sequence_id) !== -1; });
+  var engagementForCo = d.engagementEvents.filter(function (e) { return seqIdsForCo.indexOf(e.sequence_id) !== -1; });
+
+  function esc(s) { return String(s == null ? "" : s); }
+  function personName(id) { var p = d.people.filter(function (x) { return x.person_id === id; })[0]; return p ? p.name : id; }
+
+  var CLAIM = {
+    fact: { glyph: "●", label: "Fait", cls: "epi-fact" },
+    inference: { glyph: "◐", label: "Inférence", cls: "epi-inference" },
+    hypothesis: { glyph: "◇", label: "Hypothèse", cls: "epi-hypothesis" },
+    unknown: { glyph: "?", label: "Inconnu", cls: "epi-unknown" },
+  };
+  function claimBadge(type) {
+    var c = CLAIM[type] || CLAIM.unknown;
+    return '<span class="badge ' + c.cls + '">' + c.glyph + " " + c.label + "</span>";
+  }
+  var CONF_BARS = { high: "▮▮▮", med: "▮▮▯", low: "▮▯▯" };
+  function confBadge(level) {
+    return '<span class="badge confidence-' + level + '">' + (CONF_BARS[level] || "▯▯▯") + " confiance " + level + "</span>";
+  }
+  function freshBadge(level) {
+    return '<span class="badge freshness-' + level + '">⟳ ' + level + "</span>";
+  }
+  function sourceBadge(src) {
+    return '<span class="source-badge">\u{1F517} ' + esc(src) + "</span>";
+  }
+
+  /* ---------- Overview ---------- */
+  function renderOverview() {
+    var statusMeta = { in_progress: "Recherche en cours", not_started: "Recherche non démarrée", complete: "Recherche complète" };
+    return (
+      '<div class="research-grid">' +
+      '<div class="research-section"><h4>Identité</h4>' +
+      "<p>" + company.sector + " · " + company.size + " · " + company.location + "</p>" +
+      '<div class="meta"><span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + company.research_status.replace("_", " ") + "</span></div></div>" +
+      '<div class="research-section"><h4>État de la recherche</h4>' +
+      "<p>" + (rc ? statusMeta[rc.status] + " — couverture " + rc.coverage : "Aucun ResearchCase ouvert.") + "</p></div>" +
+      '<div class="research-section"><h4>Compteurs</h4><ul>' +
+      "<li>" + signalsForCo.length + " signal(aux)</li>" +
+      "<li>" + peopleForCo.length + " personne(s)</li>" +
+      "<li>" + demandsForCo.length + " demand(s)</li>" +
+      "<li>" + fitsForCo.length + " fit assessment(s)</li>" +
+      "</ul></div>" +
+      '<div class="research-section"><h4>Dernier signal</h4>' +
+      (signalsForCo[0] ? "<p>" + signalsForCo[0].summary + " " + freshBadge(signalsForCo[0].freshness) + "</p>" : "<p>Aucun signal récent.</p>") +
+      "</div></div>"
+    );
+  }
+
+  /* ---------- Research (14 sections) ---------- */
+  var SECTIONS = [
+    ["identity", "Identity"], ["business_model", "Business model"], ["products_services", "Products & services"],
+    ["customers_markets", "Customers/markets"], ["organisation", "Organisation"], ["strategic_priorities", "Strategic priorities"],
+    ["technology", "Technology"], ["ai_transformation", "AI/transformation"], ["recent_events", "Recent events"],
+    ["hiring", "Hiring"], ["competitive_environment", "Competitive environment"], ["risks", "Risks"],
+  ];
+  function renderResearch() {
+    if (!rc) {
+      return '<div class="empty-state">Aucun ResearchCase ouvert pour ce compte — recherche non démarrée.</div>';
+    }
+    var sectionsHtml = SECTIONS.map(function (s) {
+      var key = s[0], label = s[1];
+      var items = evForCase.filter(function (e) { return e.section === key; });
+      var body = items.length
+        ? items.map(function (e) {
+            return '<div class="claim">' + e.statement + '<div class="meta">' + claimBadge(e.claim_type) + confBadge(e.confidence) + freshBadge(e.freshness) + sourceBadge(e.source) + "</div></div>";
+          }).join("")
+        : '<div class="claim">' + claimBadge("unknown") + " Aucune évidence rattachée à cette section pour l'instant.</div>";
+      return '<div class="research-section"><h4>' + label + "</h4>" + body + "</div>";
+    }).join("");
+
+    var sources = [];
+    evForCase.forEach(function (e) { if (e.source && e.source !== "—" && sources.indexOf(e.source) === -1) sources.push(e.source); });
+    var sourcesHtml = '<div class="research-section"><h4>Sources</h4>' +
+      (sources.length ? "<ul>" + sources.map(function (s) { return "<li>" + sourceBadge(s) + "</li>"; }).join("") + "</ul>" : "<p>Aucune source citée.</p>") + "</div>";
+
+    var historyHtml = '<div class="research-section"><h4>Research history</h4>' +
+      (rc.history && rc.history.length
+        ? '<ul class="timeline">' + rc.history.map(function (h) { return "<li><time>" + h.at + "</time>" + h.actor + " — " + h.action + "</li>"; }).join("") + "</ul>"
+        : "<p>Aucun historique enregistré.</p>") + "</div>";
+
+    return '<div class="research-grid">' + sectionsHtml + sourcesHtml + historyHtml + "</div>";
+  }
+
+  /* ---------- Signals ---------- */
+  function renderSignals() {
+    if (!signalsForCo.length) return '<div class="empty-state">Aucun signal pour ce compte.</div>';
+    var statusBadge = { new: "epi-hypothesis", reviewed: "epi-fact", rejected: "epi-unknown", expired: "epi-unknown" };
+    var rows = signalsForCo.map(function (s) {
+      return "<tr><td>" + s.kind.replace("_", " ") + "</td><td>" + s.summary + "</td>" +
+        "<td>" + freshBadge(s.freshness) + "</td>" +
+        '<td><span class="badge ' + (statusBadge[s.status] || "epi-unknown") + '">' + s.status + "</span></td>" +
+        "<td>" + sourceBadge(s.source) + "</td></tr>";
+    }).join("");
+    return '<table class="data-table"><thead><tr><th>Type</th><th>Résumé</th><th>Observé</th><th>Statut</th><th>Source</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  }
+
+  /* ---------- People ---------- */
+  function renderPeople() {
+    if (!peopleForCo.length) return '<div class="empty-state">Aucune personne rattachée à ce compte.</div>';
+    var rows = peopleForCo.map(function (p) {
+      var roleBadge = p.role_status === "verified" ? '<span class="badge epi-fact">● vérifié</span>' : '<span class="badge epi-hypothesis">◇ non vérifié</span>';
+      return "<tr><td>" + p.name + "</td><td>" + p.title + " " + roleBadge + "</td><td>" + p.relationship_distance + "</td></tr>";
+    }).join("");
+    return '<table class="data-table"><thead><tr><th>Personne</th><th>Rôle (statut)</th><th>Distance relation</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  }
+
+  /* ---------- Demands ---------- */
+  var DEMAND_STATUS = {
+    detected: { label: "Detected", cls: "epi-hypothesis", glyph: "◇" },
+    inferred: { label: "Inferred", cls: "epi-inference", glyph: "◐" },
+    validated: { label: "Validated", cls: "epi-fact", glyph: "●" },
+    qualified: { label: "Qualified", cls: "human-decision-badge", glyph: "\u{1F464}" },
+  };
+  function renderDemands() {
+    if (!demandsForCo.length) return '<div class="empty-state">Aucune demand détectée pour ce compte.</div>';
+    var cards = demandsForCo.map(function (dm) {
+      var st = DEMAND_STATUS[dm.status] || { label: dm.status, cls: "epi-unknown", glyph: "?" };
+      var sourceMix = [];
+      dm.evidence_ids.forEach(function (eid) {
+        var e = d.evidence.filter(function (x) { return x.evidence_id === eid; })[0];
+        if (e && sourceMix.indexOf(e.source) === -1) sourceMix.push(e.source);
+      });
+      var linkedFits = fitsForCo.filter(function (f) { return f.demand_id === dm.demand_id; });
+      var fitsHtml = linkedFits.length
+        ? linkedFits.map(function (f) { return '<a href="../fit/detail.html?fit_id=' + f.fit_id + '">' + f.fit_id + " (" + f.status + ") →</a>"; }).join("<br>")
+        : '<button type="button" disabled title="Une Fit Assessment nécessite une ProductSnapshot publiée et se crée dans l\'espace Fit, pas depuis Research">Lancer une évaluation Fit</button>';
+      return (
+        '<article class="card">' +
+        '<div class="meta"><span class="badge ' + st.cls + '">' + st.glyph + " " + st.label + "</span>" + confBadge(dm.confidence) + '<span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">urgence ' + dm.urgency + "</span></div>" +
+        "<h3>" + dm.problem + "</h3>" +
+        "<p style=\"color:var(--gtm-text-muted);font-size:14px;\">→ " + dm.outcome + "</p>" +
+        "<p style=\"font-size:13px;\">" + dm.evidence_ids.length + " preuve(s) · sources : " + (sourceMix.length ? sourceMix.join(", ") : "aucune") + "</p>" +
+        (dm.unknowns.length ? "<p style=\"font-size:13px;\">" + claimBadge("unknown") + " " + dm.unknowns.join(" · ") + "</p>" : "") +
+        (dm.contradictions.length ? "<p style=\"font-size:13px;color:var(--gtm-state-error);\">⚠ Contradiction(s) : " + dm.contradictions.join(" · ") + "</p>" : "") +
+        '<div class="meta"><strong style="font-size:12px;color:var(--gtm-text-muted);">Fits liés :</strong></div>' +
+        "<p style=\"font-size:14px;\">" + fitsHtml + "</p>" +
+        "</article>"
+      );
+    }).join("");
+    return '<div class="grid">' + cards + "</div>";
+  }
+
+  /* ---------- Fits (read-only) ---------- */
+  function renderFits() {
+    if (!fitsForCo.length) return '<div class="empty-state">Aucune Fit Assessment pour ce compte.</div>';
+    var cards = fitsForCo.map(function (f) {
+      var snap = d.productSnapshots.filter(function (s) { return s.snapshot_id === f.snapshot_id; })[0];
+      return (
+        '<article class="card">' +
+        '<div class="meta"><span class="badge" style="border-color:var(--gtm-border);color:var(--gtm-text-muted);">' + f.status.replace("_", " ") + "</span>" +
+        (snap ? '<span class="badge version-badge">v# ' + snap.version + "</span>" : "") +
+        (f.hard_gates_passed ? "" : '<span class="badge blocker-badge">⛔ hard gate</span>') + "</div>" +
+        "<h3>" + f.fit_id + "</h3>" +
+        "<p style=\"color:var(--gtm-text-muted);font-size:14px;\">Décision (résumé, non dominant) : " + f.overall_decision + "</p>" +
+        '<div style="margin-top:8px;"><a href="../fit/detail.html?fit_id=' + f.fit_id + '">Ouvrir dans Fit →</a></div>' +
+        "</article>"
+      );
+    }).join("");
+    return '<div class="grid">' + cards + "</div>";
+  }
+
+  /* ---------- Engagement ---------- */
+  function renderEngagement() {
+    if (!touchpointsForCo.length && !engagementForCo.length) return '<div class="empty-state">Aucune activité d\'engagement pour ce compte.</div>';
+    var tpRows = touchpointsForCo.map(function (t) {
+      return "<tr><td>" + personName(t.person_id) + "</td><td>" + t.channel.replace("_", " ") + "</td><td>" + t.scheduled_at + "</td>" +
+        '<td><span class="badge epi-hypothesis">◇ ' + t.status.replace("_", " ") + "</span></td><td>" + t.why_now + "</td></tr>";
+    }).join("");
+    var evRows = engagementForCo.map(function (e) {
+      return "<tr><td>" + personName(e.person_id) + "</td><td>" + e.kind + "</td><td>" + e.occurred_at + "</td>" +
+        '<td><span class="badge epi-fact">● observé</span></td><td>sentiment : ' + e.sentiment + "</td></tr>";
+    }).join("");
+    return (
+      '<div class="drawer-section"><h4>Touchpoints planifiés</h4>' +
+      (tpRows ? '<table class="data-table"><thead><tr><th>Personne</th><th>Canal</th><th>Prévu</th><th>Statut</th><th>Pourquoi maintenant</th></tr></thead><tbody>' + tpRows + "</tbody></table>" : "<p>Aucun touchpoint planifié.</p>") +
+      "</div>" +
+      '<div class="drawer-section"><h4>Événements d\'engagement observés</h4>' +
+      (evRows ? '<table class="data-table"><thead><tr><th>Personne</th><th>Type</th><th>Observé</th><th>Statut</th><th>Détail</th></tr></thead><tbody>' + evRows + "</tbody></table>" : "<p>Aucun engagement observé — un email envoyé seul n'est jamais compté comme engagement.</p>") +
+      "</div>"
+    );
+  }
+
+  /* ---------- Activity (unified timeline) ---------- */
+  function renderActivity() {
+    var events = [];
+    signalsForCo.forEach(function (s) { events.push({ at: s.observed_at, label: "Signal observé : " + s.summary }); });
+    if (rc) rc.history.forEach(function (h) { events.push({ at: h.at, label: "Research — " + h.action + " (" + h.actor + ")" }); });
+    artifactsForCo.forEach(function (a) { events.push({ at: a.updated_at, label: "Artifact mis à jour : " + a.title + " (v" + a.version + ")" }); });
+    fitsForCo.forEach(function (f) {
+      (f.decision_history || []).forEach(function (h) { events.push({ at: h.at, label: "Fit " + f.fit_id + " — " + h.action + " (" + h.actor + ")" }); });
+    });
+    engagementForCo.forEach(function (e) { events.push({ at: e.occurred_at.slice(0, 10), label: personName(e.person_id) + " — " + e.kind }); });
+    events.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    if (!events.length) return '<div class="empty-state">Aucune activité enregistrée pour ce compte.</div>';
+    return '<ul class="timeline">' + events.map(function (e) { return "<li><time>" + e.at + "</time>" + e.label + "</li>"; }).join("") + "</ul>";
+  }
+
+  /* ---------- Artifacts ---------- */
+  function renderArtifacts() {
+    if (!artifactsForCo.length) return '<div class="empty-state">Aucun artifact pour ce compte.</div>';
+    var rows = artifactsForCo.map(function (a) {
+      return "<tr><td>" + a.title + "</td><td>" + a.type.replace("_", " ") + '</td><td><span class="badge version-badge">v# ' + a.version + "</span></td><td>" + a.author + "</td><td>" + a.updated_at + "</td></tr>";
+    }).join("");
+    return '<table class="data-table"><thead><tr><th>Titre</th><th>Type</th><th>Version</th><th>Auteur</th><th>Mis à jour</th></tr></thead><tbody>' + rows + "</tbody></table>";
+  }
+
+  var TABS = [
+    ["overview", "Overview", renderOverview],
+    ["research", "Research", renderResearch],
+    ["signals", "Signals", renderSignals],
+    ["people", "People", renderPeople],
+    ["demands", "Demands", renderDemands],
+    ["fits", "Fits", renderFits],
+    ["engagement", "Engagement", renderEngagement],
+    ["activity", "Activity", renderActivity],
+    ["artifacts", "Artifacts", renderArtifacts],
+  ];
+  var validTabIds = TABS.map(function (t) { return t[0]; });
+  if (validTabIds.indexOf(initialTab) === -1) initialTab = "overview";
+
+  var tabsNav = TABS.map(function (t) {
+    return '<button type="button" class="tab-btn" data-tab="' + t[0] + '"' + (t[0] === initialTab ? ' aria-current="page"' : "") + ">" + t[1] + "</button>";
+  }).join("");
+  var tabsSelect = '<select class="tab-select" aria-label="Choisir un onglet">' + TABS.map(function (t) {
+    return '<option value="' + t[0] + '"' + (t[0] === initialTab ? " selected" : "") + ">" + t[1] + "</option>";
+  }).join("") + "</select>";
+  var panels = TABS.map(function (t) {
+    return '<section class="tab-panel" data-tab="' + t[0] + '"' + (t[0] === initialTab ? "" : " hidden") + ">" + t[2]() + "</section>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="company-header">' +
+    "<div><p class=\"eyebrow\">Research · Company 360</p><h1>" + company.name + "</h1>" +
+    "<p class=\"lede\">" + company.sector + " · " + company.size + " · " + company.location + "</p></div>" +
+    '<div><a href="index.html">← Retour à la queue Research</a></div>' +
+    "</div>" +
+    '<div class="tabs company-tabs" role="tablist" aria-label="Onglets Company 360">' + tabsNav + "</div>" +
+    tabsSelect +
+    panels;
+
+  var mainTabButtons = main.querySelectorAll(".tab-btn");
+  var mainPanels = main.querySelectorAll(".tab-panel");
+  var selectEl = main.querySelector(".tab-select");
+
+  function activate(tabId) {
+    mainTabButtons.forEach(function (b) {
+      if (b.getAttribute("data-tab") === tabId) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+    mainPanels.forEach(function (p) { p.hidden = p.getAttribute("data-tab") !== tabId; });
+    selectEl.value = tabId;
+    var url = new URL(window.location.href);
+    url.searchParams.set("tab", tabId);
+    window.history.replaceState(null, "", url);
+  }
+  mainTabButtons.forEach(function (b) { b.addEventListener("click", function () { activate(b.getAttribute("data-tab")); }); });
+  selectEl.addEventListener("change", function () { activate(selectEl.value); });
+
+  /* ---------- Context rail: quick facts, always visible per SHELL_CONTRACT.md §1 ---------- */
+  if (rail) {
+    var openFit = fitsForCo.filter(function (f) { return f.status === "pending_review" || f.status === "needs_human_review"; })[0];
+    rail.innerHTML =
+      '<div class="drawer-section"><h4>Compte</h4><p>' + company.name + "<br>" + company.sector + "</p></div>" +
+      '<div class="drawer-section"><h4>Research</h4><p>' + (rc ? rc.status.replace("_", " ") + " — " + rc.coverage : "Non démarrée") + "</p></div>" +
+      '<div class="drawer-section"><h4>Prochaine action suggérée</h4><p>' +
+      (openFit ? "Revoir " + openFit.fit_id + " (" + openFit.status.replace("_", " ") + ")" : "Compléter les sections Research incomplètes") +
+      "</p></div>";
+  }
+})();
+</script>
+</body>
+</html>

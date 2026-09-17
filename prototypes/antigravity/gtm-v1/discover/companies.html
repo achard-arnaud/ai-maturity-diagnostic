@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discover · Companies — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("discover", {});
+  var main = document.getElementById("gtmMain");
+  var d = window.GtmMockData;
+
+  var rows = d.companies.map(function (c) {
+    var sig = d.signals.filter(function (s) { return s.company_id === c.company_id; })[0];
+    return "<tr><td><a href=\"../research/index.html?company_id=" + c.company_id + "\">" + c.name + "</a></td><td>" + c.sector +
+      "</td><td>" + c.size + "</td><td>" + c.location + "</td><td>" +
+      (sig ? '<span class="badge freshness-' + sig.freshness + '">' + sig.summary + "</span>" : "—") +
+      "</td><td>" + c.research_status.replace("_", " ") + "</td></tr>";
+  }).join("");
+
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Discover</p><h1>Companies</h1>' +
+    '<p class="lede">All companies / Target accounts / Saved searches — aucun score de Fit ou de demande n’apparaît ici.</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Discover Home</a><a href="people.html">People</a>' +
+    '<a href="companies.html" aria-current="page">Companies</a><a href="signals.html">Signals</a><a href="lists.html">Lists</a></div>' +
+    '<div class="toolbar"><select aria-label="Filtre secteur"><option>Tous secteurs</option></select>' +
+    '<select aria-label="Filtre statut recherche"><option>Tous statuts</option></select></div>' +
+    '<table class="data-table"><thead><tr><th>Compte</th><th>Secteur</th><th>Taille</th><th>Localisation</th><th>Signal récent</th><th>Statut recherche</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+</script>
+</body>
+</html>

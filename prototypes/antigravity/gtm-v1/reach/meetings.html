@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach · Meetings — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script>
+  GtmProtoShell.render("reach", {});
+  var main = document.getElementById("gtmMain");
+  main.innerHTML =
+    '<div class="section-head"><div><p class="eyebrow">Reach</p><h1>Meetings</h1>' +
+    '<p class="lede">Réunions issues d’un EngagementEvent de type meeting_booked (cf. Engagement).</p></div></div>' +
+    '<div class="tabs"><a href="index.html">Execution Queue</a><a href="sequences.html">Sequences</a>' +
+    '<a href="messages.html">Messages</a><a href="tasks.html">Tasks</a><a href="calls.html">Calls</a>' +
+    '<a href="meetings.html" aria-current="page">Meetings</a><a href="history.html">Touchpoint history</a></div>' +
+    '<div class="empty-state">Aucune réunion réservée dans le mock actuel — voir SCREEN_CONTRACT.md DECISION_REQUIRED #1.</div>';
+</script>
+</body>
+</html>

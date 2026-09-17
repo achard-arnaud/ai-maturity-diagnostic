@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline — GTM V1</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="../shared/shell.css">
+<link rel="stylesheet" href="../shared/components.css">
+</head>
+<body>
+<div id="gtmShell"></div>
+<script src="../shared/shell.js"></script>
+<script src="../shared/mock-data.js"></script>
+<script>
+  GtmProtoShell.render("pipeline", { rail: false });
+  var main = document.getElementById("gtmMain");
+
+  main.innerHTML =
+    '<div class="section-head">' +
+    '<div><p class="eyebrow">Pipeline</p><h1>Leads</h1>' +
+    '<p class="lede">Où en sont nos Opportunities et Deals — jamais une Opportunity créée sur un clic non gouverné.</p></div>' +
+    '<div><a href="states.html">Voir tous les états →</a></div>' +
+    "</div>" +
+    '<div class="tabs" role="tablist" aria-label="Sous-espaces Pipeline">' +
+    '<a href="index.html" aria-current="page">Leads</a>' +
+    '<a href="opportunities.html">Opportunities</a>' +
+    '<a href="deals.html">Deals</a>' +
+    '<a href="board.html">Board</a>' +
+    "</div>" +
+    '<div class="empty-state">' +
+    '<p><strong>Lead</strong> n’est pas un objet canonique de <code>SHELL_CONTRACT.md</code> §4 / <code>shared/mock-data.js</code>.</p>' +
+    '<p style="font-size:13px;">Cet onglet reste volontairement vide plutôt que de mapper arbitrairement un objet existant (Demand, TargetPlan…) sur ce concept — voir <code>SCREEN_CONTRACT.md</code> DECISION_REQUIRED #1.</p>' +
+    "</div>";
+</script>
+</body>
+</html>
