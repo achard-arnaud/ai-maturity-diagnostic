@@ -1,0 +1,229 @@
+"""Epic 14 S01: SearchRequest / EvidenceCandidate acquisition contract.
+
+Pure, dependency-free shapes and functions -- no storage, no network
+(mirrors app/research_policy.py's and app/signal_policy.py's established
+convention). Encodes ADR-011 (docs/ADR-011-evidence-acquisition-search.md):
+a harvested `search-social-networks` Result becomes an EvidenceCandidate
+only through here, with provenance validated before the candidate can
+exist at all, and it can never carry a Demand/Fit/TargetPlan-readiness
+field -- acquisition never directly creates Demand, Fit or authority
+(Epic 14 purpose statement).
+
+This module does not call any source adapter; app/harvest_runner.py (S02+)
+is the caller that turns a real search-social-networks Result into the
+inputs build_evidence_candidate() expects.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Any, Mapping
+
+from app.signal_policy import DEMAND_ONLY_FIELDS, compute_dedup_key
+
+SPACES = frozenset({"discover", "research", "targets"})
+
+# The nine search-social-networks sources this Epic wraps (ADR-011 §1).
+SOURCES = frozenset(
+    {"web", "linkedin", "youtube", "hackernews", "arxiv", "github", "reddit", "x", "perplexity"}
+)
+
+# Only this lane, post-Fit, may originate a Targets-space request
+# (ADR-011 §6): every other source stays Discover/Research until a Fit
+# decision exists.
+TARGETS_SPACE_SOURCES = frozenset({"linkedin"})
+
+# Fields unique to CanonicalFitAssessmentV1 / CanonicalTargetPlanV1
+# (contracts/fit_assessment_v1.schema.yaml, contracts/target_plan_v1.schema.yaml)
+# that must never appear on an EvidenceCandidate/harvested payload --
+# the second half of "acquisition never directly creates Demand, Fit or
+# authority" (DEMAND_ONLY_FIELDS, imported above, covers the Demand half).
+FIT_OR_TARGET_ONLY_FIELDS = frozenset(
+    {
+        "input_lock",
+        "gates",
+        "coverage",
+        "gaps",
+        "alternatives",
+        "counter_evidence",
+        "score",
+        "verdict",
+        "fit_assessment_id",
+        "target_plan_id",
+    }
+)
+
+# Per ADR-011 §4: a freshly harvested, uncorroborated candidate is never
+# graded/typed above these -- promotion above U1/hypothesis is a claim-
+# lineage decision (app.research_policy.validate_claim_lineage), never an
+# acquisition-time default.
+DEFAULT_EVIDENCE_GRADE = "U1"
+DEFAULT_EPISTEMIC_STATUS = "hypothesis"
+_UNCORROBORATED_MAX_GRADES = frozenset({"U1", "N0"})
+_UNCORROBORATED_MAX_STATUSES = frozenset({"hypothesis", "inference", "unknown"})
+
+EXCERPT_MAX_LENGTH = 1000  # contracts/evidence_v1.schema.yaml's excerpt.maxLength
+
+
+class AcquisitionPolicyError(RuntimeError):
+    pass
+
+
+def assert_no_demand_or_fit_fields(payload: Mapping[str, Any]) -> None:
+    """Raise if a harvested/candidate payload carries any Demand-only or
+    Fit/TargetPlan-only field -- acquisition never directly creates Demand,
+    Fit or authority (Epic 14 purpose statement; ADR-011 §2)."""
+
+    found = (DEMAND_ONLY_FIELDS | FIT_OR_TARGET_ONLY_FIELDS) & payload.keys()
+    if found:
+        raise AcquisitionPolicyError(
+            f"acquisition payload carries Demand/Fit/TargetPlan-only field(s) {sorted(found)} -- "
+            "search results cannot create Demand, Fit or Target readiness (Epic 14 purpose; ADR-011 S2)"
+        )
+
+
+@dataclass(frozen=True)
+class SearchRequest:
+    """A bounded request to acquire evidence for one workspace.
+
+    `sources` must be given explicitly and non-empty: Program invariant
+    "do not fan out to all sources by default" (ADR-011 S1/S3) is enforced
+    here, not left to a caller's convention.
+    """
+
+    workspace_id: str
+    query: str
+    sources: tuple[str, ...]
+    space: str
+    requested_by: str
+    days: int = 30
+    limit: int = 10
+    enrich: bool = True
+    allow_commercial: bool = False
+    research_case_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.workspace_id.strip():
+            raise AcquisitionPolicyError("workspace_id is required")
+        if not self.query.strip():
+            raise AcquisitionPolicyError("query is required")
+        if not self.requested_by.strip():
+            raise AcquisitionPolicyError("requested_by is required")
+        if self.space not in SPACES:
+            raise AcquisitionPolicyError(f"unknown space: {self.space!r} (expected one of {sorted(SPACES)})")
+        if not self.sources:
+            raise AcquisitionPolicyError(
+                "sources must be given explicitly and non-empty -- "
+                "do not fan out to every source by default (ADR-011 S3)"
+            )
+        unknown = set(self.sources) - SOURCES
+        if unknown:
+            raise AcquisitionPolicyError(f"unknown source(s): {sorted(unknown)}")
+        # ADR-011 S6: LinkedIn may only be requested from the Targets space
+        # (post-Fit); every other space keeps it out entirely.
+        if "linkedin" in self.sources and self.space != "targets":
+            raise AcquisitionPolicyError(
+                "linkedin may only be requested from space='targets' (post-Fit) -- "
+                "see ADR-011 S6 Discover/Research/Targets placement"
+            )
+        if self.space == "targets":
+            non_targets_sources = set(self.sources) - TARGETS_SPACE_SOURCES
+            if non_targets_sources:
+                raise AcquisitionPolicyError(
+                    f"space='targets' only accepts {sorted(TARGETS_SPACE_SOURCES)}, got {sorted(non_targets_sources)}"
+                )
+        if self.days < 1:
+            raise AcquisitionPolicyError("days must be >= 1")
+        if self.limit < 1:
+            raise AcquisitionPolicyError("limit must be >= 1")
+
+
+@dataclass(frozen=True)
+class EvidenceCandidate:
+    """The mapped, not-yet-promoted shape a source adapter's raw Result
+    becomes before it is written as CanonicalEvidenceV1/CanonicalSignalV1
+    (ADR-011 S2). Promotion to a canonical record is a separate, explicit
+    step this module does not perform."""
+
+    candidate_id: str
+    workspace_id: str
+    space: str
+    source_kind: str
+    source_ref: str
+    locator: str
+    excerpt: str
+    observed_at: str
+    dated_at: str | None
+    evidence_grade: str
+    epistemic_status: str
+    entity_refs: tuple[str, ...]
+    dedup_key: str
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+def build_evidence_candidate(
+    *,
+    candidate_id: str,
+    workspace_id: str,
+    space: str,
+    source_name: str,
+    locator: str,
+    title: str,
+    snippet: str = "",
+    dated_at: str | None = None,
+    observed_at: str | None = None,
+    entity_refs: tuple[str, ...] = (),
+    evidence_grade: str = DEFAULT_EVIDENCE_GRADE,
+    epistemic_status: str = DEFAULT_EPISTEMIC_STATUS,
+    metadata: Mapping[str, Any] | None = None,
+) -> EvidenceCandidate:
+    """Map one harvested Result into an EvidenceCandidate, rejecting it if
+    provenance is missing rather than silently defaulting (Epic 14 S01
+    test: "missing provenance rejected").
+    """
+
+    if not workspace_id.strip():
+        raise AcquisitionPolicyError("workspace_id is required")
+    if space not in SPACES:
+        raise AcquisitionPolicyError(f"unknown space: {space!r}")
+    if source_name not in SOURCES:
+        raise AcquisitionPolicyError(f"unknown source: {source_name!r}")
+    if not locator.strip():
+        raise AcquisitionPolicyError("a candidate requires a non-empty locator (provenance)")
+    if not title.strip() and not snippet.strip():
+        raise AcquisitionPolicyError("a candidate requires a non-empty title or snippet")
+    if evidence_grade not in _UNCORROBORATED_MAX_GRADES:
+        raise AcquisitionPolicyError(
+            f"a freshly harvested candidate cannot be graded {evidence_grade!r} without prior "
+            f"corroboration -- expected one of {sorted(_UNCORROBORATED_MAX_GRADES)} (ADR-011 S4)"
+        )
+    if epistemic_status not in _UNCORROBORATED_MAX_STATUSES:
+        raise AcquisitionPolicyError(
+            f"a freshly harvested candidate cannot carry epistemic_status={epistemic_status!r} -- "
+            f"expected one of {sorted(_UNCORROBORATED_MAX_STATUSES)} (ADR-011 S4)"
+        )
+
+    resolved_metadata = dict(metadata or {})
+    assert_no_demand_or_fit_fields(resolved_metadata)
+
+    excerpt = " ".join(f"{title} {snippet}".split()).strip()[:EXCERPT_MAX_LENGTH]
+    resolved_observed_at = observed_at or datetime.now(timezone.utc).isoformat()
+    dedup_key = compute_dedup_key(source_name, locator, excerpt)
+
+    return EvidenceCandidate(
+        candidate_id=candidate_id,
+        workspace_id=workspace_id,
+        space=space,
+        source_kind=source_name,
+        source_ref=locator,
+        locator=locator,
+        excerpt=excerpt,
+        observed_at=resolved_observed_at,
+        dated_at=dated_at,
+        evidence_grade=evidence_grade,
+        epistemic_status=epistemic_status,
+        entity_refs=entity_refs,
+        dedup_key=dedup_key,
+        metadata=resolved_metadata,
+    )
